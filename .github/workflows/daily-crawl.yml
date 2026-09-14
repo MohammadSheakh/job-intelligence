@@ -1,0 +1,43 @@
+name: Daily job pipeline
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 06:15 Asia/Dhaka (00:15 UTC)
+    - cron: '15 0 * * *'
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Crawl career pages
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CRAWL_DELAY_MS: '750'
+        run: npm run crawl:daily
+
+      - name: Match candidates and send enabled digests
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AI_BASE_URL: ${{ secrets.AI_BASE_URL }}
+          AI_MODEL: ${{ secrets.AI_MODEL }}
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+        run: npm run notify:daily

@@ -1,0 +1,44 @@
+{
+  "name": "job-intelligence",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:import-companies": "tsx scripts/import-companies.ts",
+    "db:verify": "tsx scripts/verify.ts",
+    "crawl:pilot": "tsx scripts/crawl-pilot.ts",
+    "typecheck": "tsc --noEmit",
+    "crawl:daily": "tsx scripts/crawl-daily.ts",
+    "crawl:dry": "tsx scripts/crawl-dry-run.ts",
+    "candidate:add": "tsx scripts/add-candidate.ts",
+    "match:preview": "tsx scripts/match-preview.ts",
+    "notify:daily": "tsx scripts/notify-daily.ts",
+    "settings:set": "tsx scripts/set-setting.ts",
+    "admin": "tsx src/admin/server.ts",
+    "categories:enrich": "tsx scripts/enrich-categories.ts",
+    "db:migrate:portal": "tsx scripts/migrate-portal.ts",
+    "candidate:set-default-password": "tsx scripts/set-default-password.ts",
+    "env:check": "tsx scripts/check-env.ts",
+    "build": "tsc",
+    "start": "node dist/src/admin/server.js",
+    "docker:bootstrap": "tsx scripts/docker-bootstrap.ts",
+    "docker:scheduler": "tsx scripts/docker-scheduler.ts",
+    "db:status": "tsx scripts/db-status.ts",
+    "prd:audit": "tsx scripts/prd-audit.ts"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "csv-parse": "^6.1.0",
+    "dotenv": "^17.2.2",
+    "pg": "^8.16.3",
+    "nodemailer": "^7.0.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "@types/pg": "^8.15.5",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "@types/nodemailer": "^6.4.19"
+  }
+}

@@ -1,0 +1,70 @@
+name: job-intelligence
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: job_intelligence
+      POSTGRES_USER: jobapp
+      POSTGRES_PASSWORD: ${LOCAL_DB_PASSWORD:-jobapp_local}
+      TZ: Asia/Dhaka
+    volumes:
+      - job_intelligence_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jobapp -d job_intelligence"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://jobapp:${LOCAL_DB_PASSWORD:-jobapp_local}@db:5432/job_intelligence
+      DATABASE_MODE: local
+      ADMIN_HOST: 0.0.0.0
+      ADMIN_PORT: 3000
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-asdfasdf}
+      DEFAULT_CANDIDATE_PASSWORD: ${DEFAULT_CANDIDATE_PASSWORD:-asdfasdf}
+      CANDIDATE_SESSION_SECRET: ${CANDIDATE_SESSION_SECRET:-local-development-session-secret-2026-change-before-production}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:3000}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      TZ: Asia/Dhaka
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  scheduler:
+    build:
+      context: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://jobapp:${LOCAL_DB_PASSWORD:-jobapp_local}@db:5432/job_intelligence
+      DATABASE_MODE: local
+      SKIP_DOCKER_BOOTSTRAP: "true"
+      TZ: Asia/Dhaka
+      DAILY_CRAWL_HOUR: ${DAILY_CRAWL_HOUR:-6}
+      DAILY_CRAWL_MINUTE: ${DAILY_CRAWL_MINUTE:-15}
+      RUN_DAILY_ON_START: ${RUN_DAILY_ON_START:-false}
+    depends_on:
+      app:
+        condition: service_healthy
+    command: ["npm", "run", "docker:scheduler"]
+
+volumes:
+  job_intelligence_pgdata:

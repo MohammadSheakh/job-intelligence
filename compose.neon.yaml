@@ -1,0 +1,48 @@
+name: job-intelligence
+
+services:
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env before using compose.neon.yaml}
+      DATABASE_MODE: neon
+      ADMIN_HOST: 0.0.0.0
+      ADMIN_PORT: 3000
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-asdfasdf}
+      DEFAULT_CANDIDATE_PASSWORD: ${DEFAULT_CANDIDATE_PASSWORD:-asdfasdf}
+      CANDIDATE_SESSION_SECRET: ${CANDIDATE_SESSION_SECRET:-local-development-session-secret-2026-change-before-production}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:3000}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      TZ: Asia/Dhaka
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  scheduler:
+    build:
+      context: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env before using compose.neon.yaml}
+      DATABASE_MODE: neon
+      SKIP_DOCKER_BOOTSTRAP: "true"
+      TZ: Asia/Dhaka
+      DAILY_CRAWL_HOUR: ${DAILY_CRAWL_HOUR:-6}
+      DAILY_CRAWL_MINUTE: ${DAILY_CRAWL_MINUTE:-15}
+      RUN_DAILY_ON_START: ${RUN_DAILY_ON_START:-false}
+    depends_on:
+      app:
+        condition: service_healthy
+    command: ["npm", "run", "docker:scheduler"]
