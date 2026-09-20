@@ -112,6 +112,11 @@ code or Prisma platform placeholders belong in the replacement.
 - Existing IDE tabs for `repositories/candidate-profile.repository.ts` are
   stale: repositories were intentionally removed because the service now uses
   Prisma directly; controllers delegate only to services.
+- The legacy root `pnpm typecheck` currently fails in existing legacy sources
+  (`src/admin/server.ts`, `src/auth/password.ts`, and `src/crawler/generic.ts`)
+  due to dependency/type compatibility errors. The root package and TypeScript
+  configuration were restored to their committed legacy form; this failure is
+  not caused by the Nest/Next package boundaries.
 - Before backend edits, read
   `.agents/skills/nestjs-best-practices/SKILL.md`; before frontend edits, read
   `/home/chillpc/.agents/skills/nextjs-app-router-patterns/SKILL.md`.
