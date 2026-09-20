@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
+import type { Prisma } from '@prisma/client';
 import { hashLegacyScrypt, verifyLegacyScrypt } from './password.service.js';
 
 export interface CandidatePrincipal { id: bigint; name: string; email: string; mustChangePassword: boolean; }
@@ -20,8 +21,8 @@ export class CandidateAuthenticationService {
   async changePassword(candidateId: bigint, password: string): Promise<void> {
     await this.setPassword(candidateId, password, false);
   }
-  async setPassword(candidateId: bigint, password: string, mustChangePassword: boolean): Promise<void> {
+  async setPassword(candidateId: bigint, password: string, mustChangePassword: boolean, database: Prisma.TransactionClient = this.prisma): Promise<void> {
     const passwordHash = await hashLegacyScrypt(password);
-    await this.prisma.candidateAuth.upsert({ where: { candidateId }, create: { candidateId, passwordHash, mustChangePassword }, update: { passwordHash, mustChangePassword } });
+    await database.candidateAuth.upsert({ where: { candidateId }, create: { candidateId, passwordHash, mustChangePassword }, update: { passwordHash, mustChangePassword } });
   }
 }

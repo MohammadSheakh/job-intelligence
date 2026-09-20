@@ -1,7 +1,7 @@
 # Architecture migration status
 
 **Last updated:** 2026-09-20
-**Status:** In progress — candidate core flows and selected admin APIs are implemented; candidate core API flows are verified against disposable local PostgreSQL.
+**Status:** In progress — candidate core flows and selected admin APIs are implemented; candidate core flows and the implemented admin APIs have regression coverage against disposable local PostgreSQL.
 **Overall progress:** Tracked by the completed and remaining milestones below; no weighted completion percentage is defined.
 
 ## Final direction
@@ -85,7 +85,7 @@ code or Prisma platform placeholders belong in the replacement.
 
 - Added Jest, Nest TestingModule, and Supertest with a separate test TypeScript
   configuration. `pnpm --dir backend test` runs 20 database-isolated tests;
-  `pnpm --dir backend test:database` runs 21 real PostgreSQL API tests.
+  `pnpm --dir backend test:database` runs 45 real PostgreSQL API tests (21 candidate and 24 admin).
 - Authentication tests cover legacy scrypt compatibility, password length,
   signed-session tampering/expiry, login, identity, password change, logout,
   inactive accounts, and malformed cookies.
@@ -110,16 +110,26 @@ code or Prisma platform placeholders belong in the replacement.
   accessible. Pipeline edits clear empty notes and refresh `updated_at`, default
   Applied dates to the current UTC date, and reset omitted reapply counts to zero
   as in the legacy form flow. Company browse limits must be integers.
-- All 41 tests, backend source/test typechecks, and the Nest build passed.
-  This does not establish full feature parity, company transaction rollback,
-  browser behavior, Neon runtime behavior, or production readiness.
+- Admin database tests cover Basic authorization for all six API groups,
+  candidate create/edit/reset and duplicate-email rejection, safe response
+  serialization, company/category edits, job filters/pagination, crawler-log
+  ordering, settings persistence, and input validation.
+- Database constraint failures injected only into the disposable test database
+  verify rollback of company edits/category replacements, all settings writes,
+  and candidate profile/password writes. Candidate management now persists
+  profile and authentication changes in one Prisma transaction, preventing
+  partial saves when password storage fails.
+- Candidate IDs must be positive decimal PostgreSQL bigint values; malformed
+  or overflowing IDs return HTTP 400 rather than reaching Prisma.
+- All 65 tests, backend source/test typechecks, and the Nest build passed.
+  This does not establish exhaustive feature parity, browser behavior, Neon
+  runtime behavior, or production readiness.
 
 ## In progress / next verification work
 
-1. Extend real database coverage to admin candidate management, company/category
-   updates and transaction rollback, jobs, settings, and crawler monitoring.
-2. Verify the complete candidate flow in a browser, including direct navigation
+1. Verify the complete candidate flow in a browser, including direct navigation
    during mandatory password change; API enforcement is now tested.
+2. Build the Company Intelligence admin UI against the verified APIs.
 3. Continue feature parity work below; candidate recommendations, Quick Search,
    and Google OAuth are not included in the verified core API scope.
 
@@ -132,7 +142,8 @@ code or Prisma platform placeholders belong in the replacement.
 3. Port crawler execution, matching, Quick Search, notifications, email,
    Google OAuth, and operational scripts without changing product rules.
    Jobs catalog, crawler-log reads, persisted settings, and admin candidate
-   management APIs are implemented; their broader parity validation remains.
+   management APIs have local database regression coverage; exhaustive parity
+   and browser validation remain.
 4. Build the remaining Next.js admin views against those APIs.
 5. Add feature/unit/integration parity tests, then move Docker, scheduler,
    launch scripts, and CI to the two-app architecture.

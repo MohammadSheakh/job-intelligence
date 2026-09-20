@@ -42,7 +42,7 @@ describe('Candidate portal with disposable PostgreSQL', () => {
     const first = await prisma.candidate.create({ data: { name: 'First', email: 'first@example.test', auth: { create: { passwordHash, mustChangePassword: false } } } });
     const second = await prisma.candidate.create({ data: { name: 'Second', email: 'second@example.test', auth: { create: { passwordHash, mustChangePassword: false } } } });
     firstId = first.id; secondId = second.id;
-    await prisma.category.createMany({ data: [{ name: 'TypeScript', type: 'technology' }, { name: 'Other', type: 'other' }] });
+    await prisma.category.createMany({ skipDuplicates: true, data: [{ name: 'TypeScript', type: 'technology' }, { name: 'Other', type: 'other' }] });
     await prisma.company.create({ data: { id: 'alpha', name: 'Alpha', location: 'Dhaka', categories: { create: [{ category: { connect: { name: 'TypeScript' } } }, { category: { connect: { name: 'Other' } } }] } } });
     await prisma.company.create({ data: { id: 'beta', name: 'Beta', active: false } });
     cookie = await login(first.email);

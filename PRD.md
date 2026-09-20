@@ -241,3 +241,10 @@ and preserve the legacy date/count rules: Applied defaults to today's date
 the previous date, and omitted reapply counts reset to zero. Core candidate API
 persistence and isolation are verified locally; broader feature parity and browser
 verification remain required before cutover.
+
+Admin candidate creation and updates must persist profile and password changes
+atomically: a failed password write must leave no new account or partial profile
+edit. Candidate identifiers accepted by admin endpoints must be positive decimal
+values within PostgreSQL's signed bigint range; invalid values return HTTP 400.
+Local regression tests cover the implemented admin API groups, including real
+transaction rollback for candidate, company/category, and settings writes.
