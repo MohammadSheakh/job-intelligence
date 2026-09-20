@@ -1,0 +1,62 @@
+model Company {
+  id                       String                    @id
+  name                     String
+  name_source              String?
+  website_url              String?
+  careerUrl                String?                   @map("career_url")
+  linkedin_url             String?
+  email                    String?
+  location                 String?
+  tech_stack               String?
+  employee_count_hint      Decimal?                  @db.Decimal
+  aiub_total_hint          String?
+  status_research_hint     String?
+  notes                    String?
+  additional_websites      String?
+  additional_career_urls   String?
+  additional_linkedin_urls String?
+  additional_emails        String?
+  corporate_domains        String?
+  source_rows              String?
+  source_row_count         Int                       @default(1)
+  needs_manual_review      Boolean                   @default(false)
+  review_reasons           String?
+  needs_enrichment         Boolean                   @default(false)
+  enrichment_reasons       String?
+  active                   Boolean                   @default(true)
+  recommended_action       String?
+  last_checked_at          DateTime?                 @db.Timestamptz(6)
+  created_at               DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime                  @default(now()) @db.Timestamptz(6)
+  candidate_company_state  candidate_company_state[]
+  categories               CompanyCategory[]
+  crawl_logs               CrawlLog[]
+  jobs                     Job[]
+
+  @@index([recommended_action], map: "companies_action_idx")
+  @@index([active])
+  @@index([careerUrl], where: raw("(career_url IS NOT NULL)"))
+  @@map("companies")
+}
+
+model Category {
+  id        BigInt            @id @default(autoincrement())
+  name      String            @unique
+  type      String
+  companies CompanyCategory[]
+
+  @@map("categories")
+}
+
+model CompanyCategory {
+  companyId  String   @map("company_id")
+  categoryId BigInt   @map("category_id")
+  source     String   @default("inferred")
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([companyId, categoryId])
+  @@index([categoryId])
+  @@index([companyId])
+  @@map("company_categories")
+}

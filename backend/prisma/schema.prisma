@@ -1,0 +1,201 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+model Candidate {
+  id                      BigInt                    @id @default(autoincrement())
+  name                    String
+  email                   String                    @unique
+  expertise               String?
+  skills                  String?
+  experience_level        String?
+  preferred_locations     String?
+  excluded_locations      String?
+  preferred_work_modes    String?
+  minimum_match_score     Int                       @default(70)
+  active                  Boolean                   @default(true)
+  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  preferred_categories    String?
+  excluded_categories     String?
+  auth                    CandidateAuth?
+  candidate_company_state candidate_company_state[]
+  candidate_search_runs   candidate_search_runs[]
+  notifications           Notification[]
+
+  @@map("candidates")
+}
+
+model CandidateAuth {
+  candidateId        BigInt    @id @map("candidate_id")
+  passwordHash       String?   @map("password_hash")
+  google_sub         String?   @unique
+  google_email       String?
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @db.Timestamptz(6)
+  mustChangePassword Boolean   @default(false) @map("must_change_password")
+  candidate          Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("candidate_auth")
+}
+
+model candidate_company_state {
+  candidate_id    BigInt
+  company_id      String
+  status          String
+  last_applied_at DateTime? @db.Date
+  reapply_count   Int       @default(0)
+  notes           String?
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+  candidates      Candidate @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  companies       Company   @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([candidate_id, company_id])
+  @@index([company_id], map: "candidate_company_state_company_idx")
+  @@index([candidate_id, status], map: "candidate_company_state_status_idx")
+}
+
+model candidate_search_runs {
+  id                BigInt    @id @default(autoincrement())
+  candidate_id      BigInt
+  mode              String
+  requested_at      DateTime  @default(now()) @db.Timestamptz(6)
+  companies_checked Int       @default(0)
+  jobs_found        Int       @default(0)
+  matches_found     Int       @default(0)
+  success           Boolean   @default(true)
+  error             String?
+  candidates        Candidate @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([candidate_id, requested_at], map: "candidate_search_runs_candidate_day_idx")
+}
+
+
+model Company {
+  id                       String                    @id
+  name                     String
+  name_source              String?
+  website_url              String?
+  careerUrl                String?                   @map("career_url")
+  linkedin_url             String?
+  email                    String?
+  location                 String?
+  tech_stack               String?
+  employee_count_hint      Decimal?                  @db.Decimal
+  aiub_total_hint          String?
+  status_research_hint     String?
+  notes                    String?
+  additional_websites      String?
+  additional_career_urls   String?
+  additional_linkedin_urls String?
+  additional_emails        String?
+  corporate_domains        String?
+  source_rows              String?
+  source_row_count         Int                       @default(1)
+  needs_manual_review      Boolean                   @default(false)
+  review_reasons           String?
+  needs_enrichment         Boolean                   @default(false)
+  enrichment_reasons       String?
+  active                   Boolean                   @default(true)
+  recommended_action       String?
+  last_checked_at          DateTime?                 @db.Timestamptz(6)
+  created_at               DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime                  @default(now()) @db.Timestamptz(6)
+  candidate_company_state  candidate_company_state[]
+  categories               CompanyCategory[]
+  crawl_logs               CrawlLog[]
+  jobs                     Job[]
+
+  @@index([recommended_action], map: "companies_action_idx")
+  @@index([active])
+  @@index([careerUrl], where: raw("(career_url IS NOT NULL)"))
+  @@map("companies")
+}
+
+model Category {
+  id        BigInt            @id @default(autoincrement())
+  name      String            @unique
+  type      String
+  companies CompanyCategory[]
+
+  @@map("categories")
+}
+
+model CompanyCategory {
+  companyId  String   @map("company_id")
+  categoryId BigInt   @map("category_id")
+  source     String   @default("inferred")
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([companyId, categoryId])
+  @@index([categoryId])
+  @@index([companyId])
+  @@map("company_categories")
+}
+
+
+model Job {
+  id              BigInt         @id @default(autoincrement())
+  companyId       String         @map("company_id")
+  title           String
+  description     String?
+  location        String?
+  work_mode       String?
+  skills          String?
+  experience      String?
+  application_url String?
+  published_at    DateTime?      @db.Timestamptz(6)
+  first_seen_at   DateTime       @default(now()) @db.Timestamptz(6)
+  last_seen_at    DateTime       @default(now()) @db.Timestamptz(6)
+  status          String         @default("OPEN")
+  jobHash         String         @unique @map("job_hash")
+  company         Company        @relation(fields: [companyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  notifications   Notification[]
+
+  @@index([companyId])
+  @@index([status])
+  @@map("jobs")
+}
+
+model CrawlLog {
+  id         BigInt   @id @default(autoincrement())
+  company_id String?
+  checked_at DateTime @default(now()) @db.Timestamptz(6)
+  success    Boolean
+  jobs_found Int      @default(0)
+  error      String?
+  companies  Company? @relation(fields: [company_id], references: [id], onUpdate: NoAction)
+
+  @@map("crawl_logs")
+}
+
+
+model Notification {
+  id           BigInt    @id @default(autoincrement())
+  candidate_id BigInt
+  job_id       BigInt
+  match_score  Int?
+  sent_at      DateTime  @default(now()) @db.Timestamptz(6)
+  candidates   Candidate @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  jobs         Job       @relation(fields: [job_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([candidate_id, job_id])
+  @@map("notifications")
+}
+
+
+model Setting {
+  key        String   @id
+  value      String
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("settings")
+}

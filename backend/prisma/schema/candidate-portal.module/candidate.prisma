@@ -1,0 +1,68 @@
+model Candidate {
+  id                      BigInt                    @id @default(autoincrement())
+  name                    String
+  email                   String                    @unique
+  expertise               String?
+  skills                  String?
+  experience_level        String?
+  preferred_locations     String?
+  excluded_locations      String?
+  preferred_work_modes    String?
+  minimum_match_score     Int                       @default(70)
+  active                  Boolean                   @default(true)
+  created_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                  @default(now()) @db.Timestamptz(6)
+  preferred_categories    String?
+  excluded_categories     String?
+  auth                    CandidateAuth?
+  candidate_company_state candidate_company_state[]
+  candidate_search_runs   candidate_search_runs[]
+  notifications           Notification[]
+
+  @@map("candidates")
+}
+
+model CandidateAuth {
+  candidateId        BigInt    @id @map("candidate_id")
+  passwordHash       String?   @map("password_hash")
+  google_sub         String?   @unique
+  google_email       String?
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @db.Timestamptz(6)
+  mustChangePassword Boolean   @default(false) @map("must_change_password")
+  candidate          Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("candidate_auth")
+}
+
+model candidate_company_state {
+  candidate_id    BigInt
+  company_id      String
+  status          String
+  last_applied_at DateTime? @db.Date
+  reapply_count   Int       @default(0)
+  notes           String?
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+  candidates      Candidate @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  companies       Company   @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([candidate_id, company_id])
+  @@index([company_id], map: "candidate_company_state_company_idx")
+  @@index([candidate_id, status], map: "candidate_company_state_status_idx")
+}
+
+model candidate_search_runs {
+  id                BigInt    @id @default(autoincrement())
+  candidate_id      BigInt
+  mode              String
+  requested_at      DateTime  @default(now()) @db.Timestamptz(6)
+  companies_checked Int       @default(0)
+  jobs_found        Int       @default(0)
+  matches_found     Int       @default(0)
+  success           Boolean   @default(true)
+  error             String?
+  candidates        Candidate @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([candidate_id, requested_at], map: "candidate_search_runs_candidate_day_idx")
+}

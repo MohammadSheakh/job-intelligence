@@ -1,4 +1,9 @@
 node_modules/
+.pnpm-store/
+.next/
+apps/*/.next/
+apps/*/dist/
+*.tsbuildinfo
 .env
 .env.local
 dist/
