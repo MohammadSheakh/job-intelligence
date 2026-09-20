@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-09-20
 **Status:** In progress — candidate authentication and core candidate profile flow are migrated.
-**Overall progress:** **52% complete / 48% remaining**
+**Overall progress:** **55% complete / 45% remaining**
 
 ## Final direction
 
@@ -68,6 +68,9 @@ code or Prisma platform placeholders belong in the replacement.
 - Migrated persisted admin runtime settings to `/api/v1/admin/settings`.
   The API reads the same defaults and updates only the ten existing editable
   keys in a single Prisma transaction, with legacy bounds enforced by DTOs.
+- Migrated admin candidate management to `/api/v1/admin/candidates`: list,
+  detail, create, and update with duplicate-email protection, profile/category
+  normalization, and legacy-compatible default-password/password-reset rules.
 - Backend typecheck plus frontend typecheck and production build pass after the
   candidate portal routes above were added.
 - Completed the modular Prisma schema fragments for every introspected model,

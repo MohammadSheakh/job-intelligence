@@ -8,9 +8,10 @@ import { CandidatePortalModule } from './features/candidate-portal/candidate-por
 import { CompanyIntelligenceModule } from './features/company-intelligence/company-intelligence.module.js';
 import { JobCrawlingModule } from './features/job-crawling/job-crawling.module.js';
 import { SettingsModule } from './features/settings/settings.module.js';
+import { AdminOperationsModule } from './features/admin-operations/admin-operations.module.js';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true, envFilePath: ['../.env', '.env'] }), AppConfigurationModule, PrismaModule, AuthenticationModule, CandidatePortalModule, CompanyIntelligenceModule, JobCrawlingModule, SettingsModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true, envFilePath: ['../.env', '.env'] }), AppConfigurationModule, PrismaModule, AuthenticationModule, CandidatePortalModule, CompanyIntelligenceModule, JobCrawlingModule, SettingsModule, AdminOperationsModule],
   controllers: [AppController],
 })
 export class AppModule {}

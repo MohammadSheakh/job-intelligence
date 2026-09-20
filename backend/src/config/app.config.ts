@@ -1,4 +1,4 @@
-export interface AppConfig { apiPort: number; cookieSecure: boolean; adminUsername: string; adminPassword: string; }
+export interface AppConfig { apiPort: number; cookieSecure: boolean; adminUsername: string; adminPassword: string; defaultCandidatePassword: string; }
 
 export function appConfig(): AppConfig {
   return {
@@ -6,5 +6,6 @@ export function appConfig(): AppConfig {
     cookieSecure: process.env.COOKIE_SECURE === 'true',
     adminUsername: process.env.ADMIN_USERNAME ?? '',
     adminPassword: process.env.ADMIN_PASSWORD ?? '',
+    defaultCandidatePassword: process.env.DEFAULT_CANDIDATE_PASSWORD ?? 'asdfasdf',
   };
 }

@@ -18,7 +18,10 @@ export class CandidateAuthenticationService {
     return row ? { id: row.id, name: row.name, email: row.email, mustChangePassword: row.auth?.mustChangePassword ?? false } : null;
   }
   async changePassword(candidateId: bigint, password: string): Promise<void> {
+    await this.setPassword(candidateId, password, false);
+  }
+  async setPassword(candidateId: bigint, password: string, mustChangePassword: boolean): Promise<void> {
     const passwordHash = await hashLegacyScrypt(password);
-    await this.prisma.candidateAuth.upsert({ where: { candidateId }, create: { candidateId, passwordHash, mustChangePassword: false }, update: { passwordHash, mustChangePassword: false } });
+    await this.prisma.candidateAuth.upsert({ where: { candidateId }, create: { candidateId, passwordHash, mustChangePassword }, update: { passwordHash, mustChangePassword } });
   }
 }
