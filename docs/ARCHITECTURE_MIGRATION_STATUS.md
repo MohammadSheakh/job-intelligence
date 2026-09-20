@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-09-20
 **Status:** In progress — candidate authentication and core candidate profile flow are migrated.
-**Overall progress:** **55% complete / 45% remaining**
+**Overall progress:** **57% complete / 43% remaining**
 
 ## Final direction
 
@@ -71,6 +71,8 @@ code or Prisma platform placeholders belong in the replacement.
 - Migrated admin candidate management to `/api/v1/admin/candidates`: list,
   detail, create, and update with duplicate-email protection, profile/category
   normalization, and legacy-compatible default-password/password-reset rules.
+- Migrated read-only crawler monitoring to `/api/v1/admin/crawl-logs`, with
+  legacy descending order, linked-company-only rows, and bounded pagination.
 - Backend typecheck plus frontend typecheck and production build pass after the
   candidate portal routes above were added.
 - Completed the modular Prisma schema fragments for every introspected model,
