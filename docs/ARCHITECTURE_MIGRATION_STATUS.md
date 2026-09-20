@@ -1,8 +1,8 @@
 # Architecture migration status
 
 **Last updated:** 2026-09-20
-**Status:** In progress — candidate authentication and core candidate profile flow are migrated.
-**Overall progress:** **57% complete / 43% remaining**
+**Status:** In progress — candidate core flows and selected admin APIs are implemented; initial automated regression coverage is in place.
+**Overall progress:** Tracked by the completed and remaining milestones below; no weighted completion percentage is defined.
 
 ## Final direction
 
@@ -31,7 +31,7 @@ code or Prisma platform placeholders belong in the replacement.
   score range, category type, and job status). Preserve them in Neon and
   duplicate their policy through DTO/service validation.
 
-## Completed and validated
+## Implemented (validation scope noted below)
 
 - Created independent `backend/` and `frontend/` package boundaries.
 - Created Ferio-style backend library roots: `common`, `database`,
@@ -81,20 +81,43 @@ code or Prisma platform placeholders belong in the replacement.
 - Installed and applied `nextjs-app-router-patterns`; Nest changes follow the
   local `nestjs-best-practices` guidance.
 
-## In progress now
+## Automated verification added
 
-1. Verify candidate portal API behavior end-to-end against a safe local account.
-2. Add a test runner and focused unit/integration tests for authentication,
-   candidate portal, and Company Intelligence. There was no backend test runner
-   in the newly isolated package, so this remains an explicit verification gap.
+- Added Jest, Nest TestingModule, and Supertest with a separate test TypeScript
+  configuration. `pnpm --dir backend test` runs 20 focused regression tests.
+- Authentication tests cover legacy scrypt compatibility, password length,
+  signed-session tampering/expiry, login, identity, password change, logout,
+  inactive accounts, and malformed cookies.
+- Candidate profile HTTP tests cover session scoping, normalization, exclusion
+  precedence, read-only identity fields, and score bounds. Admin HTTP tests
+  verify separate Basic credentials and pagination bounds.
+- Company service tests cover transactional category replacement, the `Other`
+  fallback, and rejection of missing companies/categories before writes.
+- Regression tests reproduced and now cover two fixes: malformed cookie encoding
+  returns HTTP 401 instead of 500, and session tokens with extra fields are rejected.
+- Tests replace Prisma with mocks and do not load `.env` or connect to a database.
+  They do not establish SQL correctness, transaction rollback, full database
+  parity, browser behavior, or production readiness.
+
+## In progress / next verification work
+
+1. Verify candidate portal API behavior end-to-end against a safe local account
+   and isolated local database.
+2. Extend coverage to pipeline operations, company browse, category catalog,
+   admin candidate management, jobs, settings, and crawler monitoring.
+3. Verify mandatory password-change enforcement and the complete candidate
+   flow in a browser before claiming end-to-end parity.
 
 ## Remaining work (ordered)
 
 1. Complete candidate portal UI and endpoint parity, including recommendations
    and Quick Search after the matching feature is migrated.
-2. Migrate company intelligence admin APIs/UI and admin authorization.
-3. Port jobs/crawling, matching, quick search, settings, notifications, email,
+2. Build Company Intelligence admin UI and verify parity of the implemented
+   company/category APIs and Basic authorization.
+3. Port crawler execution, matching, Quick Search, notifications, email,
    Google OAuth, and operational scripts without changing product rules.
+   Jobs catalog, crawler-log reads, persisted settings, and admin candidate
+   management APIs are implemented; their broader parity validation remains.
 4. Build the remaining Next.js admin views against those APIs.
 5. Add feature/unit/integration parity tests, then move Docker, scheduler,
    launch scripts, and CI to the two-app architecture.
@@ -126,8 +149,13 @@ code or Prisma platform placeholders belong in the replacement.
 ## Verification commands
 
 ```bash
-cd backend && pnpm typecheck
-cd frontend && pnpm typecheck && pnpm build
+# Run from the repository root (job-intelligence-prd-db-switch/).
+pnpm --dir backend test
+pnpm --dir backend typecheck
+pnpm --dir backend typecheck:test
+pnpm --dir backend build
+pnpm --dir frontend typecheck
+pnpm --dir frontend build
 git diff --check
 ```
 

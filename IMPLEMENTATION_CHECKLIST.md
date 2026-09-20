@@ -204,3 +204,16 @@ This checklist is intentionally conservative. A feature that exists in source co
 - [x] `npm run prd:audit` provides a structural guard against PRD/code drift.
 - [x] README links to PRD, checklist, and database switching guide.
 - [x] New feature work should update both PRD and checklist when behavior or scope changes.
+
+## Replacement architecture verification
+
+These items apply to `backend/` and `frontend/`; earlier feature completion
+entries describe the legacy runtime.
+
+- [x] Backend Jest runner with Nest TestingModule and Supertest, isolated from real databases and `.env`.
+- [x] Initial authentication, candidate-profile HTTP, admin authorization, and company-category service regression coverage (20 tests).
+- [x] Malformed candidate cookie encoding returns HTTP 401; signed sessions reject extra token fields.
+- [ ] Pipeline, company browse, category catalog, and remaining admin API regression coverage.
+- [ ] Candidate portal verification using an isolated local database/account.
+- [ ] Browser verification of login, mandatory password change, and candidate workflows.
+- [ ] Complete feature parity, operational cutover, and rollback validation before replacing the legacy runtime.

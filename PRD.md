@@ -219,3 +219,16 @@ The local database uses a named volume. Bootstrap is idempotent and seeds the pa
 ## 18. Acceptance criteria
 
 The MVP is accepted when the codebase satisfies all product behavior above, migrations are idempotent, Local/Neon switching is documented and scripted, Admin and Candidate views follow Ferio, and remaining external/integration gaps are explicitly marked in `IMPLEMENTATION_CHECKLIST.md` rather than described as complete.
+
+## 19. Architecture migration verification
+
+The existing single-process application remains the current runtime while the
+replacement NestJS API (`backend/`) and Next.js UI (`frontend/`) are developed.
+Migration status and cutover gaps are tracked in
+`docs/ARCHITECTURE_MIGRATION_STATUS.md`; legacy feature completion does not imply
+replacement-application parity.
+
+The replacement API must reject malformed candidate session cookies with HTTP
+401 and accept only the expected three-field signed token format. Initial
+regression coverage uses isolated database mocks; local database and browser
+verification remain required before cutover.

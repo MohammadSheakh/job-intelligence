@@ -10,7 +10,9 @@ export class CandidateSessionService {
     return { token: `${payload}.${signature}`, expiresAt };
   }
   verify(token: string): bigint | null {
-    const [id, expiry, signature] = token.split('.');
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const [id, expiry, signature] = parts;
     if (!id || !expiry || !signature || !/^\d+$/.test(id) || !/^\d+$/.test(expiry)) return null;
     const expected = createHmac('sha256', this.secret()).update(`${id}.${expiry}`).digest('base64url');
     const received = Buffer.from(signature);
