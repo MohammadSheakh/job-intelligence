@@ -213,7 +213,10 @@ entries describe the legacy runtime.
 - [x] Backend Jest runner with Nest TestingModule and Supertest, isolated from real databases and `.env`.
 - [x] Initial authentication, candidate-profile HTTP, admin authorization, and company-category service regression coverage (20 tests).
 - [x] Malformed candidate cookie encoding returns HTTP 401; signed sessions reject extra token fields.
-- [ ] Pipeline, company browse, category catalog, and remaining admin API regression coverage.
-- [ ] Candidate portal verification using an isolated local database/account.
+- [x] Pipeline, company browse, and category catalog API coverage against disposable PostgreSQL 16 (21 database tests; 41 tests total).
+- [x] Candidate profile/pipeline persistence and isolation verified using two synthetic local accounts.
+- [x] Candidate portal reads/writes reject accounts requiring an initial password change; identity, password change, and logout remain accessible.
+- [x] Pipeline note clearing, update timestamps, default Applied dates, and omitted reapply counts match the tested legacy behavior; browse limits require integers.
+- [ ] Remaining admin API database coverage and transaction rollback verification.
 - [ ] Browser verification of login, mandatory password change, and candidate workflows.
 - [ ] Complete feature parity, operational cutover, and rollback validation before replacing the legacy runtime.

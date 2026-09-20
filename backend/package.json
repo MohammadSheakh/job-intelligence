@@ -10,7 +10,8 @@
     "prisma:generate": "pnpm prisma:schema:build && prisma generate",
     "prisma:db:pull": "prisma db pull --print",
     "test": "jest --runInBand",
-    "typecheck:test": "tsc -p tsconfig.test.json"
+    "typecheck:test": "tsc -p tsconfig.test.json",
+    "test:database": "node test/scripts/run-database-tests.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

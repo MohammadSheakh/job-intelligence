@@ -1,7 +1,7 @@
 # Architecture migration status
 
 **Last updated:** 2026-09-20
-**Status:** In progress — candidate core flows and selected admin APIs are implemented; initial automated regression coverage is in place.
+**Status:** In progress — candidate core flows and selected admin APIs are implemented; candidate core API flows are verified against disposable local PostgreSQL.
 **Overall progress:** Tracked by the completed and remaining milestones below; no weighted completion percentage is defined.
 
 ## Final direction
@@ -84,7 +84,8 @@ code or Prisma platform placeholders belong in the replacement.
 ## Automated verification added
 
 - Added Jest, Nest TestingModule, and Supertest with a separate test TypeScript
-  configuration. `pnpm --dir backend test` runs 20 focused regression tests.
+  configuration. `pnpm --dir backend test` runs 20 database-isolated tests;
+  `pnpm --dir backend test:database` runs 21 real PostgreSQL API tests.
 - Authentication tests cover legacy scrypt compatibility, password length,
   signed-session tampering/expiry, login, identity, password change, logout,
   inactive accounts, and malformed cookies.
@@ -95,18 +96,32 @@ code or Prisma platform placeholders belong in the replacement.
   fallback, and rejection of missing companies/categories before writes.
 - Regression tests reproduced and now cover two fixes: malformed cookie encoding
   returns HTTP 401 instead of 500, and session tokens with extra fields are rejected.
-- Tests replace Prisma with mocks and do not load `.env` or connect to a database.
-  They do not establish SQL correctness, transaction rollback, full database
-  parity, browser behavior, or production readiness.
+- The default suite replaces Prisma with mocks. The separate database runner
+  creates a uniquely named PostgreSQL 16 container with temporary storage and a
+  dynamically assigned loopback port, applies `sql/001_init.sql` and
+  `sql/008_runtime_schema.sql`, creates synthetic candidate/company fixtures,
+  and removes its own container on completion. Neither suite loads `.env`;
+  the database runner does not accept an external database URL.
+- Real database tests cover profile persistence, candidate isolation, company
+  search/category filters, category catalog, pipeline create/update/filter/delete,
+  password-change enforcement, and invalid requests.
+- Fixed verified migration gaps: all candidate portal reads/writes require the
+  initial password change (HTTP 403); `me`, change-password, and logout remain
+  accessible. Pipeline edits clear empty notes and refresh `updated_at`, default
+  Applied dates to the current UTC date, and reset omitted reapply counts to zero
+  as in the legacy form flow. Company browse limits must be integers.
+- All 41 tests, backend source/test typechecks, and the Nest build passed.
+  This does not establish full feature parity, company transaction rollback,
+  browser behavior, Neon runtime behavior, or production readiness.
 
 ## In progress / next verification work
 
-1. Verify candidate portal API behavior end-to-end against a safe local account
-   and isolated local database.
-2. Extend coverage to pipeline operations, company browse, category catalog,
-   admin candidate management, jobs, settings, and crawler monitoring.
-3. Verify mandatory password-change enforcement and the complete candidate
-   flow in a browser before claiming end-to-end parity.
+1. Extend real database coverage to admin candidate management, company/category
+   updates and transaction rollback, jobs, settings, and crawler monitoring.
+2. Verify the complete candidate flow in a browser, including direct navigation
+   during mandatory password change; API enforcement is now tested.
+3. Continue feature parity work below; candidate recommendations, Quick Search,
+   and Google OAuth are not included in the verified core API scope.
 
 ## Remaining work (ordered)
 
@@ -151,6 +166,7 @@ code or Prisma platform placeholders belong in the replacement.
 ```bash
 # Run from the repository root (job-intelligence-prd-db-switch/).
 pnpm --dir backend test
+pnpm --dir backend test:database # requires Docker and postgres:16
 pnpm --dir backend typecheck
 pnpm --dir backend typecheck:test
 pnpm --dir backend build

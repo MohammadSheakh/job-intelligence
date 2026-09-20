@@ -113,6 +113,7 @@ describe('Candidate and admin HTTP integration (mock database)', () => {
   });
 
   it('scopes profile access to the session and normalizes preferences with exclusions winning', async () => {
+    candidate.auth.mustChangePassword = false;
     const { cookie } = await login();
     await request(app.getHttpServer()).get('/api/v1/candidate/profile').set('Cookie', cookie)
       .expect(200, { name: candidate.name, email: candidate.email, minimum_match_score: 60 });
@@ -128,6 +129,7 @@ describe('Candidate and admin HTTP integration (mock database)', () => {
 
   it.each([{ email: 'other@example.test' }, { candidateId: '99' }, { minimumMatchScore: 101 }])(
     'rejects profile identity changes and invalid score: %j', async (invalid) => {
+      candidate.auth.mustChangePassword = false;
       const { cookie } = await login();
       await request(app.getHttpServer()).put('/api/v1/candidate/profile').set('Cookie', cookie)
         .send({ name: 'Candidate', minimumMatchScore: 60, ...invalid }).expect(400);

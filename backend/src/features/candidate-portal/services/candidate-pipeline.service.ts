@@ -7,7 +7,19 @@ export class CandidatePipelineService {
   async save(candidateId: bigint, input: SaveCompanyStateDto): Promise<void> {
     const company = await this.prisma.company.findUnique({ where: { id: input.companyId }, select: { id: true } });
     if (!company) throw new NotFoundException({ code: 'COMPANY_NOT_FOUND', message: 'Company was not found.' });
-    await this.prisma.candidate_company_state.upsert({ where: { candidate_id_company_id: { candidate_id: candidateId, company_id: company.id } }, create: { candidate_id: candidateId, company_id: company.id, status: input.status, last_applied_at: input.lastAppliedAt ? new Date(input.lastAppliedAt) : null, reapply_count: input.reapplyCount ?? 0, notes: input.notes?.trim() || null }, update: { status: input.status, last_applied_at: input.lastAppliedAt ? new Date(input.lastAppliedAt) : undefined, reapply_count: input.reapplyCount ?? undefined, notes: input.notes?.trim() || undefined } });
+    const lastAppliedAt = input.lastAppliedAt
+      ? new Date(input.lastAppliedAt)
+      : input.status === 'APPLIED' ? new Date(new Date().toISOString().slice(0, 10)) : null;
+    const state = {
+      status: input.status,
+      reapply_count: input.reapplyCount ?? 0,
+      notes: input.notes?.trim() || null,
+    };
+    await this.prisma.candidate_company_state.upsert({
+      where: { candidate_id_company_id: { candidate_id: candidateId, company_id: company.id } },
+      create: { candidate_id: candidateId, company_id: company.id, ...state, last_applied_at: lastAppliedAt },
+      update: { ...state, last_applied_at: lastAppliedAt ?? undefined, updated_at: new Date() },
+    });
   }
   async list(candidateId: bigint, status?: 'PLANNING' | 'APPLIED' | 'EXCLUDED') {
     const rows = await this.prisma.candidate_company_state.findMany({

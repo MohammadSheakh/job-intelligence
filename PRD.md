@@ -230,5 +230,14 @@ replacement-application parity.
 
 The replacement API must reject malformed candidate session cookies with HTTP
 401 and accept only the expected three-field signed token format. Initial
-regression coverage uses isolated database mocks; local database and browser
+regression coverage uses isolated database mocks plus a disposable PostgreSQL
+runner with synthetic accounts. Candidate portal endpoints must enforce the
+initial password change with HTTP 403 while leaving identity, password change,
+and logout available. Company browse limits are integers from 1 to 100.
+
+Pipeline updates must allow clearing notes, refresh the modification timestamp,
+and preserve the legacy date/count rules: Applied defaults to today's date
+(UTC in the tested database configuration), omitted dates on other states retain
+the previous date, and omitted reapply counts reset to zero. Core candidate API
+persistence and isolation are verified locally; broader feature parity and browser
 verification remain required before cutover.
