@@ -255,3 +255,11 @@ to profile, companies, and pipeline. The overview provides Sign out, which clear
 the session cookie through the authentication API and returns to login. Desktop
 Chromium verification covers these core flows; visual/mobile and cross-browser
 validation remain pending.
+
+The replacement Company Intelligence UI provides admin company search, category
+and research-action filters, pagination, company editing, and category upsert.
+It uses the existing Basic Admin API credentials, held in browser memory only;
+refresh, sign-out, or a rejected credential requires a new sign-in. Candidate
+sessions never authorize admin actions. Empty company category assignments use
+the API's Other fallback. Local Chromium checks cover these workflows and the
+company list at a narrow viewport; full migration parity remains pending.

@@ -53,11 +53,13 @@ pnpm --dir backend exec playwright install chromium
 pnpm --dir backend test:browser
 ```
 
-The browser command reuses the disposable PostgreSQL runner. Eight Jest/Playwright
+The browser command reuses the disposable PostgreSQL runner. Sixteen Jest/Playwright
 checks run real Chromium against Nest feature modules and Next development mode:
 unsigned direct navigation, mandatory password-change navigation, invalid login,
 password replacement, profile persistence, company tracking/pipeline edits and
-removal, and logout. Nest listens on loopback with credentialed CORS for the test
+removal, and logout. Eight admin checks cover Basic sign-in and credential
+lifecycle, candidate/admin isolation, filters/pagination, company/category edits,
+empty/missing/error states, retry, and narrow company-list overflow. Nest listens on loopback with credentialed CORS for the test
 frontend. No cloud database, user account, or live credentials are used.
 
 The fixture copies frontend source/configuration into a temporary directory and
@@ -68,6 +70,7 @@ closed/removed after the run. Tests require Docker, installed frontend dependenc
 and Playwright Chromium with its system libraries; on a fresh Linux machine use
 `pnpm --dir backend exec playwright install --with-deps chromium` if needed.
 
-These are desktop Chromium functional checks, not visual QA, cross-browser/mobile
-coverage, production bootstrap verification, or full recommendation/Quick Search
-parity. Browser checks are separate from the fast and database-only suites.
+These are Chromium functional checks, including one 390-pixel company-list
+viewport check and screenshots in `/tmp/job-admin-companies*.png`. They do not
+establish comprehensive visual/mobile or cross-browser coverage, production
+bootstrap verification, or full recommendation/Quick Search parity. Browser checks are separate from the fast and database-only suites.

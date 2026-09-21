@@ -1,7 +1,7 @@
 # Architecture migration status
 
 **Last updated:** 2026-09-21
-**Status:** In progress — candidate core flows and selected admin APIs are implemented; candidate core flows and the implemented admin APIs have regression coverage against disposable local PostgreSQL.
+**Status:** In progress — candidate core flows, Company Intelligence admin UI, and selected admin APIs are implemented with local regression coverage.
 **Overall progress:** Tracked by the completed and remaining milestones below; no weighted completion percentage is defined.
 
 ## Final direction
@@ -160,9 +160,26 @@ code or Prisma platform placeholders belong in the replacement.
   backend source/test typechecks and build, and frontend typecheck/build pass.
   Visual/mobile/cross-browser QA and production bootstrap checks remain separate.
 
+## Company Intelligence admin UI
+
+- Added `/admin/companies`, company detail/edit, and `/admin/categories` to the
+  Next frontend. Listing supports search, category/action filters, and pagination;
+  editing persists research/contact fields, active state, and category assignments.
+  Category management creates categories or updates their type by name.
+- The admin layout uses the existing Basic-auth API. Credentials stay in React
+  memory only; refresh, sign-out, or an API 401 requires signing in again.
+  Candidate cookies do not grant admin access.
+- Added eight Chromium checks for authorization, pagination/filtering, empty and
+  failed requests, missing records, company/category persistence, credential
+  rejection, and company-list overflow at a 390-pixel viewport. Desktop and mobile
+  company-list screenshots were reviewed; broader visual and browser QA remains.
+- Validation: 81 checks (20 isolated, 45 PostgreSQL, 16 browser), style/lint,
+  backend source/test typechecks and build, and frontend typecheck/build.
+
 ## In progress / next verification work
 
-1. Build the Company Intelligence admin UI against the verified APIs.
+1. Migrate deterministic matching and recommendation APIs, then connect the
+   candidate recommendation and Quick Search views.
 2. Continue feature parity work below; candidate recommendations, Quick Search,
    and Google OAuth are not included in the verified core API scope.
 3. Broaden candidate QA to visual/mobile/cross-browser behavior and production
@@ -172,8 +189,8 @@ code or Prisma platform placeholders belong in the replacement.
 
 1. Complete candidate portal UI and endpoint parity, including recommendations
    and Quick Search after the matching feature is migrated.
-2. Build Company Intelligence admin UI and verify parity of the implemented
-   company/category APIs and Basic authorization.
+2. Extend admin browser coverage as the remaining views are implemented;
+   company/category management and Basic authorization have initial coverage.
 3. Port crawler execution, matching, Quick Search, notifications, email,
    Google OAuth, and operational scripts without changing product rules.
    Jobs catalog, crawler-log reads, persisted settings, and admin candidate
@@ -191,7 +208,8 @@ code or Prisma platform placeholders belong in the replacement.
   truth; the running legacy app has not been deleted or overwritten.
 - The candidate portal backend is under
   `backend/src/features/{authentication,candidate-portal}/`.
-- The candidate frontend is under `frontend/app/candidate/`.
+- The candidate frontend is under `frontend/app/candidate/`; Company Intelligence
+  admin pages are under `frontend/app/admin/`.
 - API base URL defaults to `http://localhost:4000/api/v1`; configure
   `NEXT_PUBLIC_API_URL` for another environment. Backend CORS accepts
   `FRONTEND_ORIGIN` (default `http://localhost:3000`).

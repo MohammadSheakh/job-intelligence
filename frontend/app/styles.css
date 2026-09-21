@@ -126,3 +126,61 @@
     @apply ml-2 bg-slate-100 text-slate-950 hover:bg-slate-200;
   }
 }
+
+@layer components {
+  .admin {
+    @apply text-neutral-950;
+  }
+  .admin p {
+    @apply text-neutral-600;
+  }
+  .admin .card,
+  .admin input,
+  .admin select,
+  .admin textarea {
+    @apply border-neutral-200 shadow-none;
+  }
+  .admin button {
+    @apply rounded-full bg-neutral-950;
+  }
+  .admin button.secondary {
+    @apply ml-0 bg-neutral-100 text-neutral-950;
+  }
+  .admin nav {
+    @apply items-center;
+  }
+  .admin nav button {
+    @apply mt-0;
+  }
+  .admin-filters {
+    @apply mb-6 grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-4;
+  }
+  .admin-fields {
+    @apply grid gap-x-5 sm:grid-cols-2;
+  }
+  .admin-table-wrap {
+    @apply w-full overflow-x-auto;
+  }
+  .admin table {
+    @apply w-full border-collapse text-left text-sm;
+  }
+  .admin th,
+  .admin td {
+    @apply border-b border-neutral-200 px-3 py-4 align-top;
+  }
+  .admin td p {
+    @apply mb-0 mt-1 text-xs;
+  }
+  .admin td button {
+    @apply mt-0;
+  }
+  .admin-pagination {
+    @apply flex justify-between gap-3;
+  }
+  .admin .error {
+    @apply text-red-700;
+  }
+  .admin .success {
+    @apply text-emerald-700;
+  }
+}

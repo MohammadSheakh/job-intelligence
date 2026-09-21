@@ -221,7 +221,9 @@ entries describe the legacy runtime.
 - [x] Real constraint failures verify company/category, settings, and candidate profile/password transaction rollback.
 - [x] Admin candidate creation and password resets persist atomically; invalid/overflowing candidate IDs return HTTP 400.
 - [x] Eight desktop Chromium checks cover login failures, mandatory-password direct navigation, profile/pipeline mutations, and logout (73 checks total).
-- [ ] Visual, mobile, cross-browser, and production bootstrap verification.
+- [x] Company Intelligence Next admin UI: Basic sign-in, company filters/pagination/editing, and category create/type update.
+- [x] Eight admin Chromium checks cover auth isolation, credential lifecycle, persistence, errors/retry, and narrow company-list overflow (81 checks total).
+- [~] Desktop/mobile company-list screenshots reviewed; broader visual/mobile, cross-browser, and production bootstrap verification remains.
 - [ ] Complete feature parity, operational cutover, and rollback validation before replacing the legacy runtime.
 
 ## Source readability and style checks
