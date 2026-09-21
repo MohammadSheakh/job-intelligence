@@ -241,3 +241,14 @@ entries describe the legacy runtime.
 - [x] Controller/service responsibilities and important method contracts documented in JSDoc.
 - [x] Guard ordering, transaction boundaries, pipeline defaults, and session limitations explained for maintainers.
 - [x] `docs/BACKEND_DEVELOPER_GUIDE.md` documents request flow and commenting conventions.
+
+## Deterministic recommendations and Figma follow-ups
+
+- [~] Pure deterministic matcher and guarded candidate recommendations API migrated; bounded job batches and result retention, bigint-safe IDs, legacy exclusions/thresholds.
+- [~] Candidate overview recommendations with explanations, safe external links, and company pipeline actions implemented. Runtime/browser validation deferred; no tests added or run for this milestone at user request.
+- [ ] Quick Search crawler orchestration, persisted quota enforcement, and optional AI migrated to Nest/Next.
+- [ ] Admin company manual-review completion, creation, controlled enrichment, and table external links from gpt1.md.
+- [ ] Application-deadline persistence/display and evidence-based job freshness rules.
+- [ ] Controlled experience levels/numeric years and separate admin candidate list/new/detail views.
+- [ ] Expanded crawler diagnostics/detail view (the gpt1 request concerns crawler logs).
+- [ ] Candidate active-company directory pagination and location/personal-state filters, independent of matching.

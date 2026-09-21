@@ -176,22 +176,63 @@ code or Prisma platform placeholders belong in the replacement.
 - Validation: 81 checks (20 isolated, 45 PostgreSQL, 16 browser), style/lint,
   backend source/test typechecks and build, and frontend typecheck/build.
 
+## Deterministic recommendations migration
+
+- Added a framework-independent matching domain preserving legacy scoring,
+  normalization, category bonuses, and hard exclusions. The matching feature
+  exports a Prisma-backed recommendation service to the candidate portal.
+- `GET /api/v1/candidate/recommendations?limit=8` accepts 1–20 results, requires
+  the signed session and completed password change, and returns decimal-string
+  job IDs, scores, explanations, company links, and candidate tracking status.
+- OPEN jobs are scanned by descending ID in batches of 200. Blacklists are
+  filtered in the database; only the best requested results remain in memory.
+  Ranking still takes work proportional to eligible jobs; this is not a
+  precomputed recommendation index or a point-in-time database snapshot.
+- The candidate overview now displays recommendations and Apply/Plan/Applied/
+  Blacklist actions. Company links and application links allow HTTP(S) only and
+  open separately with `noopener noreferrer`. Companies remains a research
+  directory independent of matching.
+- Scoring and OPEN-job eligibility preserve legacy behavior. Deadline filtering
+  and numeric experience matching cannot be claimed until those fields and
+  their ingestion paths exist; see the product follow-ups below.
+- Validation for this milestone is limited to formatting/lint, source typechecks,
+  builds, and code review. No tests were added or run, per the user's instruction;
+  earlier 81-test results describe the preceding commit, not this change.
+
+## Product follow-ups from gpt1.md
+
+`docs/gpt-conversation/gpt1.md` supplies these pending requirements. They do not
+imply completed migration parity:
+
+- Admin Companies: manual-review queue and completion/recalculation; Add Company;
+  controlled official-site/LinkedIn enrichment; external links in the table.
+- Admin Jobs: persist/display application deadlines, reject explicitly expired
+  jobs, define historical-listing rules without using age alone, and link company
+  names to official sites.
+- Admin Candidates: controlled experience levels plus numeric years; separate
+  list, creation, and detail/edit routes.
+- Crawler Logs: richer diagnostics and expandable/detail views. This request is
+  for crawler logs, not candidate detail.
+- Candidate Companies: paginated active-company research directory (25/page),
+  location and personal-state filters; independent of recommendation eligibility.
+
 ## In progress / next verification work
 
-1. Migrate deterministic matching and recommendation APIs, then connect the
-   candidate recommendation and Quick Search views.
-2. Continue feature parity work below; candidate recommendations, Quick Search,
-   and Google OAuth are not included in the verified core API scope.
+1. Migrate crawler execution and persisted Quick Search orchestration, then
+   connect the candidate Quick Search view. Deterministic recommendations are
+   implemented; runtime verification is deferred.
+2. Continue feature parity work below; Quick Search and Google OAuth
+   remain outside the migrated core API scope.
 3. Broaden candidate QA to visual/mobile/cross-browser behavior and production
    deployment configuration; the core desktop Chromium flow is now covered.
 
 ## Remaining work (ordered)
 
-1. Complete candidate portal UI and endpoint parity, including recommendations
-   and Quick Search after the matching feature is migrated.
+1. Complete candidate portal parity: Quick Search, the gpt1 company-directory
+   requirements, and runtime validation of recommendations.
 2. Extend admin browser coverage as the remaining views are implemented;
    company/category management and Basic authorization have initial coverage.
-3. Port crawler execution, matching, Quick Search, notifications, email,
+3. Port crawler execution, optional AI matching, Quick Search, notifications, email,
    Google OAuth, and operational scripts without changing product rules.
    Jobs catalog, crawler-log reads, persisted settings, and admin candidate
    management APIs have local database regression coverage; exhaustive parity

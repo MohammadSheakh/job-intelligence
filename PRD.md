@@ -263,3 +263,34 @@ refresh, sign-out, or a rejected credential requires a new sign-in. Candidate
 sessions never authorize admin actions. Empty company category assignments use
 the API's Other fallback. Local Chromium checks cover these workflows and the
 company list at a narrow viewport; full migration parity remains pending.
+
+Replacement recommendations use deterministic scoring over OPEN jobs and exclude
+the signed-in candidate's blacklisted companies. The API returns the best 1–20
+matches (default eight), breaking score ties by descending job ID, with scores,
+explanations, company links, and tracking status. The overview provides Apply,
+Plan, Applied, and Blacklist through the existing pipeline contract. Company
+browsing remains independent of recommendation eligibility.
+
+## 20. Product refinements from Figma review
+
+The page-specific requirements in `docs/gpt-conversation/gpt1.md` are accepted
+follow-up scope, tracked separately from completed migration work:
+
+- Company administration needs manual-review completion (clear the review flag
+  and recalculate next action), company creation, controlled enrichment through
+  official sources without bypassing anti-bot controls, and external website,
+  career, and LinkedIn links.
+- Jobs must persist/display application deadlines and exclude explicitly expired
+  openings. Old publish dates alone do not prove expiry; historical-job rules
+  need explicit evidence. Company names link to their official websites.
+- Candidate administration uses separate list/new/detail pages, a controlled
+  experience-level selection (Student/Intern, Fresher/Entry, Junior, Mid, Senior,
+  Lead/Principal, Manager), and numeric experience years for future matching.
+- Crawler diagnostics need source URL, timestamp, outcome/counts, available HTTP
+  status, adapter, duration, errors, and action transitions in a detail view.
+- Candidate Companies lists active employers for research/tracking, regardless of
+  open jobs or matching, with server-side pagination (25/page), search, category,
+  location, and personal pipeline-state filters.
+
+Deadline/experience schema and ingestion work remain pending; the deterministic
+migration preserves legacy policy until those inputs exist.

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api, candidateAuthRedirect } from '../../lib/api';
+import { Recommendations } from './components/recommendations';
 interface Candidate {
   id: string;
   name: string;
@@ -65,13 +66,7 @@ export default function CandidateHomePage() {
           {error}
         </p>
       )}
-      <section className="card">
-        <h2>Your portal is ready</h2>
-        <p>
-          Manage your matching profile, browse companies, and track applications. Recommendations
-          and Quick Search will appear here when their matching API migration is complete.
-        </p>
-      </section>
+      <Recommendations />
     </main>
   );
 }

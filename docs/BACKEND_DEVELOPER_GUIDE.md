@@ -40,6 +40,28 @@ expose authentication availability flags without returning credential material.
   and the password-change flag on each request.
 - `/api/v1/health` reports process liveness, not database readiness.
 
+## Recommendation request flow
+
+`CandidateRecommendationsController` applies both candidate guards and delegates
+only the trusted principal ID plus the validated limit to `MatchingModule`.
+`CandidateRecommendationsService` projects the active profile, scans OPEN jobs in
+200-row keyset batches, and retains at most 20 ranked rows. Related categories and
+candidate state are loaded with each batch; no per-job query loop is used.
+Bigint job IDs remain bigint internally and serialize as decimal strings.
+
+The pure `matching/domain` code preserves the legacy deterministic policy and
+has no Nest, Prisma, HTTP, or AI dependency. Exclusions run before weighted scoring;
+the service applies the candidate's threshold afterward. Score ties use descending
+job ID. Notifications do not suppress portal recommendations. This read does not
+crawl, send email, consume Quick Search quotas, or invoke AI.
+
+Memory is bounded by a batch plus the result limit, but computation remains linear
+in eligible jobs. Concurrent updates can be visible between batches; the API does
+not promise a frozen snapshot. Before large-scale traffic, profile this path and
+consider invalidated, precomputed rankings rather than caching personalized data
+without accounting for profile and blacklist changes. Deadline and numeric-years
+support from `gpt1.md` still require schema and ingestion work.
+
 ## Commenting conventions
 
 Use a short JSDoc comment above each controller/service class to explain its

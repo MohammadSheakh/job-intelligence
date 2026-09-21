@@ -1,3 +1,5 @@
+import { MatchingModule } from '../matching/matching.module.js';
+import { CandidateRecommendationsController } from './controllers/candidate-recommendations.controller.js';
 import { Module } from '@nestjs/common';
 import { AuthenticationModule } from '../authentication/authentication.module.js';
 import { CandidateProfileController } from './controllers/candidate-profile.controller.js';
@@ -10,8 +12,9 @@ import { CandidateCategoryCatalogController } from './controllers/candidate-cate
 import { CandidateCategoryCatalogService } from './services/candidate-category-catalog.service.js';
 
 @Module({
-  imports: [AuthenticationModule],
+  imports: [AuthenticationModule, MatchingModule],
   controllers: [
+    CandidateRecommendationsController,
     CandidateProfileController,
     CandidatePipelineController,
     CandidateCompanyController,

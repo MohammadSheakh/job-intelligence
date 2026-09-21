@@ -1,0 +1,147 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '@app/database';
+import { deterministicMatch } from '../domain/matcher.js';
+
+export interface CandidateRecommendation {
+  jobId: string;
+  companyId: string;
+  companyName: string;
+  companyWebsiteUrl: string | null;
+  title: string;
+  location: string | null;
+  workMode: string | null;
+  applicationUrl: string | null;
+  score: number;
+  reasons: string[];
+  categories: string[];
+  trackingStatus: string | null;
+}
+
+/** Rank existing OPEN jobs without crawler, AI, or notification side effects. */
+@Injectable()
+export class CandidateRecommendationsService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Scan by descending bigint ID in bounded batches, retaining only the best results.
+   * Newer inserts cannot extend a scan already in progress. This is a live read,
+   * not a database snapshot: concurrent profile/job edits appear on the next refresh.
+   */
+  async list(candidateId: bigint, limit: number): Promise<CandidateRecommendation[]> {
+    const candidate = await this.prisma.candidate.findFirst({
+      where: { id: candidateId, active: true },
+      select: {
+        expertise: true,
+        skills: true,
+        experience_level: true,
+        preferred_locations: true,
+        excluded_locations: true,
+        preferred_work_modes: true,
+        preferred_categories: true,
+        excluded_categories: true,
+        minimum_match_score: true,
+      },
+    });
+    if (!candidate) throw new NotFoundException('Candidate profile was not found.');
+    const profile = {
+      expertise: candidate.expertise,
+      skills: candidate.skills,
+      experienceLevel: candidate.experience_level,
+      preferredLocations: candidate.preferred_locations,
+      excludedLocations: candidate.excluded_locations,
+      preferredWorkModes: candidate.preferred_work_modes,
+      preferredCategories: candidate.preferred_categories,
+      excludedCategories: candidate.excluded_categories,
+    };
+    const best: CandidateRecommendation[] = [];
+    const batchSize = 200;
+    let beforeId: bigint | undefined;
+
+    for (;;) {
+      const jobs = await this.prisma.job.findMany({
+        where: {
+          status: 'OPEN',
+          ...(beforeId === undefined ? {} : { id: { lt: beforeId } }),
+          company: {
+            candidate_company_state: {
+              none: { candidate_id: candidateId, status: 'EXCLUDED' },
+            },
+          },
+        },
+        orderBy: { id: 'desc' },
+        take: batchSize,
+        select: {
+          id: true,
+          companyId: true,
+          title: true,
+          description: true,
+          location: true,
+          work_mode: true,
+          skills: true,
+          experience: true,
+          application_url: true,
+          company: {
+            select: {
+              name: true,
+              website_url: true,
+              careerUrl: true,
+              location: true,
+              tech_stack: true,
+              categories: {
+                select: { category: { select: { name: true, type: true } } },
+                orderBy: { category: { name: 'asc' } },
+              },
+              candidate_company_state: {
+                where: { candidate_id: candidateId },
+                select: { status: true },
+              },
+            },
+          },
+        },
+      });
+      for (const job of jobs) {
+        const company = job.company;
+        const trackingStatus = company.candidate_company_state[0]?.status ?? null;
+        // Recheck the projected state in case a blacklist changed between relation reads.
+        if (trackingStatus === 'EXCLUDED') continue;
+        const categories = company.categories.map(({ category }) => category);
+        const names = categories.filter(({ name }) => name !== 'Other').map(({ name }) => name);
+        const result = deterministicMatch(profile, {
+          companyLocation: company.location,
+          companyTechStack: company.tech_stack,
+          companyCategories: names,
+          companySectorCategories: categories
+            .filter(({ type }) => type === 'sector')
+            .map(({ name }) => name),
+          title: job.title,
+          description: job.description,
+          location: job.location,
+          workMode: job.work_mode,
+          skills: job.skills,
+          experience: job.experience,
+        });
+        if (!result.eligible || result.finalScore < candidate.minimum_match_score) continue;
+        best.push({
+          jobId: job.id.toString(),
+          companyId: job.companyId,
+          companyName: company.name,
+          companyWebsiteUrl: company.website_url,
+          title: job.title,
+          location: job.location ?? company.location,
+          workMode: job.work_mode,
+          applicationUrl: job.application_url ?? company.careerUrl ?? company.website_url,
+          score: result.finalScore,
+          reasons: result.reasons.slice(0, 3),
+          categories: names.slice(0, 5),
+          trackingStatus,
+        });
+        // The requested list is at most 20; keeping it sorted avoids retaining all matches.
+        best.sort((a, b) => b.score - a.score || (BigInt(a.jobId) > BigInt(b.jobId) ? -1 : 1));
+        if (best.length > limit) best.pop();
+      }
+      if (jobs.length < batchSize) break;
+      beforeId = jobs[jobs.length - 1].id;
+    }
+    return best;
+  }
+}

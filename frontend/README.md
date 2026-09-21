@@ -7,7 +7,7 @@ behavioral reference until feature parity is verified.
 
 ## Implemented routes
 
-- `/candidate/login` and `/candidate`: candidate authentication and overview.
+- `/candidate/login` and `/candidate`: candidate authentication and ranked recommendations.
 - `/candidate/change-password`, `/candidate/profile`, `/candidate/companies`,
   and `/candidate/pipeline`: core candidate workflows.
 - `/admin` redirects to `/admin/companies`: company search/filter/pagination.
