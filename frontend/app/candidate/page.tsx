@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api, candidateAuthRedirect } from '../../lib/api';
 import { Recommendations } from './components/recommendations';
+import { SearchUsage } from './components/search-usage';
 interface Candidate {
   id: string;
   name: string;
@@ -66,6 +67,7 @@ export default function CandidateHomePage() {
           {error}
         </p>
       )}
+      <SearchUsage />
       <Recommendations />
     </main>
   );

@@ -7,5 +7,6 @@ import { SettingsService } from './services/settings.service.js';
   imports: [AuthenticationModule],
   controllers: [AdminSettingsController],
   providers: [SettingsService],
+  exports: [SettingsService],
 })
 export class SettingsModule {}

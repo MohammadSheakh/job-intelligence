@@ -252,3 +252,11 @@ entries describe the legacy runtime.
 - [ ] Controlled experience levels/numeric years and separate admin candidate list/new/detail views.
 - [ ] Expanded crawler diagnostics/detail view (the gpt1 request concerns crawler logs).
 - [ ] Candidate active-company directory pagination and location/personal-state filters, independent of matching.
+
+## Replacement Quick Search prerequisites
+
+- [~] Guarded, read-only daily-usage API and candidate overview allowance display implemented.
+- [~] Persistent quota reservation uses a shared PostgreSQL advisory lock, Dhaka day bounds, and atomic count/insert; runtime concurrency validation deferred.
+- [~] Bounded PostgreSQL company selector preserves relevance/check-time order and excludes candidate blacklists.
+- [ ] Crawler execution, run finalization, AI availability checks, and Standard/AI execution UI wired to these services.
+- [~] This milestone uses formatting/lint, source typechecks, builds, and review only; tests omitted at user request.

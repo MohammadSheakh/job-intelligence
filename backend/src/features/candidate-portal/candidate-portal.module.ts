@@ -1,3 +1,5 @@
+import { QuickSearchModule } from '../quick-search/quick-search.module.js';
+import { CandidateSearchUsageController } from './controllers/candidate-search-usage.controller.js';
 import { MatchingModule } from '../matching/matching.module.js';
 import { CandidateRecommendationsController } from './controllers/candidate-recommendations.controller.js';
 import { Module } from '@nestjs/common';
@@ -12,8 +14,9 @@ import { CandidateCategoryCatalogController } from './controllers/candidate-cate
 import { CandidateCategoryCatalogService } from './services/candidate-category-catalog.service.js';
 
 @Module({
-  imports: [AuthenticationModule, MatchingModule],
+  imports: [AuthenticationModule, MatchingModule, QuickSearchModule],
   controllers: [
+    CandidateSearchUsageController,
     CandidateRecommendationsController,
     CandidateProfileController,
     CandidatePipelineController,

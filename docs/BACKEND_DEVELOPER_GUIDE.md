@@ -62,6 +62,32 @@ consider invalidated, precomputed rankings rather than caching personalized data
 without accounting for profile and blacklist changes. Deadline and numeric-years
 support from `gpt1.md` still require schema and ingestion work.
 
+## Quick Search quota and company selection
+
+`QuickSearchModule` imports the exported `SettingsService` rather than registering
+another provider. Its usage endpoint is read-only. The internal `reserve` method
+uses a transaction-scoped advisory lock keyed by candidate bigint ID, compatible
+with the legacy process, then checks quotas and inserts an unfinished run. Never
+hold this transaction open during crawling or AI calls. Failed and unfinished
+runs consume quota, preventing retries/restarts from granting extra searches.
+
+The count query captures PostgreSQL statement time after acquiring the lock,
+calculates Asia/Dhaka day bounds, and reuses that timestamp for insertion. This
+avoids app-server clock drift and a count/insert midnight mismatch. Read Committed
+ensures the count sees the preceding reservation after waiting on its lock.
+Settings are read before reservation; changes apply to subsequent requests.
+
+The selector uses parameterized SQL because ordering by a filtered category count
+is not supported by the current Prisma query shape. Filtering, ranking, and LIMIT
+run in PostgreSQL; no full catalog is materialized in Node. Blacklisted companies
+are excluded, in addition to active/monitor-ready/career-URL checks.
+
+The future orchestrator must validate Standard/AI availability before reservation,
+finalize the returned bigint run ID after success/failure, and handle interrupted
+work without automatically refunding quota. Reservation is not a job queue or
+idempotency mechanism. No execution endpoint exists yet, and settings enabling
+AI do not mean a migrated AI provider is available.
+
 ## Commenting conventions
 
 Use a short JSDoc comment above each controller/service class to explain its

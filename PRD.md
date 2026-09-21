@@ -294,3 +294,19 @@ follow-up scope, tracked separately from completed migration work:
 
 Deadline/experience schema and ingestion work remain pending; the deterministic
 migration preserves legacy policy until those inputs exist.
+
+## 21. Replacement Quick Search prerequisites
+
+The candidate overview can read persisted daily Quick Search usage without
+consuming an allowance. Daily counts use the Asia/Dhaka calendar and include
+failed or unfinished reservations. The Nest reservation service must serialize
+quota checks and run creation across instances and the legacy application;
+restarts must not reset allowances. A reserved request retains its quota charge
+when execution fails or is interrupted.
+
+Company selection is bounded by the configured company limit (maximum 25), prefers
+candidate category overlap then least-recently checked companies, and excludes
+candidate blacklists. Only active monitor-ready companies with a career URL qualify.
+This shortlist is distinct from the active-company research directory described
+in gpt1.md. Crawler execution and AI availability must be implemented before
+exposing a Quick Search execution action in the replacement UI.

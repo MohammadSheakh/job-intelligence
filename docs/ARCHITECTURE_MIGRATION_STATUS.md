@@ -199,6 +199,26 @@ code or Prisma platform placeholders belong in the replacement.
   builds, and code review. No tests were added or run, per the user's instruction;
   earlier 81-test results describe the preceding commit, not this change.
 
+## Quick Search prerequisites
+
+- Added a reusable Quick Search module with persistent usage/reservation and
+  bounded company selection services. `GET /api/v1/candidate/quick-search/usage`
+  is read-only, guarded by the candidate session/password-change rules, and
+  returns daily counts, remaining allowances, and the next Dhaka midnight.
+- Reservations use the same transaction-scoped PostgreSQL advisory lock key as
+  legacy Quick Search. Counts and inserts share a transaction; failed/unfinished
+  runs still count. Date bounds compare against raw `requested_at` timestamps
+  so the existing candidate/time index remains usable.
+- Selection runs in PostgreSQL, ranks preferred-category overlap then oldest
+  check time and ID, and returns at most 25 active monitor-ready companies with
+  a nonblank career URL. Candidate blacklists are excluded before selection.
+- The candidate overview displays persisted usage independently of rankings.
+  It has no execution button: crawler execution, run finalization, and Standard/
+  AI orchestration remain pending. Internal reservation is not exposed over HTTP.
+- Formatting/lint, backend/frontend typechecks and builds are the validation
+  scope. No tests were added or run at the user's request; database concurrency,
+  midnight rollover, and browser behavior remain unverified at runtime.
+
 ## Product follow-ups from gpt1.md
 
 `docs/gpt-conversation/gpt1.md` supplies these pending requirements. They do not
@@ -218,8 +238,8 @@ imply completed migration parity:
 
 ## In progress / next verification work
 
-1. Migrate crawler execution and persisted Quick Search orchestration, then
-   connect the candidate Quick Search view. Deterministic recommendations are
+1. Migrate crawler execution and Quick Search orchestration using the new quota
+   and selector services; add run finalization and the execution UI. Deterministic recommendations are
    implemented; runtime verification is deferred.
 2. Continue feature parity work below; Quick Search and Google OAuth
    remain outside the migrated core API scope.
