@@ -310,3 +310,8 @@ candidate blacklists. Only active monitor-ready companies with a career URL qual
 This shortlist is distinct from the active-company research directory described
 in gpt1.md. Crawler execution and AI availability must be implemented before
 exposing a Quick Search execution action in the replacement UI.
+
+Prisma developer tooling follows the Ferio V2 schema-builder workflow while
+retaining the single-tenant Job Intelligence schema. Application generation has
+no platform-client step. Seed execution remains disabled for authoritative data;
+migration commands require a reviewed baseline before use on the existing database.

@@ -103,3 +103,14 @@ From the repository root, run `pnpm check:style`, backend source/test typechecks
 and the relevant test suite. `pnpm --dir backend test` uses database mocks;
 `pnpm --dir backend test:database` uses disposable PostgreSQL. Browser test setup
 and scope are documented in `backend/test/README.md`.
+
+## Prisma tooling
+
+Edit model fragments under `backend/prisma/schema/`, then run
+`pnpm --dir backend prisma:sync`. The exact Ferio V2 builder assembles them before
+client generation. `prisma:generate` alone does not rebuild fragments. The
+scripts-local ESM package leaves the Nest runtime module format unchanged.
+
+Migration commands are wired but require baseline review for the existing
+schema. Seed commands deliberately refuse writes. See `backend/prisma/_doc.md`
+for the complete command table; there is no platform database in this project.

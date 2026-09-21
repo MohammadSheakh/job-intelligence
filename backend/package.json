@@ -6,8 +6,8 @@
     "build": "nest build",
     "start": "node dist/src/main.js",
     "typecheck": "tsc --noEmit",
-    "prisma:schema:build": "node prisma/scripts/build-prisma-schema.mjs",
-    "prisma:generate": "pnpm prisma:schema:build && prisma generate",
+    "prisma:schema:build": "node prisma/scripts/build-prisma-schemaV2.js",
+    "prisma:generate": "pnpm prisma generate --schema prisma/schema.prisma",
     "prisma:db:pull": "prisma db pull --print",
     "test": "jest --runInBand",
     "typecheck:test": "tsc -p tsconfig.test.json",
@@ -16,7 +16,12 @@
     "format:check": "pnpm --dir .. exec prettier --check backend",
     "lint": "pnpm --dir .. exec eslint backend --max-warnings 0",
     "lint:fix": "pnpm --dir .. exec eslint backend --fix --max-warnings 0",
-    "test:browser": "node test/scripts/run-database-tests.mjs --browser"
+    "test:browser": "node test/scripts/run-database-tests.mjs --browser",
+    "prisma:sync": "pnpm run prisma:schema:build && pnpm run prisma:generate",
+    "prisma:seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
+    "prisma:migrate:dev": "pnpm run prisma:schema:build && pnpm prisma migrate dev --schema prisma/schema.prisma",
+    "prisma:migrate:status": "pnpm prisma migrate status --schema prisma/schema.prisma",
+    "prisma:migrate:deploy": "pnpm prisma migrate deploy --schema prisma/schema.prisma"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -46,6 +51,8 @@
     "prisma": "^7.10.0",
     "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
+    "ts-node": "10.9.2",
+    "tsconfig-paths": "4.2.0",
     "typescript": "^5.9.2"
   }
 }

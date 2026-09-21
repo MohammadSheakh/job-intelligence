@@ -26,7 +26,7 @@ code or Prisma platform placeholders belong in the replacement.
   all 11 discovered models and Prisma Client was generated from that file.
 - `backend/prisma/schema/` has the desired Ferio-style modular layout. Its
   fragments now rebuild the complete introspected schema, so
-  `pnpm prisma:generate` is safe to use locally.
+  `pnpm prisma:sync` rebuilds fragments and generates the client locally.
 - Prisma cannot express three existing database check constraints (candidate
   score range, category type, and job status). Preserve them in Neon and
   duplicate their policy through DTO/service validation.
@@ -303,3 +303,17 @@ git diff --check
 
 Do not run `prisma migrate`, `prisma db push`, `prisma db seed`, or
 `prisma migrate reset` against Neon during this migration.
+
+## Ferio Prisma tooling alignment
+
+- Copied the Ferio `build-prisma-schemaV2.js` byte-for-byte with a scripts-local
+  ESM package boundary. Existing Job Intelligence models remain authoritative;
+  no commerce/platform schemas, migrations, or seeds were copied.
+- Added schema build, generate, sync, seed, and migrate dev/status/deploy package
+  commands. `prisma:generate` now generates only; use `prisma:sync` after editing
+  fragments. Registered the seed entry point in Prisma 7 configuration and added
+  the required ts-node/tsconfig-paths development dependencies.
+- Seed invocation explicitly refuses writes under the existing data policy.
+  Migration CLI wiring is available; database baseline and actual migration
+  execution remain unverified and must be reviewed before use on Neon.
+- See `backend/prisma/_doc.md` for command behavior and verification boundaries.

@@ -19,3 +19,6 @@ backend/prisma/schema.prisma
 backend/prisma/schema/
 backend/prisma/migration-checksums.json
 .env*
+
+# Preserve the exact upstream Ferio V2 builder.
+backend/prisma/scripts/build-prisma-schemaV2.js

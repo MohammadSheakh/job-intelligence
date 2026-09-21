@@ -260,3 +260,10 @@ entries describe the legacy runtime.
 - [~] Bounded PostgreSQL company selector preserves relevance/check-time order and excludes candidate blacklists.
 - [ ] Crawler execution, run finalization, AI availability checks, and Standard/AI execution UI wired to these services.
 - [~] This milestone uses formatting/lint, source typechecks, builds, and review only; tests omitted at user request.
+
+## Prisma tooling alignment
+
+- [x] Exact Ferio V2 builder, recursive schema assembly, and explicit script ESM boundary.
+- [x] Backend schema build/generate/sync and migrate dev/status/deploy scripts added; ts-node and tsconfig-paths available for the seed entry point.
+- [x] Local sync, schema validation, seed refusal, migration CLI help, style/lint, backend typecheck/build verified without database mutation.
+- [ ] Existing database Prisma Migrate baseline and live migration execution; seeding remains deliberately disabled.
