@@ -342,9 +342,9 @@ imply completed migration parity:
   due to dependency/type compatibility errors. The root package and TypeScript
   configuration were restored to their committed legacy form; this failure is
   not caused by the Nest/Next package boundaries.
-- Before backend edits, read
-  `.agents/skills/nestjs-best-practices/SKILL.md`; before frontend edits, read
-  `/home/chillpc/.agents/skills/nextjs-app-router-patterns/SKILL.md`.
+- Before backend edits, read `backend/AGENTS.md` and its local Ferio workflow;
+  before frontend edits, read `frontend/AGENTS.md` and its Ferio design skill.
+  Generic Nest/Next skills supplement these project-specific instructions.
 
 ## Verification commands
 
@@ -420,3 +420,12 @@ Do not run `prisma migrate`, `prisma db push`, `prisma db seed`, or
   No test suite, live crawl, database connection, or lock-concurrency check ran.
 - Milestone 13 is implemented: **13/24 = 54.17% complete, 45.83% remaining**.
   Runtime verification and scheduler cutover remain in milestones 23–24.
+
+## Agent instruction alignment
+
+Root, backend, frontend, and Prisma-scoped `AGENTS.md` files now route agents to
+project-specific rules and local backend/frontend skills. Conflicting imported
+tenancy/Drizzle/Redis prescriptions were replaced with the actual single-tenant
+Nest/Prisma/Next boundaries. See `docs/agents/instruction-system.md` for the audit,
+reading order, and maintenance scenarios. This guidance-only change adds no
+product milestone credit: progress remains **13/24 = 54.17%**.

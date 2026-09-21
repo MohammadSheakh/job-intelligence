@@ -1,0 +1,4 @@
+interface:
+  display_name: "Job Intelligence Backend"
+  short_description: "Implement Nest/Prisma features within project boundaries"
+  default_prompt: "Use $ferio-backend-architecture-v2-current for this task, following the repository scoped instructions."

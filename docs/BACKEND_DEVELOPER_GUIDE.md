@@ -99,8 +99,10 @@ when behavior changes; tests remain the evidence that the rules hold.
 
 ## Checking a change
 
-From the repository root, run `pnpm check:style`, backend source/test typechecks,
-and the relevant test suite. `pnpm --dir backend test` uses database mocks;
+Follow `backend/AGENTS.md` for applicable checks. From the repository root,
+use `pnpm check:style`, backend source/test typechecks, and relevant suites when
+authorized. Explicit user test deferral takes precedence; record runtime gaps.
+`pnpm --dir backend test` uses database mocks;
 `pnpm --dir backend test:database` uses disposable PostgreSQL. Browser test setup
 and scope are documented in `backend/test/README.md`.
 
@@ -194,3 +196,11 @@ Do not overlap the legacy daily script, which does not take this lock.
 Standard Quick Search should reuse `CompanyCrawlService` after reserving quota,
 and must finalize its own search-run record. Daily crawling does not reserve
 candidate quotas or provide the pending AI/Quick Search UI.
+
+## Agent guidance ownership
+
+`backend/AGENTS.md` and its linked `.agents/rules/` own coding conventions; this
+guide explains current implementation flows. Simple direct-Prisma services remain
+valid migration code; focused repositories own substantial SQL, shared persistence,
+and connection lifecycles. Choose a boundary deliberately rather than introducing
+Drizzle, tenancy, Redis, or ambient transactions from an unrelated template.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend Code Review"
+  short_description: "Review contracts, persistence, and failure boundaries"
+  default_prompt: "Use $backend-coding-standards for this task, following the repository scoped instructions."

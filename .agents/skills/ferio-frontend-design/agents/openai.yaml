@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ferio Frontend Design"
+  short_description: "Build accessible Ferio admin and candidate screens"
+  default_prompt: "Use $ferio-frontend-design for this task, following the repository scoped instructions."
