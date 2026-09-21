@@ -114,3 +114,23 @@ scripts-local ESM package leaves the Nest runtime module format unchanged.
 Migration commands are wired but require baseline review for the existing
 schema. Seed commands deliberately refuse writes. See `backend/prisma/_doc.md`
 for the complete command table; there is no platform database in this project.
+
+## Crawler ingestion boundary
+
+`job-crawling/domain/career-page.parser.ts` accepts fetched HTML without performing
+network requests. The 2 MiB limit protects parsing; a future HTTP transport must
+also enforce a streaming body limit, timeout, and safe redirect/address checks
+before allocating the full response. HTTP(S) scheme checks alone are not SSRF
+protection. Known source overrides are preserved as a pure resolver.
+
+`CrawlIngestionService.ingest` parses first, then atomically persists at most 150
+legacy-hash job upserts, the company check timestamp, and a success log. It requires
+an active monitor-ready company. The first company update serializes persistence
+for that company; it does not prevent duplicate network work or establish fetch
+freshness ordering. Missing descriptions retain old content, and absent jobs are
+not automatically closed. Transaction failures roll back all successful-page writes.
+
+The orchestrator must call `recordFailure` with a sanitized diagnostic after
+fetch, parsing, or persistence errors. This separate path updates the check time
+and failure log without changing jobs. Rich log fields and persisted application
+deadlines from gpt1 still require schema work. No execution endpoint is exposed.

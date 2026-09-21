@@ -2,7 +2,48 @@
 
 **Last updated:** 2026-09-21
 **Status:** In progress — candidate core flows, Company Intelligence admin UI, and selected admin APIs are implemented with local regression coverage.
-**Overall progress:** Tracked by the completed and remaining milestones below; no weighted completion percentage is defined.
+**Overall implementation progress: 50% complete / 50% remaining** — 12 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
+
+## Completion scorecard
+
+Each row contributes 1/24 of the implementation scope (about 4.17%). Count a row
+only when its stated code deliverable exists; partial rows receive no credit.
+The denominator includes the accepted `gpt1.md` refinements and final cutover work.
+Milestones differ in effort, so 50% remaining does **not** mean half the time remains.
+This is the first explicit scoring baseline, not a measured increase from an
+older percentage. Update the table and numerator together as scope changes.
+
+| # | Milestone | Status |
+| --- | --- | --- |
+| 1 | Independent Nest/Next application boundaries and API configuration | Implemented |
+| 2 | Introspected modular Prisma schema and Ferio V2 developer tooling | Implemented |
+| 3 | Candidate password login, signed session, forced change, logout | Implemented |
+| 4 | Candidate profile and category catalog API/UI | Implemented |
+| 5 | Core candidate company research browse API/UI | Implemented |
+| 6 | Candidate company pipeline API/UI | Implemented |
+| 7 | Admin company/category management API/UI with Basic auth | Implemented |
+| 8 | Admin jobs, candidates, settings, and crawl-log APIs | Implemented |
+| 9 | Deterministic recommendations API and overview actions | Implemented; runtime checks deferred |
+| 10 | Persistent Quick Search quota and shortlist services, usage UI | Implemented; runtime checks deferred |
+| 11 | Shared formatting/lint tooling and backend developer documentation | Implemented |
+| 12 | Crawler HTML extraction and atomic job/log ingestion service | Implemented; runtime checks deferred |
+| 13 | Bounded HTTP crawler transport, daily execution, source orchestration | Pending |
+| 14 | Standard Quick Search execution, run finalization, execution UI | Pending |
+| 15 | Optional AI provider integration, limits, and AI-assisted search | Pending |
+| 16 | Email digests, notifications, delivery deduplication integration | Pending |
+| 17 | Google OAuth and account binding | Pending |
+| 18 | Remaining admin dashboard/jobs/candidates/settings/logs views | Pending |
+| 19 | gpt1 company creation, review completion, enrichment, table links | Pending |
+| 20 | gpt1 deadline persistence, freshness policy, job/company links | Pending |
+| 21 | gpt1 controlled experience levels/years and candidate page split | Pending |
+| 22 | gpt1 directory pagination/filters and richer crawler diagnostics | Pending |
+| 23 | Reviewed database baseline, Docker/scheduler/scripts/CI cutover | Pending |
+| 24 | Final runtime parity, external integration, deployment and rollback validation | Pending |
+
+**Verification boundary:** earlier 81 checks apply to the earlier admin UI
+milestone. Newer work has source/style/build checks only at the user's request.
+No percentage of production readiness is claimed. Legacy remains the runtime
+until cutover and rollback requirements are satisfied.
 
 ## Final direction
 
@@ -219,6 +260,25 @@ code or Prisma platform placeholders belong in the replacement.
   scope. No tests were added or run at the user's request; database concurrency,
   midnight rollover, and browser behavior remain unverified at runtime.
 
+## Crawler extraction and ingestion foundation
+
+- Ported legacy HTML vacancy extraction and stable job hashing into the Nest
+  job-crawling domain. Parsing performs no network I/O, rejects non-HTTP(S) page
+  and application links, accepts at most 2 MiB of HTML, and returns at most 150 jobs.
+- Exported `CrawlIngestionService`: job upserts, company check time, and the
+  success log share one bounded transaction. Failure logging has a separate
+  atomic path. Missing descriptions preserve existing content; empty results
+  never close existing jobs after a single crawl.
+- Parsing runs before opening the transaction. No network request is made while
+  holding a company lock. A caller must supply a fetched page and explicitly
+  record sanitized failure diagnostics; there is no crawl execution endpoint yet.
+- Existing extraction heuristics are retained, including limited deadline-text
+  recognition. This does not fulfill gpt1 deadline persistence or comprehensive
+  freshness rules. HTTP status/final URL/hash are returned to the future
+  orchestrator; the existing log schema cannot yet persist richer diagnostics.
+- Formatting/lint, backend typecheck/build, and code review are the checks for
+  this milestone. No test suite, live crawl, or database mutation was run.
+
 ## Product follow-ups from gpt1.md
 
 `docs/gpt-conversation/gpt1.md` supplies these pending requirements. They do not
@@ -238,9 +298,10 @@ imply completed migration parity:
 
 ## In progress / next verification work
 
-1. Migrate crawler execution and Quick Search orchestration using the new quota
-   and selector services; add run finalization and the execution UI. Deterministic recommendations are
-   implemented; runtime verification is deferred.
+1. Add bounded HTTP transport (timeouts, response-size limits, redirect/address
+   validation), then connect extraction/ingestion to Standard Quick Search, run
+   finalization, and the execution UI. Recommendations and quota services exist;
+   runtime verification is deferred.
 2. Continue feature parity work below; Quick Search and Google OAuth
    remain outside the migrated core API scope.
 3. Broaden candidate QA to visual/mobile/cross-browser behavior and production

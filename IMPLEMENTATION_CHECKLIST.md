@@ -267,3 +267,12 @@ entries describe the legacy runtime.
 - [x] Backend schema build/generate/sync and migrate dev/status/deploy scripts added; ts-node and tsconfig-paths available for the seed entry point.
 - [x] Local sync, schema validation, seed refusal, migration CLI help, style/lint, backend typecheck/build verified without database mutation.
 - [ ] Existing database Prisma Migrate baseline and live migration execution; seeding remains deliberately disabled.
+
+
+## Replacement crawler foundation and progress accounting
+
+- [~] Legacy HTML extraction and job normalization/hash policy ported to a network-free domain parser with bounded input/output.
+- [~] Transactional job upserts, company check timestamp, and success log; separate failure-log persistence implemented.
+- [ ] HTTP transport, scheduling, Quick Search execution/finalization, and richer gpt1 deadline/log fields remain pending.
+- [x] Explicit migration scorecard added: 12/24 equally weighted implementation milestones = 50%; no runtime-readiness percentage claimed.
+- [~] Parser/ingestion runtime parity remains unverified; test development and execution deferred at user request.

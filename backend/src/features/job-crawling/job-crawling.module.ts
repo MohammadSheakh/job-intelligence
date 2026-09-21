@@ -1,3 +1,4 @@
+import { CrawlIngestionService } from './services/crawl-ingestion.service.js';
 import { Module } from '@nestjs/common';
 import { AuthenticationModule } from '../authentication/authentication.module.js';
 import { AdminJobsController } from './controllers/admin-jobs.controller.js';
@@ -8,6 +9,7 @@ import { AdminCrawlLogService } from './services/admin-crawl-log.service.js';
 @Module({
   imports: [AuthenticationModule],
   controllers: [AdminJobsController, AdminCrawlLogsController],
-  providers: [AdminJobCatalogService, AdminCrawlLogService],
+  providers: [AdminJobCatalogService, AdminCrawlLogService, CrawlIngestionService],
+  exports: [CrawlIngestionService],
 })
 export class JobCrawlingModule {}

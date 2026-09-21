@@ -315,3 +315,11 @@ Prisma developer tooling follows the Ferio V2 schema-builder workflow while
 retaining the single-tenant Job Intelligence schema. Application generation has
 no platform-client step. Seed execution remains disabled for authoritative data;
 migration commands require a reviewed baseline before use on the existing database.
+
+
+The replacement crawler separates fetched-page extraction from HTTP transport.
+Successful-page ingestion atomically writes jobs, company check time, and the
+crawl log using stable legacy hashes. Missing descriptions preserve prior content;
+a single empty/no-opening result does not close existing jobs. Parsing is bounded
+to 2 MiB HTML and 150 jobs. HTTP execution and richer deadline/log persistence
+remain separate migration milestones.
