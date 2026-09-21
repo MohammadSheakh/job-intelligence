@@ -3,12 +3,15 @@ import * as cheerio from 'cheerio';
 import type { CrawlResult, CrawledJob } from './types.js';
 import { canonicalizeUrl, normalizeTitle, normalizeWhitespace } from '../jobs/normalize.js';
 
-const ROLE_TEXT = /\b(engineer|developer|designer|manager|intern|trainee|executive|officer|analyst|specialist|architect|consultant|qa|quality assurance|devops|support|administrator|lead|coordinator|sales|marketing|finance|hr|business development|customer service|billing|network|android|ios|java|\.net|nlp)\b/i;
-const JOB_TEXT = /\b(job|career|vacan(?:cy|cies)?|position|opening|openings)\b/i;
+const ROLE_TEXT =
+  /\b(engineer|developer|designer|manager|intern|trainee|executive|officer|analyst|specialist|architect|consultant|qa|quality assurance|devops|support|administrator|lead|coordinator|sales|marketing|finance|hr|business development|customer service|billing|network|android|ios|java|\.net|nlp)\b/i;
 const JOB_URL_HINT = /\b(job|career|vacan|position|opening|apply|awsm_job_openings)\b/i;
-const JOB_CONTEXT = /\b(vacanc(?:y|ies)|deadline|experience|apply|full[ -]?time|part[ -]?time|remote|hybrid|on[ -]?site|employment)\b/i;
-const LISTING_HEADING = /^(open positions?|current openings?|job openings?|join the team!?|we are hiring|careers?)$/i;
-const NO_OPENINGS = /\b(no (?:current )?(?:job |career )?(?:opening|openings|vacancy|vacancies|position|positions)|currently no (?:openings|vacancies|positions)|no jobs? available|we are not hiring)\b/i;
+const JOB_CONTEXT =
+  /\b(vacanc(?:y|ies)|deadline|experience|apply|full[ -]?time|part[ -]?time|remote|hybrid|on[ -]?site|employment)\b/i;
+const LISTING_HEADING =
+  /^(open positions?|current openings?|job openings?|join the team!?|we are hiring|careers?)$/i;
+const NO_OPENINGS =
+  /\b(no (?:current )?(?:job |career )?(?:opening|openings|vacancy|vacancies|position|positions)|currently no (?:openings|vacancies|positions)|no jobs? available|we are not hiring)\b/i;
 
 function absoluteUrl(base: string, href: string): string | null {
   if (/^(mailto:|tel:|javascript:|#)/i.test(href)) return null;
@@ -28,7 +31,9 @@ function actionComparable(value: string): string {
 }
 
 function isActionOnly(value: string): boolean {
-  return /^(apply|apply now|view|view details?|see job details?|job details?|details?|read more|learn more|career|careers|jobs?|vacancies|open positions?)$/.test(actionComparable(value));
+  return /^(apply|apply now|view|view details?|see job details?|job details?|details?|read more|learn more|career|careers|jobs?|vacancies|open positions?)$/.test(
+    actionComparable(value),
+  );
 }
 
 function roleLike(value: string): boolean {
@@ -36,13 +41,18 @@ function roleLike(value: string): boolean {
   return text.length >= 3 && text.length <= 180 && ROLE_TEXT.test(text) && !isActionOnly(text);
 }
 
-function nearestJobContainer($: cheerio.CheerioAPI, el: cheerio.Element): cheerio.Cheerio<cheerio.Element> {
+function nearestJobContainer(
+  $: cheerio.CheerioAPI,
+  el: cheerio.Element,
+): cheerio.Cheerio<cheerio.Element> {
   let node = $(el).parent();
   let fallback = node;
 
   for (let i = 0; i < 6 && node.length; i += 1) {
     const text = normalizeWhitespace(node.text());
-    const heading = normalizeWhitespace(node.find('h1,h2,h3,h4,h5,h6,strong,.title,.job-title,.position-title').first().text());
+    const heading = normalizeWhitespace(
+      node.find('h1,h2,h3,h4,h5,h6,strong,.title,.job-title,.position-title').first().text(),
+    );
     if (JOB_CONTEXT.test(text) || roleLike(heading)) return node;
     fallback = node;
     node = node.parent();
@@ -57,7 +67,11 @@ function bestTitle($: cheerio.CheerioAPI, anchor: cheerio.Element): string {
 
   const container = nearestJobContainer($, anchor);
   const heading = normalizeWhitespace(
-    container.find('h1,h2,h3,h4,h5,h6,strong,.title,.job-title,.position-title').filter((_, node) => roleLike($(node).text())).first().text(),
+    container
+      .find('h1,h2,h3,h4,h5,h6,strong,.title,.job-title,.position-title')
+      .filter((_, node) => roleLike($(node).text()))
+      .first()
+      .text(),
   );
 
   if (heading) return normalizeTitle(heading);
@@ -74,10 +88,15 @@ function nearbyLocation($: cheerio.CheerioAPI, el: cheerio.Element): string | un
 }
 
 function parseDeadlineFromText(text: string): Date | null {
-  const match = text.match(/deadline\s*:?\s*([0-9]{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\s*,?\s+[0-9]{4}|[A-Za-z]+\s+[0-9]{1,2}(?:st|nd|rd|th)?\s*,?\s+[0-9]{4})/i);
+  const match = text.match(
+    /deadline\s*:?\s*([0-9]{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\s*,?\s+[0-9]{4}|[A-Za-z]+\s+[0-9]{1,2}(?:st|nd|rd|th)?\s*,?\s+[0-9]{4})/i,
+  );
   if (!match) return null;
 
-  const cleaned = match[1].replace(/(\d)(st|nd|rd|th)\b/gi, '$1').replace(/\s+/g, ' ').trim();
+  const cleaned = match[1]
+    .replace(/(\d)(st|nd|rd|th)\b/gi, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
   const timestamp = Date.parse(cleaned);
   if (Number.isNaN(timestamp)) return null;
 
@@ -154,7 +173,7 @@ function extractTableJobs(
     if (isExpired(rowText)) return;
 
     const href = $(row).find('a[href]').first().attr('href');
-    const applicationUrl = href ? absoluteUrl(sourceUrl, href) ?? sourceUrl : sourceUrl;
+    const applicationUrl = href ? (absoluteUrl(sourceUrl, href) ?? sourceUrl) : sourceUrl;
 
     addJob(jobs, seen, {
       companyId,
@@ -191,17 +210,21 @@ function extractListingSectionJobs(
       const container = nearestJobContainer($, el);
       const context = normalizeWhitespace(container.text());
       const hasPerItemCue = JOB_CONTEXT.test(context);
-      const href = container.find('a[href]').filter((_, a) => {
-        const value = $(a).attr('href') ?? '';
-        return JOB_URL_HINT.test(value) || /apply/i.test($(a).text());
-      }).first().attr('href');
+      const href = container
+        .find('a[href]')
+        .filter((_, a) => {
+          const value = $(a).attr('href') ?? '';
+          return JOB_URL_HINT.test(value) || /apply/i.test($(a).text());
+        })
+        .first()
+        .attr('href');
 
       // Avoid generic career-family headings such as "Back-end Development" unless
       // the item has an apply/detail link or vacancy/experience/deadline context.
       if (!hasPerItemCue && !href) return;
       if (isExpired(context)) return;
 
-      const applicationUrl = href ? absoluteUrl(sourceUrl, href) ?? sourceUrl : sourceUrl;
+      const applicationUrl = href ? (absoluteUrl(sourceUrl, href) ?? sourceUrl) : sourceUrl;
       addJob(jobs, seen, {
         companyId,
         title,
@@ -224,18 +247,20 @@ function extractLongOpeningBlocks(
     const fullText = normalizeWhitespace($(block).text());
     if (!/current openings?|open positions?/i.test(fullText) || fullText.length < 180) return;
 
-    $(block).find('li,h2,h3,h4,h5,h6,p,span,strong').each((_, child) => {
-      const title = normalizeTitle($(child).text());
-      if (!roleLike(title) || title.length > 120) return;
-      if (/current openings?|open positions?/i.test(title)) return;
+    $(block)
+      .find('li,h2,h3,h4,h5,h6,p,span,strong')
+      .each((_, child) => {
+        const title = normalizeTitle($(child).text());
+        if (!roleLike(title) || title.length > 120) return;
+        if (/current openings?|open positions?/i.test(title)) return;
 
-      addJob(jobs, seen, {
-        companyId,
-        title,
-        applicationUrl: sourceUrl,
-        sourceUrl,
+        addJob(jobs, seen, {
+          companyId,
+          title,
+          applicationUrl: sourceUrl,
+          sourceUrl,
+        });
       });
-    });
 
     // Keep the variable read so minifiers/linters don't rewrite clone handling oddly.
     void direct;

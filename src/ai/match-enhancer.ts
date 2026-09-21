@@ -37,7 +37,8 @@ export async function maybeEnhanceMatch(
         messages: [
           {
             role: 'system',
-            content: 'Return JSON only: {"semanticScore":0-100,"reason":"short explanation"}. Score candidate-job career fit. Do not override explicit location/work-mode exclusions.',
+            content:
+              'Return JSON only: {"semanticScore":0-100,"reason":"short explanation"}. Score candidate-job career fit. Do not override explicit location/work-mode exclusions.',
           },
           {
             role: 'user',
@@ -66,7 +67,9 @@ export async function maybeEnhanceMatch(
     });
     if (!response.ok) return base;
 
-    const payload = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
+    const payload = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
     const content = payload.choices?.[0]?.message?.content;
     if (!content) return base;
     const parsed = JSON.parse(content) as AiMatchResponse;

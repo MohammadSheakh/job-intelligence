@@ -11,17 +11,33 @@ export class AdminBasicAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request>();
     const header = request.headers.authorization;
     const expected = `${this.config.app.adminUsername}:${this.config.app.adminPassword}`;
-    if (!header?.startsWith('Basic ') || !this.config.app.adminUsername || !this.config.app.adminPassword) this.reject();
+    if (
+      !header?.startsWith('Basic ') ||
+      !this.config.app.adminUsername ||
+      !this.config.app.adminPassword
+    )
+      this.reject();
 
     let supplied: string;
-    try { supplied = Buffer.from(header.slice(6), 'base64').toString('utf8'); } catch { this.reject(); }
+    try {
+      supplied = Buffer.from(header.slice(6), 'base64').toString('utf8');
+    } catch {
+      this.reject();
+    }
     const suppliedBuffer = Buffer.from(supplied!);
     const expectedBuffer = Buffer.from(expected);
-    if (suppliedBuffer.length !== expectedBuffer.length || !timingSafeEqual(suppliedBuffer, expectedBuffer)) this.reject();
+    if (
+      suppliedBuffer.length !== expectedBuffer.length ||
+      !timingSafeEqual(suppliedBuffer, expectedBuffer)
+    )
+      this.reject();
     return true;
   }
 
   private reject(): never {
-    throw new UnauthorizedException({ code: 'ADMIN_AUTH_REQUIRED', message: 'Administrator authentication is required.' });
+    throw new UnauthorizedException({
+      code: 'ADMIN_AUTH_REQUIRED',
+      message: 'Administrator authentication is required.',
+    });
   }
 }

@@ -8,7 +8,31 @@ import { CompanyIntelligenceService } from '../services/company-intelligence.ser
 @UseGuards(AdminBasicAuthGuard)
 export class AdminCompaniesController {
   constructor(private readonly companies: CompanyIntelligenceService) {}
-  @Get() list(@Query() query: CompanyListQueryDto) { return this.companies.list(query); }
-  @Get(':id') get(@Param('id') id: string) { return this.companies.getById(id); }
-  @Put(':id') async update(@Param('id') id: string, @Body() input: UpdateCompanyDto) { await this.companies.update(id, input); return { ok: true }; }
+
+  @Get()
+  list(
+    @Query()
+    query: CompanyListQueryDto,
+  ) {
+    return this.companies.list(query);
+  }
+
+  @Get(':id')
+  get(
+    @Param('id')
+    id: string,
+  ) {
+    return this.companies.getById(id);
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id')
+    id: string,
+    @Body()
+    input: UpdateCompanyDto,
+  ) {
+    await this.companies.update(id, input);
+    return { ok: true };
+  }
 }

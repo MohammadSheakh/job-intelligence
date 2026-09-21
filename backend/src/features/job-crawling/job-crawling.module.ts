@@ -5,5 +5,9 @@ import { AdminCrawlLogsController } from './controllers/admin-crawl-logs.control
 import { AdminJobCatalogService } from './services/admin-job-catalog.service.js';
 import { AdminCrawlLogService } from './services/admin-crawl-log.service.js';
 
-@Module({ imports: [AuthenticationModule], controllers: [AdminJobsController, AdminCrawlLogsController], providers: [AdminJobCatalogService, AdminCrawlLogService] })
+@Module({
+  imports: [AuthenticationModule],
+  controllers: [AdminJobsController, AdminCrawlLogsController],
+  providers: [AdminJobCatalogService, AdminCrawlLogService],
+})
 export class JobCrawlingModule {}

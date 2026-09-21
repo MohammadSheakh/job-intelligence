@@ -11,7 +11,11 @@
     "prisma:db:pull": "prisma db pull --print",
     "test": "jest --runInBand",
     "typecheck:test": "tsc -p tsconfig.test.json",
-    "test:database": "node test/scripts/run-database-tests.mjs"
+    "test:database": "node test/scripts/run-database-tests.mjs",
+    "format": "pnpm --dir .. exec prettier --write backend",
+    "format:check": "pnpm --dir .. exec prettier --check backend",
+    "lint": "pnpm --dir .. exec eslint backend --max-warnings 0",
+    "lint:fix": "pnpm --dir .. exec eslint backend --fix --max-warnings 0"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

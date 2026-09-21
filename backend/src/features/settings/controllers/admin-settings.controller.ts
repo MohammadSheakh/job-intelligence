@@ -7,6 +7,18 @@ import { SettingsService } from '../services/settings.service.js';
 @UseGuards(AdminBasicAuthGuard)
 export class AdminSettingsController {
   constructor(private readonly settings: SettingsService) {}
-  @Get() get() { return this.settings.get(); }
-  @Put() async update(@Body() input: UpdateSettingsDto) { await this.settings.update(input); return { ok: true }; }
+
+  @Get()
+  get() {
+    return this.settings.get();
+  }
+
+  @Put()
+  async update(
+    @Body()
+    input: UpdateSettingsDto,
+  ) {
+    await this.settings.update(input);
+    return { ok: true };
+  }
 }

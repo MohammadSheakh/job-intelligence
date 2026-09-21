@@ -6,5 +6,21 @@ import { CandidateAuthenticationController } from './controllers/candidate-authe
 import { CandidateSessionGuard } from './guards/candidate-session.guard.js';
 import { AdminBasicAuthGuard } from './guards/admin-basic-auth.guard.js';
 
-@Module({ controllers: [CandidateAuthenticationController], providers: [CandidateAuthenticationService, CandidateSessionService, CandidateSessionGuard, CandidatePasswordChangedGuard, AdminBasicAuthGuard], exports: [CandidateAuthenticationService, CandidateSessionService, CandidateSessionGuard, CandidatePasswordChangedGuard, AdminBasicAuthGuard] })
+@Module({
+  controllers: [CandidateAuthenticationController],
+  providers: [
+    CandidateAuthenticationService,
+    CandidateSessionService,
+    CandidateSessionGuard,
+    CandidatePasswordChangedGuard,
+    AdminBasicAuthGuard,
+  ],
+  exports: [
+    CandidateAuthenticationService,
+    CandidateSessionService,
+    CandidateSessionGuard,
+    CandidatePasswordChangedGuard,
+    AdminBasicAuthGuard,
+  ],
+})
 export class AuthenticationModule {}

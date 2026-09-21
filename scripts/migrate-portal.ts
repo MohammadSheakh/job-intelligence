@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { db, closeDb } from '../src/db.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const files = ['006_candidate_portal.sql','007_quick_search.sql'];
+const files = ['006_candidate_portal.sql', '007_quick_search.sql'];
 
 try {
   await db.query('BEGIN');

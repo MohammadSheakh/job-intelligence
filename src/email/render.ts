@@ -26,30 +26,42 @@ function safeUrl(value?: string | null): string | null {
   }
 }
 
-export function renderDigest(candidateName: string, matches: DigestMatch[]): { subject: string; text: string; html: string } {
+export function renderDigest(
+  candidateName: string,
+  matches: DigestMatch[],
+): { subject: string; text: string; html: string } {
   const sorted = [...matches].sort((a, b) => b.result.finalScore - a.result.finalScore);
   const subject = `${sorted.length} new job match${sorted.length === 1 ? '' : 'es'} for you`;
 
-  const textJobs = sorted.map(({ job, result }, index) => {
-    const lines = [
-      `${index + 1}. ${job.title} — ${job.companyName}`,
-      `Match: ${result.finalScore}%`,
-      job.location || job.companyLocation ? `Location: ${job.location ?? job.companyLocation}` : null,
-      job.workMode ? `Work mode: ${job.workMode}` : null,
-      result.matchedSkills.length ? `Matched skills: ${result.matchedSkills.join(', ')}` : null,
-      result.matchedCompanyCategories.length ? `Company context: ${result.matchedCompanyCategories.join(', ')}` : null,
-      result.matchedPreferredCategories.length ? `Preferred categories: ${result.matchedPreferredCategories.join(', ')}` : null,
-      result.reasons.length ? `Why: ${result.reasons.join('; ')}` : null,
-      job.applicationUrl ? `Apply: ${job.applicationUrl}` : null,
-      job.companyWebsiteUrl ? `Company: ${job.companyWebsiteUrl}` : null,
-    ].filter(Boolean);
-    return lines.join('\n');
-  }).join('\n\n');
+  const textJobs = sorted
+    .map(({ job, result }, index) => {
+      const lines = [
+        `${index + 1}. ${job.title} — ${job.companyName}`,
+        `Match: ${result.finalScore}%`,
+        job.location || job.companyLocation
+          ? `Location: ${job.location ?? job.companyLocation}`
+          : null,
+        job.workMode ? `Work mode: ${job.workMode}` : null,
+        result.matchedSkills.length ? `Matched skills: ${result.matchedSkills.join(', ')}` : null,
+        result.matchedCompanyCategories.length
+          ? `Company context: ${result.matchedCompanyCategories.join(', ')}`
+          : null,
+        result.matchedPreferredCategories.length
+          ? `Preferred categories: ${result.matchedPreferredCategories.join(', ')}`
+          : null,
+        result.reasons.length ? `Why: ${result.reasons.join('; ')}` : null,
+        job.applicationUrl ? `Apply: ${job.applicationUrl}` : null,
+        job.companyWebsiteUrl ? `Company: ${job.companyWebsiteUrl}` : null,
+      ].filter(Boolean);
+      return lines.join('\n');
+    })
+    .join('\n\n');
 
-  const cards = sorted.map(({ job, result }) => {
-    const apply = safeUrl(job.applicationUrl);
-    const company = safeUrl(job.companyWebsiteUrl);
-    return `
+  const cards = sorted
+    .map(({ job, result }) => {
+      const apply = safeUrl(job.applicationUrl);
+      const company = safeUrl(job.companyWebsiteUrl);
+      return `
       <div style="border:1px solid #ddd;border-radius:8px;padding:16px;margin:0 0 16px">
         <h2 style="margin:0 0 8px;font-size:18px">${escapeHtml(job.title)}</h2>
         <div><strong>${escapeHtml(job.companyName)}</strong> · ${result.finalScore}% match</div>
@@ -64,7 +76,8 @@ export function renderDigest(candidateName: string, matches: DigestMatch[]): { s
           ${company ? `${apply ? ' · ' : ''}<a href="${escapeHtml(company)}">Company website</a>` : ''}
         </div>
       </div>`;
-  }).join('');
+    })
+    .join('');
 
   const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;line-height:1.5;color:#111">
     <p>Hi ${escapeHtml(candidateName)},</p>

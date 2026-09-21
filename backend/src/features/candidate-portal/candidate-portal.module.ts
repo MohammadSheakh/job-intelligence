@@ -9,5 +9,19 @@ import { CandidateCompanyService } from './services/candidate-company.service.js
 import { CandidateCategoryCatalogController } from './controllers/candidate-category-catalog.controller.js';
 import { CandidateCategoryCatalogService } from './services/candidate-category-catalog.service.js';
 
-@Module({ imports: [AuthenticationModule], controllers: [CandidateProfileController, CandidatePipelineController, CandidateCompanyController, CandidateCategoryCatalogController], providers: [CandidateProfileService, CandidatePipelineService, CandidateCompanyService, CandidateCategoryCatalogService] })
+@Module({
+  imports: [AuthenticationModule],
+  controllers: [
+    CandidateProfileController,
+    CandidatePipelineController,
+    CandidateCompanyController,
+    CandidateCategoryCatalogController,
+  ],
+  providers: [
+    CandidateProfileService,
+    CandidatePipelineService,
+    CandidateCompanyService,
+    CandidateCategoryCatalogService,
+  ],
+})
 export class CandidatePortalModule {}

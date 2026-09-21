@@ -7,10 +7,14 @@ const problems = environmentProblems(mode);
 
 console.log(`Environment check (${mode})`);
 console.log(`- DATABASE_URL: ${env.databaseUrl ? 'set' : 'missing'}`);
-console.log(`- Admin credentials: ${env.adminUsername && env.adminPassword ? 'set' : 'incomplete'}`);
+console.log(
+  `- Admin credentials: ${env.adminUsername && env.adminPassword ? 'set' : 'incomplete'}`,
+);
 console.log(`- Candidate session secret: ${env.candidateSessionSecret ? 'set' : 'missing'}`);
 console.log(`- Default candidate password: ${env.defaultCandidatePassword ? 'set' : 'missing'}`);
-console.log(`- Google OAuth: ${env.googleClientId && env.googleClientSecret ? 'configured' : 'off'}`);
+console.log(
+  `- Google OAuth: ${env.googleClientId && env.googleClientSecret ? 'configured' : 'off'}`,
+);
 console.log(`- AI provider env: ${env.aiModel ? 'configured' : 'off/local optional'}`);
 console.log(`- SMTP env: ${env.smtpUser && env.smtpPass ? 'configured' : 'off'}`);
 

@@ -41,10 +41,16 @@ try {
     `);
 
     // Keep the two verified URL corrections used by the live project.
-    await db.query(`UPDATE companies SET career_url='https://genexinfosys.com/career', updated_at=now() WHERE id='C0019'`);
-    await db.query(`UPDATE companies SET career_url='https://incrosoft.com/careers', updated_at=now() WHERE id='C0027'`);
+    await db.query(
+      `UPDATE companies SET career_url='https://genexinfosys.com/career', updated_at=now() WHERE id='C0019'`,
+    );
+    await db.query(
+      `UPDATE companies SET career_url='https://incrosoft.com/careers', updated_at=now() WHERE id='C0027'`,
+    );
   } else {
-    console.log(`[bootstrap] existing database detected (${companies} companies); data seed skipped`);
+    console.log(
+      `[bootstrap] existing database detected (${companies} companies); data seed skipped`,
+    );
   }
 
   // Re-apply runtime schema after a first seed so optional categories/settings exist.
@@ -52,7 +58,9 @@ try {
 
   const categoryCount = await tableCount('categories');
   const candidateCount = await tableCount('candidates');
-  console.log(`[bootstrap] ready: companies=${await tableCount('companies')} categories=${categoryCount} candidates=${candidateCount}`);
+  console.log(
+    `[bootstrap] ready: companies=${await tableCount('companies')} categories=${categoryCount} candidates=${candidateCount}`,
+  );
 } finally {
   await closeDb();
 }

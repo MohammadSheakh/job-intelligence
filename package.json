@@ -25,20 +25,33 @@
     "docker:bootstrap": "tsx scripts/docker-bootstrap.ts",
     "docker:scheduler": "tsx scripts/docker-scheduler.ts",
     "db:status": "tsx scripts/db-status.ts",
-    "prd:audit": "tsx scripts/prd-audit.ts"
+    "prd:audit": "tsx scripts/prd-audit.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix --max-warnings 0",
+    "check:style": "pnpm format:check && pnpm lint"
   },
   "dependencies": {
     "cheerio": "^1.1.2",
     "csv-parse": "^6.1.0",
     "dotenv": "^17.2.2",
-    "pg": "^8.16.3",
-    "nodemailer": "^7.0.6"
+    "nodemailer": "^7.0.6",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
+    "@eslint/js": "^9",
+    "@next/eslint-plugin-next": "15.5.25",
     "@types/node": "^24.5.2",
+    "@types/nodemailer": "^6.4.19",
     "@types/pg": "^8.15.5",
+    "eslint": "^9",
+    "eslint-config-prettier": "^10",
+    "eslint-plugin-react-hooks": "^5",
+    "globals": "^16",
+    "prettier": "^3",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
-    "@types/nodemailer": "^6.4.19"
+    "typescript-eslint": "^8"
   }
 }

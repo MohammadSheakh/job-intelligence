@@ -46,14 +46,21 @@ export async function exchangeGoogleCode(code: string): Promise<GoogleUser> {
     body,
   });
   if (!tokenResponse.ok) throw new Error(`Google token exchange failed (${tokenResponse.status}).`);
-  const token = await tokenResponse.json() as { access_token?: string };
+  const token = (await tokenResponse.json()) as { access_token?: string };
   if (!token.access_token) throw new Error('Google did not return an access token.');
 
   const profileResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
     headers: { authorization: `Bearer ${token.access_token}` },
   });
-  if (!profileResponse.ok) throw new Error(`Google profile request failed (${profileResponse.status}).`);
-  const profile = await profileResponse.json() as { sub?:string; email?:string; email_verified?:boolean; name?:string };
-  if (!profile.sub || !profile.email || profile.email_verified !== true) throw new Error('Google email is not verified.');
-  return { sub:profile.sub, email:profile.email, emailVerified:true, name:profile.name };
+  if (!profileResponse.ok)
+    throw new Error(`Google profile request failed (${profileResponse.status}).`);
+  const profile = (await profileResponse.json()) as {
+    sub?: string;
+    email?: string;
+    email_verified?: boolean;
+    name?: string;
+  };
+  if (!profile.sub || !profile.email || profile.email_verified !== true)
+    throw new Error('Google email is not verified.');
+  return { sub: profile.sub, email: profile.email, emailVerified: true, name: profile.name };
 }

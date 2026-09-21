@@ -7,5 +7,12 @@ import { AdminCrawlLogService } from '../services/admin-crawl-log.service.js';
 @UseGuards(AdminBasicAuthGuard)
 export class AdminCrawlLogsController {
   constructor(private readonly logs: AdminCrawlLogService) {}
-  @Get() list(@Query() query: CrawlLogListQueryDto) { return this.logs.list(query); }
+
+  @Get()
+  list(
+    @Query()
+    query: CrawlLogListQueryDto,
+  ) {
+    return this.logs.list(query);
+  }
 }

@@ -36,7 +36,9 @@ export function normalizeLocation(value: string | undefined): string | undefined
   return normalized || undefined;
 }
 
-export function createJobHash(job: Pick<CrawledJob, 'companyId' | 'title' | 'location' | 'applicationUrl'>): string {
+export function createJobHash(
+  job: Pick<CrawledJob, 'companyId' | 'title' | 'location' | 'applicationUrl'>,
+): string {
   const payload = [
     job.companyId.toLowerCase(),
     normalizeTitle(job.title).toLowerCase(),

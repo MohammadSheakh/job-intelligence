@@ -6,8 +6,11 @@ export async function recordCrawlLog(input: {
   jobsFound: number;
   error?: string;
 }): Promise<void> {
-  await db.query(`
+  await db.query(
+    `
     INSERT INTO crawl_logs (company_id, success, jobs_found, error)
     VALUES ($1, $2, $3, $4)
-  `, [input.companyId, input.success, input.jobsFound, input.error ?? null]);
+  `,
+    [input.companyId, input.success, input.jobsFound, input.error ?? null],
+  );
 }

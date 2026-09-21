@@ -14,7 +14,8 @@ export async function getCompaniesForDailyCrawl(limit?: number): Promise<Company
     id: string;
     name: string;
     career_url: string;
-  }>(`
+  }>(
+    `
     SELECT id, name, career_url
     FROM companies
     WHERE active = true
@@ -23,7 +24,9 @@ export async function getCompaniesForDailyCrawl(limit?: number): Promise<Company
       AND recommended_action = 'MONITOR_READY'
     ORDER BY COALESCE(last_checked_at, '1970-01-01'::timestamptz) ASC, id ASC
     ${limitClause}
-  `, params);
+  `,
+    params,
+  );
 
   return result.rows.map((row) => ({
     id: row.id,
@@ -33,12 +36,22 @@ export async function getCompaniesForDailyCrawl(limit?: number): Promise<Company
 }
 
 export async function markCompanyChecked(companyId: string): Promise<void> {
-  await db.query('UPDATE companies SET last_checked_at = now(), updated_at = now() WHERE id = $1', [companyId]);
+  await db.query('UPDATE companies SET last_checked_at = now(), updated_at = now() WHERE id = $1', [
+    companyId,
+  ]);
 }
 
-export async function getCompaniesForQuickSearch(candidateId: number, preferredCategories: string | null | undefined, limit: number): Promise<CompanyForCrawl[]> {
-  const categories = (preferredCategories ?? '').split(/[,;|\n]+/).map((x) => x.trim()).filter(Boolean);
-  const result = await db.query<{ id:string; name:string; career_url:string }>(`
+export async function getCompaniesForQuickSearch(
+  candidateId: number,
+  preferredCategories: string | null | undefined,
+  limit: number,
+): Promise<CompanyForCrawl[]> {
+  const categories = (preferredCategories ?? '')
+    .split(/[,;|\n]+/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+  const result = await db.query<{ id: string; name: string; career_url: string }>(
+    `
     SELECT c.id,c.name,c.career_url
     FROM companies c
     WHERE c.active=true
@@ -55,6 +68,8 @@ export async function getCompaniesForQuickSearch(candidateId: number, preferredC
       COALESCE(c.last_checked_at,'1970-01-01'::timestamptz) ASC,
       c.id ASC
     LIMIT $2
-  `, [categories, Math.max(1, Math.min(25, limit))]);
-  return result.rows.map((row) => ({ id:row.id, name:row.name, careerUrl:row.career_url }));
+  `,
+    [categories, Math.max(1, Math.min(25, limit))],
+  );
+  return result.rows.map((row) => ({ id: row.id, name: row.name, careerUrl: row.career_url }));
 }

@@ -16,7 +16,8 @@ export interface SystemSettings {
 export async function getSettings(): Promise<SystemSettings> {
   const result = await db.query<{ key: string; value: string }>('SELECT key, value FROM settings');
   const map = new Map(result.rows.map((row) => [row.key, row.value]));
-  const bool = (key: string, fallback = false) => (map.get(key) ?? String(fallback)).toLowerCase() === 'true';
+  const bool = (key: string, fallback = false) =>
+    (map.get(key) ?? String(fallback)).toLowerCase() === 'true';
   const num = (key: string, fallback: number) => {
     const value = Number(map.get(key));
     return Number.isFinite(value) ? value : fallback;
@@ -51,9 +52,12 @@ const EDITABLE_SETTINGS = new Set([
 
 export async function setSetting(key: string, value: string): Promise<void> {
   if (!EDITABLE_SETTINGS.has(key)) throw new Error(`Unsupported setting: ${key}`);
-  await db.query(`
+  await db.query(
+    `
     INSERT INTO settings(key, value, updated_at)
     VALUES ($1, $2, now())
     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()
-  `, [key, value]);
+  `,
+    [key, value],
+  );
 }

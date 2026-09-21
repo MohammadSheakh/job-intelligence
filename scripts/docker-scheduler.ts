@@ -2,7 +2,9 @@ import 'dotenv/config';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 
-const runOnStart = ['1','true','yes','on'].includes((process.env.RUN_DAILY_ON_START ?? '').toLowerCase());
+const runOnStart = ['1', 'true', 'yes', 'on'].includes(
+  (process.env.RUN_DAILY_ON_START ?? '').toLowerCase(),
+);
 const hour = Math.max(0, Math.min(23, Number(process.env.DAILY_CRAWL_HOUR ?? 6) || 6));
 const minute = Math.max(0, Math.min(59, Number(process.env.DAILY_CRAWL_MINUTE ?? 15) || 15));
 

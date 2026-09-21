@@ -25,7 +25,9 @@ function asNumber(value?: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-const parser = fs.createReadStream(file).pipe(parse({ columns: true, skip_empty_lines: true, bom: true, relax_quotes: true }));
+const parser = fs
+  .createReadStream(file)
+  .pipe(parse({ columns: true, skip_empty_lines: true, bom: true, relax_quotes: true }));
 let imported = 0;
 
 try {
@@ -69,15 +71,33 @@ try {
         recommended_action = EXCLUDED.recommended_action,
         updated_at = now()`,
       [
-        row['Company ID'], row['Company Name'], blankToNull(row['Name Source']), blankToNull(row['Website URL']),
-        blankToNull(row['Career URL']), blankToNull(row['LinkedIn URL']), blankToNull(row['Email']), blankToNull(row['Location']),
-        blankToNull(row['Tech Stack']), asNumber(row['Employee Count Hint']), blankToNull(row['AIUB/Total Hint']),
-        blankToNull(row['Status/Research Hint']), blankToNull(row['Notes']), blankToNull(row['Additional Websites']),
-        blankToNull(row['Additional Career URLs']), blankToNull(row['Additional LinkedIn URLs']), blankToNull(row['Additional Emails']),
-        blankToNull(row['Corporate Domains']), blankToNull(row['Source Rows']), Number(row['Source Row Count'] || 1),
-        asBoolean(row['Needs Manual Review']), blankToNull(row['Review Reasons']), asBoolean(row['Needs Enrichment']),
-        blankToNull(row['Enrichment Reasons']), asBoolean(row['Active']), blankToNull(row['Recommended Action'])
-      ]
+        row['Company ID'],
+        row['Company Name'],
+        blankToNull(row['Name Source']),
+        blankToNull(row['Website URL']),
+        blankToNull(row['Career URL']),
+        blankToNull(row['LinkedIn URL']),
+        blankToNull(row['Email']),
+        blankToNull(row['Location']),
+        blankToNull(row['Tech Stack']),
+        asNumber(row['Employee Count Hint']),
+        blankToNull(row['AIUB/Total Hint']),
+        blankToNull(row['Status/Research Hint']),
+        blankToNull(row['Notes']),
+        blankToNull(row['Additional Websites']),
+        blankToNull(row['Additional Career URLs']),
+        blankToNull(row['Additional LinkedIn URLs']),
+        blankToNull(row['Additional Emails']),
+        blankToNull(row['Corporate Domains']),
+        blankToNull(row['Source Rows']),
+        Number(row['Source Row Count'] || 1),
+        asBoolean(row['Needs Manual Review']),
+        blankToNull(row['Review Reasons']),
+        asBoolean(row['Needs Enrichment']),
+        blankToNull(row['Enrichment Reasons']),
+        asBoolean(row['Active']),
+        blankToNull(row['Recommended Action']),
+      ],
     );
     imported += 1;
   }

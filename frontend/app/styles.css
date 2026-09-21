@@ -1,46 +1,128 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @layer base {
-  :root { @apply bg-slate-50 font-sans text-slate-950; }
-  body { @apply m-0 min-h-screen; }
-  main { @apply mx-auto my-8 w-full max-w-5xl px-4 sm:my-16 sm:px-6; }
-  p { @apply text-slate-600; }
-  h1 { @apply mt-1 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl; }
-  h2 { @apply m-0 text-lg font-semibold text-slate-950; }
-  a { @apply font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-900; }
-  label { @apply mt-4 block text-sm font-semibold text-slate-800; }
-  input, textarea, select { @apply mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-950 shadow-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100; }
-  textarea { @apply min-h-24 resize-y; }
-  button { @apply mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-700 disabled:cursor-wait disabled:opacity-70; }
+  :root {
+    @apply bg-slate-50 font-sans text-slate-950;
+  }
+  body {
+    @apply m-0 min-h-screen;
+  }
+  main {
+    @apply mx-auto my-8 w-full max-w-5xl px-4 sm:my-16 sm:px-6;
+  }
+  p {
+    @apply text-slate-600;
+  }
+  h1 {
+    @apply mt-1 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl;
+  }
+  h2 {
+    @apply m-0 text-lg font-semibold text-slate-950;
+  }
+  a {
+    @apply font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-900;
+  }
+  label {
+    @apply mt-4 block text-sm font-semibold text-slate-800;
+  }
+  input,
+  textarea,
+  select {
+    @apply mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-950 shadow-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100;
+  }
+  textarea {
+    @apply min-h-24 resize-y;
+  }
+  button {
+    @apply mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-700 disabled:cursor-wait disabled:opacity-70;
+  }
 }
 
 @layer components {
-  .auth { @apply max-w-md; }
-  .card { @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7; }
-  .eyebrow { @apply m-0 text-xs font-bold uppercase tracking-[0.12em] text-slate-500; }
-  .muted { @apply text-slate-600; }
-  .error { @apply mt-4 text-sm font-medium text-red-700; }
-  .success { @apply mt-4 text-sm font-medium text-emerald-700; }
-  header { @apply mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between; }
-  nav { @apply flex flex-wrap gap-x-4 gap-y-2 text-sm; }
-  .form-grid { @apply grid gap-1; }
-  .form-grid fieldset { @apply mt-4 rounded-lg border border-slate-200 p-3; }
-  .form-grid legend { @apply px-1 text-sm font-semibold text-slate-800; }
-  .check { @apply mr-4 inline-flex items-center gap-2 text-sm font-normal; }
-  .check input { @apply m-0 size-4; }
-  .check-list { @apply flex flex-wrap; }
-  .search { @apply mb-5 flex flex-col gap-2 sm:flex-row; }
-  .search input, .search button { @apply m-0; }
-  .search button { @apply sm:shrink-0; }
-  .results { @apply grid gap-3; }
-  .company { @apply flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between; }
-  .company-actions { @apply flex flex-wrap items-start gap-3; }
-  .compact-label { @apply m-0 text-xs; }
-  .compact-label select { @apply mt-1 w-auto py-1.5 text-sm; }
-  .tags { @apply mt-2 text-sm; }
-  .status { @apply rounded-full bg-slate-100 px-2 py-1 text-xs font-bold tracking-wide text-slate-700; }
-  .pipeline { @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-3; }
-  .pipeline > div:first-child, .pipeline label:last-of-type { @apply sm:col-span-2 lg:col-span-3; }
-  .pipeline label { @apply m-0; }
-  .secondary { @apply ml-2 bg-slate-100 text-slate-950 hover:bg-slate-200; }
+  .auth {
+    @apply max-w-md;
+  }
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7;
+  }
+  .eyebrow {
+    @apply m-0 text-xs font-bold uppercase tracking-[0.12em] text-slate-500;
+  }
+  .muted {
+    @apply text-slate-600;
+  }
+  .error {
+    @apply mt-4 text-sm font-medium text-red-700;
+  }
+  .success {
+    @apply mt-4 text-sm font-medium text-emerald-700;
+  }
+  header {
+    @apply mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between;
+  }
+  nav {
+    @apply flex flex-wrap gap-x-4 gap-y-2 text-sm;
+  }
+  .form-grid {
+    @apply grid gap-1;
+  }
+  .form-grid fieldset {
+    @apply mt-4 rounded-lg border border-slate-200 p-3;
+  }
+  .form-grid legend {
+    @apply px-1 text-sm font-semibold text-slate-800;
+  }
+  .check {
+    @apply mr-4 inline-flex items-center gap-2 text-sm font-normal;
+  }
+  .check input {
+    @apply m-0 size-4;
+  }
+  .check-list {
+    @apply flex flex-wrap;
+  }
+  .search {
+    @apply mb-5 flex flex-col gap-2 sm:flex-row;
+  }
+  .search input,
+  .search button {
+    @apply m-0;
+  }
+  .search button {
+    @apply sm:shrink-0;
+  }
+  .results {
+    @apply grid gap-3;
+  }
+  .company {
+    @apply flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between;
+  }
+  .company-actions {
+    @apply flex flex-wrap items-start gap-3;
+  }
+  .compact-label {
+    @apply m-0 text-xs;
+  }
+  .compact-label select {
+    @apply mt-1 w-auto py-1.5 text-sm;
+  }
+  .tags {
+    @apply mt-2 text-sm;
+  }
+  .status {
+    @apply rounded-full bg-slate-100 px-2 py-1 text-xs font-bold tracking-wide text-slate-700;
+  }
+  .pipeline {
+    @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-3;
+  }
+  .pipeline > div:first-child,
+  .pipeline label:last-of-type {
+    @apply sm:col-span-2 lg:col-span-3;
+  }
+  .pipeline label {
+    @apply m-0;
+  }
+  .secondary {
+    @apply ml-2 bg-slate-100 text-slate-950 hover:bg-slate-200;
+  }
 }

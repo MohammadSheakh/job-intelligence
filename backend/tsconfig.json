@@ -1,9 +1,15 @@
 {
   "compilerOptions": {
-    "module": "nodenext", "moduleResolution": "nodenext", "target": "ES2023",
-    "strict": true, "esModuleInterop": true, "skipLibCheck": true,
-    "emitDecoratorMetadata": true, "experimentalDecorators": true,
-    "outDir": "dist", "baseUrl": ".",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "ES2023",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "outDir": "dist",
+    "baseUrl": ".",
     "paths": { "@app/common": ["libs/common/src"], "@app/database": ["libs/database/src"] }
   },
   "include": ["src/**/*.ts", "libs/**/*.ts"]

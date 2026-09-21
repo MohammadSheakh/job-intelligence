@@ -2,7 +2,8 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 
 function secret(): string {
   const value = process.env.CANDIDATE_SESSION_SECRET?.trim();
-  if (!value || value.length < 32) throw new Error('CANDIDATE_SESSION_SECRET must be set to at least 32 characters.');
+  if (!value || value.length < 32)
+    throw new Error('CANDIDATE_SESSION_SECRET must be set to at least 32 characters.');
   return value;
 }
 
@@ -27,7 +28,8 @@ export function verifySignedSession(token: string): number | null {
     if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) return null;
     const exp = Number(expRaw);
     const id = Number(idRaw);
-    if (!Number.isInteger(id) || id <= 0 || !Number.isFinite(exp) || exp * 1000 <= Date.now()) return null;
+    if (!Number.isInteger(id) || id <= 0 || !Number.isFinite(exp) || exp * 1000 <= Date.now())
+      return null;
     return id;
   } catch {
     return null;

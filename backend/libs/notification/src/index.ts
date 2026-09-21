@@ -1,1 +1,4 @@
-export interface NotificationDeliveryResult { accepted: boolean; providerMessageId?: string; }
+export interface NotificationDeliveryResult {
+  accepted: boolean;
+  providerMessageId?: string;
+}

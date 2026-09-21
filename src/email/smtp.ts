@@ -16,9 +16,17 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
   const secure = (process.env.SMTP_SECURE ?? 'false').toLowerCase() === 'true';
 
   if (!host || !user || !pass || !from) {
-    throw new Error('SMTP_HOST, SMTP_USER, SMTP_PASS and EMAIL_FROM/SMTP_USER are required when email is enabled');
+    throw new Error(
+      'SMTP_HOST, SMTP_USER, SMTP_PASS and EMAIL_FROM/SMTP_USER are required when email is enabled',
+    );
   }
 
   const transport = nodemailer.createTransport({ host, port, secure, auth: { user, pass } });
-  await transport.sendMail({ from, to: input.to, subject: input.subject, text: input.text, html: input.html });
+  await transport.sendMail({
+    from,
+    to: input.to,
+    subject: input.subject,
+    text: input.text,
+    html: input.html,
+  });
 }

@@ -1,4 +1,10 @@
-export interface AppConfig { apiPort: number; cookieSecure: boolean; adminUsername: string; adminPassword: string; defaultCandidatePassword: string; }
+export interface AppConfig {
+  apiPort: number;
+  cookieSecure: boolean;
+  adminUsername: string;
+  adminPassword: string;
+  defaultCandidatePassword: string;
+}
 
 export function appConfig(): AppConfig {
   return {

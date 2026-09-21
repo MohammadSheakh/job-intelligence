@@ -1,6 +1,6 @@
 # Architecture migration status
 
-**Last updated:** 2026-09-20
+**Last updated:** 2026-09-21
 **Status:** In progress — candidate core flows and selected admin APIs are implemented; candidate core flows and the implemented admin APIs have regression coverage against disposable local PostgreSQL.
 **Overall progress:** Tracked by the completed and remaining milestones below; no weighted completion percentage is defined.
 
@@ -124,6 +124,21 @@ code or Prisma platform placeholders belong in the replacement.
 - All 65 tests, backend source/test typechecks, and the Nest build passed.
   This does not establish exhaustive feature parity, browser behavior, Neon
   runtime behavior, or production readiness.
+
+## Code review tooling
+
+- Root Prettier, ESLint, and EditorConfig cover the legacy application, backend,
+  frontend, tests, and maintained scripts/configuration. Source has been expanded
+  into consistent multiline formatting, including Nest DTO decorators.
+- Root `pnpm check:style` enforces formatting and lint with zero warnings; backend
+  and frontend packages expose scoped commands using the root tool installation.
+- VS Code recommendations/settings and the Code style CI workflow keep new
+  changes consistent. Formatting excludes generated output, data/SQL assets,
+  bundled skills, and embedded template contents.
+- Verified formatting and lint with zero warnings, all 65 backend tests,
+  backend source/test typechecks and build, and frontend typecheck/build.
+  The previously documented legacy root typecheck errors remain; this cleanup
+  does not change those legacy runtime/type compatibility issues.
 
 ## In progress / next verification work
 

@@ -18,14 +18,20 @@ try {
   }
 
   if (!settings.emailEnabled) {
-    console.log(JSON.stringify({
-      emailEnabled: false,
-      message: 'Email is disabled in settings; no notifications were sent or recorded.',
-      candidateCount: found.candidateCount,
-      openJobCount: found.openJobCount,
-      qualifyingMatchCount: found.matches.length,
-      digestCount: groups.size,
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          emailEnabled: false,
+          message: 'Email is disabled in settings; no notifications were sent or recorded.',
+          candidateCount: found.candidateCount,
+          openJobCount: found.openJobCount,
+          qualifyingMatchCount: found.matches.length,
+          digestCount: groups.size,
+        },
+        null,
+        2,
+      ),
+    );
   } else {
     let sentDigests = 0;
     let sentJobNotifications = 0;
@@ -40,7 +46,9 @@ try {
         sentJobNotifications += 1;
       }
       sentDigests += 1;
-      console.log(JSON.stringify({ candidateId: candidate.id, email: candidate.email, jobs: matches.length }));
+      console.log(
+        JSON.stringify({ candidateId: candidate.id, email: candidate.email, jobs: matches.length }),
+      );
     }
 
     console.log(JSON.stringify({ summary: { sentDigests, sentJobNotifications } }, null, 2));

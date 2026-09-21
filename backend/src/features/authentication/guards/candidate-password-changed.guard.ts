@@ -7,7 +7,10 @@ export class CandidatePasswordChangedGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const { candidate } = context.switchToHttp().getRequest<CandidateRequest>();
     if (candidate.mustChangePassword) {
-      throw new ForbiddenException({ code: 'PASSWORD_CHANGE_REQUIRED', message: 'Change your password before continuing.' });
+      throw new ForbiddenException({
+        code: 'PASSWORD_CHANGE_REQUIRED',
+        message: 'Change your password before continuing.',
+      });
     }
     return true;
   }

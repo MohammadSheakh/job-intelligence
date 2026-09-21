@@ -18,7 +18,13 @@ try {
     ORDER BY id
     LIMIT 5
   `);
-  console.log(JSON.stringify({ counts: counts.rows[0], settings: settings.rows, sample: sample.rows }, null, 2));
+  console.log(
+    JSON.stringify(
+      { counts: counts.rows[0], settings: settings.rows, sample: sample.rows },
+      null,
+      2,
+    ),
+  );
 } finally {
   await closeDb();
 }

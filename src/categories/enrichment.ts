@@ -85,7 +85,8 @@ export function suggestCategories(company: EnrichmentCompany): CategorySuggestio
   const suggestions = new Map<string, CategorySuggestion>();
   const add = (name: string, confidence: number, reason: string) => {
     const current = suggestions.get(name);
-    if (!current || confidence > current.confidence) suggestions.set(name, { name, confidence, reason });
+    if (!current || confidence > current.confidence)
+      suggestions.set(name, { name, confidence, reason });
   };
 
   const exact = EXACT_COMPANY_RULES[normalizedName(company.name)];
@@ -101,9 +102,14 @@ export function suggestCategories(company: EnrichmentCompany): CategorySuggestio
   ].join(' | ');
 
   // Existing research text is strong enough for explicit technology/domain words.
-  for (const [pattern, category] of TECHNOLOGY_RULES) if (pattern.test(text)) add(category, 0.92, `explicit keyword: ${pattern.source}`);
-  for (const [pattern, category] of DOMAIN_RULES) if (pattern.test(text)) add(category, 0.88, `explicit domain keyword: ${pattern.source}`);
-  for (const [pattern, category] of SECTOR_RULES) if (pattern.test(text)) add(category, 0.86, `explicit sector keyword: ${pattern.source}`);
+  for (const [pattern, category] of TECHNOLOGY_RULES)
+    if (pattern.test(text)) add(category, 0.92, `explicit keyword: ${pattern.source}`);
+  for (const [pattern, category] of DOMAIN_RULES)
+    if (pattern.test(text)) add(category, 0.88, `explicit domain keyword: ${pattern.source}`);
+  for (const [pattern, category] of SECTOR_RULES)
+    if (pattern.test(text)) add(category, 0.86, `explicit sector keyword: ${pattern.source}`);
 
-  return [...suggestions.values()].sort((a, b) => b.confidence - a.confidence || a.name.localeCompare(b.name));
+  return [...suggestions.values()].sort(
+    (a, b) => b.confidence - a.confidence || a.name.localeCompare(b.name),
+  );
 }

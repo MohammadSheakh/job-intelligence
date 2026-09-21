@@ -37,7 +37,8 @@ for (const file of [
   'switch-db.sh',
   'switch-db.cmd',
   'src/ui/ferio.ts',
-]) requireFile(file);
+])
+  requireFile(file);
 
 requireText('sql/008_runtime_schema.sql', [
   'candidate_auth',
@@ -68,7 +69,8 @@ requireText('IMPLEMENTATION_CHECKLIST.md', ['[x]', '[~]', '[ ]']);
 
 const ferio = read('src/ui/ferio.ts').toLowerCase();
 for (const prohibited of ['linear-gradient(', 'radial-gradient(', 'backdrop-filter:']) {
-  if (ferio.includes(prohibited)) failures.push(`Ferio layer contains prohibited decorative styling: ${prohibited}`);
+  if (ferio.includes(prohibited))
+    failures.push(`Ferio layer contains prohibited decorative styling: ${prohibited}`);
   else passes.push(`Ferio layer excludes ${prohibited}`);
 }
 

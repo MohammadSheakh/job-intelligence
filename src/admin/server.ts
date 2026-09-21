@@ -46,7 +46,11 @@ function fmtDate(value: Date | string | null | undefined): string {
   if (Number.isNaN(date.getTime())) return '—';
   return new Intl.DateTimeFormat('en-BD', {
     timeZone: 'Asia/Dhaka',
-    year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit',
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(date);
 }
 
@@ -94,7 +98,10 @@ ${FERIO_CSS}
 }
 
 function send(res: ServerResponse, status: number, html: string): void {
-  res.writeHead(status, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+  res.writeHead(status, {
+    'content-type': 'text/html; charset=utf-8',
+    'cache-control': 'no-store',
+  });
   res.end(html);
 }
 
@@ -114,7 +121,13 @@ function pageNumber(url: URL): number {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
 }
 
-function pager(path: string, page: number, pageSize: number, total: number, params: Record<string, string | undefined>): string {
+function pager(
+  path: string,
+  page: number,
+  pageSize: number,
+  total: number,
+  params: Record<string, string | undefined>,
+): string {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const makeUrl = (target: number) => {
     const search = new URLSearchParams();
@@ -126,7 +139,11 @@ function pager(path: string, page: number, pageSize: number, total: number, para
 }
 
 async function dashboard(res: ServerResponse): Promise<void> {
-  const [stats, settings, logs] = await Promise.all([getDashboardStats(), getSettings(), getRecentCrawlLogs(8)]);
+  const [stats, settings, logs] = await Promise.all([
+    getDashboardStats(),
+    getSettings(),
+    getRecentCrawlLogs(8),
+  ]);
   const body = `<div class="top"><div><h1>Dashboard</h1><div class="muted">Live Neon-backed MVP status</div></div></div>
   <div class="grid dashboard-grid">
     <div class="card"><div class="micro">Companies</div><div class="metric">${stats.companies}</div></div>
@@ -150,8 +167,13 @@ async function companiesPage(url: URL, res: ServerResponse): Promise<void> {
   const action = url.searchParams.get('action') ?? '';
   const category = url.searchParams.get('category') ?? '';
   const pageSize = 50;
-  const [data, categories] = await Promise.all([listCompanies({ search, action, category, page, pageSize }), listCategories()]);
-  const rows = data.rows.map((company) => `<tr>
+  const [data, categories] = await Promise.all([
+    listCompanies({ search, action, category, page, pageSize }),
+    listCategories(),
+  ]);
+  const rows = data.rows
+    .map(
+      (company) => `<tr>
     <td><a href="/companies/${encodeURIComponent(company.id)}"><strong>${esc(company.name)}</strong></a><div class="muted code">${esc(company.websiteUrl ?? '')}</div></td>
     <td>${esc(company.location ?? '—')}</td>
     <td><div class="chips">${company.categories.length ? company.categories.map((name) => `<span class="chip">${esc(name)}</span>`).join('') : '—'}</div></td>
@@ -159,8 +181,15 @@ async function companiesPage(url: URL, res: ServerResponse): Promise<void> {
     <td>${company.recommendedAction === 'NO_HIRING_PAGE_FOUND' ? '<span class="pill warn">NHPF</span>' : esc(company.recommendedAction ?? '—')}</td>
     <td>${company.active ? '<span class="pill ok">Active</span>' : '<span class="pill">Disabled</span>'}${company.needsManualReview ? ' <span class="pill warn">Review</span>' : ''}</td>
     <td>${esc(fmtDate(company.lastCheckedAt))}</td>
-  </tr>`).join('');
-  const categoryOptions = categories.map((c) => `<option value="${esc(c.name)}" ${selected(category, c.name)}>${esc(c.name)} (${c.companyCount})</option>`).join('');
+  </tr>`,
+    )
+    .join('');
+  const categoryOptions = categories
+    .map(
+      (c) =>
+        `<option value="${esc(c.name)}" ${selected(category, c.name)}>${esc(c.name)} (${c.companyCount})</option>`,
+    )
+    .join('');
   const body = `<div class="top"><div><h1>Companies</h1><div class="muted">Research data, categories and crawler targets</div></div></div>
   <form class="toolbar" method="get"><div class="field"><label>Search<input class="input" name="q" value="${esc(search)}" placeholder="Company, domain, location" /></label></div><div class="field"><label>Category<select name="category"><option value="">All categories</option>${categoryOptions}</select></label></div><div class="field"><label>Action<select name="action"><option value="">All</option><option ${selected(action, 'MONITOR_READY')}>MONITOR_READY</option><option ${selected(action, 'FIND_CAREER_PAGE')}>FIND_CAREER_PAGE</option><option ${selected(action, 'NO_HIRING_PAGE_FOUND')}>NO_HIRING_PAGE_FOUND</option><option ${selected(action, 'ENRICH_FROM_LINKEDIN')}>ENRICH_FROM_LINKEDIN</option><option ${selected(action, 'MANUAL_REVIEW')}>MANUAL_REVIEW</option></select></label></div><button class="btn">Filter</button></form>
   <div class="table-wrap">${rows ? `<table><thead><tr><th>Company</th><th>Location</th><th>Categories</th><th>Career</th><th>Action</th><th>Status</th><th>Last checked</th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="empty">No companies found.</div>'}</div>
@@ -170,7 +199,8 @@ async function companiesPage(url: URL, res: ServerResponse): Promise<void> {
 
 async function companyEditPage(id: string, res: ServerResponse): Promise<void> {
   const [company, categories] = await Promise.all([getCompanyById(id), listCategories()]);
-  if (!company) return send(res, 404, layout('Not found', '<div class="empty">Company not found.</div>'));
+  if (!company)
+    return send(res, 404, layout('Not found', '<div class="empty">Company not found.</div>'));
   const selectedCategories = new Set(company.categories);
   const grouped = new Map<string, typeof categories>();
   for (const category of categories) {
@@ -179,11 +209,13 @@ async function companyEditPage(id: string, res: ServerResponse): Promise<void> {
     list.push(category);
     grouped.set(category.type, list);
   }
-  const categoryBoxes = ['technology','domain','sector','other'].map((type) => {
-    const items = grouped.get(type) ?? [];
-    if (!items.length) return '';
-    return `<div class="category-box"><h3>${esc(type[0].toUpperCase() + type.slice(1))}</h3><div class="check-list">${items.map((cat) => `<label><input type="checkbox" name="category" value="${esc(cat.name)}" ${checked(selectedCategories.has(cat.name))}/> ${esc(cat.name)}</label>`).join('')}</div></div>`;
-  }).join('');
+  const categoryBoxes = ['technology', 'domain', 'sector', 'other']
+    .map((type) => {
+      const items = grouped.get(type) ?? [];
+      if (!items.length) return '';
+      return `<div class="category-box"><h3>${esc(type[0].toUpperCase() + type.slice(1))}</h3><div class="check-list">${items.map((cat) => `<label><input type="checkbox" name="category" value="${esc(cat.name)}" ${checked(selectedCategories.has(cat.name))}/> ${esc(cat.name)}</label>`).join('')}</div></div>`;
+    })
+    .join('');
   const body = `<div class="top"><div><h1>Edit company</h1><div class="muted code">${esc(company.id)}</div></div><a class="btn secondary" href="/companies">Back</a></div>
   ${company.recommendedAction === 'NO_HIRING_PAGE_FOUND' ? '<div class="notice"><strong>NHPF:</strong> No Hiring Page Found. This company is excluded from the daily career-page crawler until a real hiring page is added.</div>' : ''}
   <form class="form-card" method="post"><div class="form-grid">
@@ -205,12 +237,27 @@ async function companyEditPage(id: string, res: ServerResponse): Promise<void> {
 
 async function categoriesPage(res: ServerResponse, notice = ''): Promise<void> {
   const categories = await listCategories();
-  const groups = ['technology','domain','sector','other'].map((type) => {
-    const rows = categories.filter((c) => c.type === type).map((c) => `<tr><td><a href="/companies?category=${encodeURIComponent(c.name)}">${esc(c.name)}</a></td><td>${c.companyCount}</td></tr>`).join('');
-    return `<div class="section"><h2>${esc(type[0].toUpperCase() + type.slice(1))}</h2><div class="table-wrap"><table><thead><tr><th>Category</th><th>Companies</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
-  }).join('');
+  const groups = ['technology', 'domain', 'sector', 'other']
+    .map((type) => {
+      const rows = categories
+        .filter((c) => c.type === type)
+        .map(
+          (c) =>
+            `<tr><td><a href="/companies?category=${encodeURIComponent(c.name)}">${esc(c.name)}</a></td><td>${c.companyCount}</td></tr>`,
+        )
+        .join('');
+      return `<div class="section"><h2>${esc(type[0].toUpperCase() + type.slice(1))}</h2><div class="table-wrap"><table><thead><tr><th>Category</th><th>Companies</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    })
+    .join('');
   const form = `<form class="form-card" method="post" action="/categories"><div class="form-grid"><label>New category<input class="input" required name="name" placeholder="e.g. Generative AI" /></label><label>Type<select name="type"><option value="technology">Technology</option><option value="domain">Domain</option><option value="sector">Sector</option><option value="other">Other</option></select></label></div><div class="actions"><button class="btn">Add category</button></div></form>`;
-  send(res, 200, layout('Categories', `<div class="top"><div><h1>Categories</h1><div class="muted">Technology, domain and sector classification</div></div></div>${notice ? `<div class="notice">${esc(notice)}</div>` : ''}${form}${groups}`));
+  send(
+    res,
+    200,
+    layout(
+      'Categories',
+      `<div class="top"><div><h1>Categories</h1><div class="muted">Technology, domain and sector classification</div></div></div>${notice ? `<div class="notice">${esc(notice)}</div>` : ''}${form}${groups}`,
+    ),
+  );
 }
 
 async function jobsPage(url: URL, res: ServerResponse): Promise<void> {
@@ -219,23 +266,43 @@ async function jobsPage(url: URL, res: ServerResponse): Promise<void> {
   const status = url.searchParams.get('status') ?? '';
   const pageSize = 50;
   const data = await listJobs({ search, status, page, pageSize });
-  const rows = data.rows.map((job) => `<tr><td><strong>${esc(job.title)}</strong><div class="muted">${esc(job.companyName)}</div>${job.companyCategories.length ? `<div class="chips" style="margin-top:6px">${job.companyCategories.map((name) => `<span class="chip">${esc(name)}</span>`).join('')}</div>` : ''}</td><td>${esc(job.location ?? '—')}</td><td>${esc(job.workMode ?? '—')}</td><td>${job.status === 'OPEN' ? '<span class="pill ok">OPEN</span>' : '<span class="pill">CLOSED</span>'}</td><td>${esc(fmtDate(job.firstSeenAt))}</td><td>${job.applicationUrl ? `<a href="${esc(job.applicationUrl)}" target="_blank" rel="noreferrer">Apply</a>` : '—'}</td></tr>`).join('');
+  const rows = data.rows
+    .map(
+      (job) =>
+        `<tr><td><strong>${esc(job.title)}</strong><div class="muted">${esc(job.companyName)}</div>${job.companyCategories.length ? `<div class="chips" style="margin-top:6px">${job.companyCategories.map((name) => `<span class="chip">${esc(name)}</span>`).join('')}</div>` : ''}</td><td>${esc(job.location ?? '—')}</td><td>${esc(job.workMode ?? '—')}</td><td>${job.status === 'OPEN' ? '<span class="pill ok">OPEN</span>' : '<span class="pill">CLOSED</span>'}</td><td>${esc(fmtDate(job.firstSeenAt))}</td><td>${job.applicationUrl ? `<a href="${esc(job.applicationUrl)}" target="_blank" rel="noreferrer">Apply</a>` : '—'}</td></tr>`,
+    )
+    .join('');
   const body = `<div class="top"><div><h1>Jobs</h1><div class="muted">Discovered and deduplicated openings</div></div></div>
   <form class="toolbar" method="get"><div class="field"><label>Search<input class="input" name="q" value="${esc(search)}" placeholder="Job, company, location" /></label></div><div class="field"><label>Status<select name="status"><option value="">All</option><option ${selected(status, 'OPEN')}>OPEN</option><option ${selected(status, 'CLOSED')}>CLOSED</option></select></label></div><button class="btn">Filter</button></form>
   <div class="table-wrap">${rows ? `<table><thead><tr><th>Job</th><th>Location</th><th>Mode</th><th>Status</th><th>First seen</th><th>Link</th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="empty">No jobs yet. Run the crawler first.</div>'}</div>${pager('/jobs', page, pageSize, data.total, { q: search, status })}`;
   send(res, 200, layout('Jobs', body));
 }
 
-function candidateForm(candidate: Awaited<ReturnType<typeof getCandidateById>> | null | undefined, categories: Awaited<ReturnType<typeof listCategories>>): string {
+function candidateForm(
+  candidate: Awaited<ReturnType<typeof getCandidateById>> | null | undefined,
+  categories: Awaited<ReturnType<typeof listCategories>>,
+): string {
   const c = candidate ?? null;
-  const preferredSet = new Set((c?.preferredCategories ?? '').split(',').map((x) => x.trim()).filter(Boolean));
-  const excludedSet = new Set((c?.excludedCategories ?? '').split(',').map((x) => x.trim()).filter(Boolean));
+  const preferredSet = new Set(
+    (c?.preferredCategories ?? '')
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean),
+  );
+  const excludedSet = new Set(
+    (c?.excludedCategories ?? '')
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean),
+  );
   const relevant = categories.filter((cat) => cat.name !== 'Other');
-  const categoryBoxes = ['technology','domain','sector','other'].map((type) => {
-    const items = relevant.filter((cat) => cat.type === type);
-    if (!items.length) return '';
-    return `<div class="category-box"><h3>${esc(type[0].toUpperCase() + type.slice(1))}</h3><div class="check-list">${items.map((cat) => `<div style="width:100%;display:flex;justify-content:space-between;gap:8px"><span>${esc(cat.name)}</span><span><label><input type="checkbox" name="preferred_category" value="${esc(cat.name)}" ${checked(preferredSet.has(cat.name))}/> Prefer</label> <label><input type="checkbox" name="excluded_category" value="${esc(cat.name)}" ${checked(excludedSet.has(cat.name))}/> Exclude</label></span></div>`).join('')}</div></div>`;
-  }).join('');
+  const categoryBoxes = ['technology', 'domain', 'sector', 'other']
+    .map((type) => {
+      const items = relevant.filter((cat) => cat.type === type);
+      if (!items.length) return '';
+      return `<div class="category-box"><h3>${esc(type[0].toUpperCase() + type.slice(1))}</h3><div class="check-list">${items.map((cat) => `<div style="width:100%;display:flex;justify-content:space-between;gap:8px"><span>${esc(cat.name)}</span><span><label><input type="checkbox" name="preferred_category" value="${esc(cat.name)}" ${checked(preferredSet.has(cat.name))}/> Prefer</label> <label><input type="checkbox" name="excluded_category" value="${esc(cat.name)}" ${checked(excludedSet.has(cat.name))}/> Exclude</label></span></div>`).join('')}</div></div>`;
+    })
+    .join('');
   return `<form class="form-card" method="post" action="/candidates/save"><input type="hidden" name="id" value="${esc(c?.id ?? '')}" /><div class="form-grid">
   <label>Name<input class="input" required name="name" value="${esc(c?.name ?? '')}" /></label>
   <label>Email<input class="input" required type="email" name="email" value="${esc(c?.email ?? '')}" /></label>
@@ -254,8 +321,31 @@ function candidateForm(candidate: Awaited<ReturnType<typeof getCandidateById>> |
 
 async function candidatesPage(url: URL, res: ServerResponse): Promise<void> {
   const editId = Number(url.searchParams.get('edit') ?? '0');
-  const [candidates, editCandidate, categories] = await Promise.all([listCandidates(), editId > 0 ? getCandidateById(editId) : Promise.resolve(null), listCategories()]);
-  const rows = candidates.map((c) => `<tr><td><strong>${esc(c.name)}</strong><div class="muted">${esc(c.email)}</div></td><td>${esc(c.expertise ?? '—')}</td><td>${esc(c.skills ?? '—')}</td><td><div>${esc(c.preferredLocations ?? '—')}</div>${c.preferredCategories ? `<div class="chips" style="margin-top:6px">${c.preferredCategories.split(',').map((x) => `<span class="chip ok">${esc(x.trim())}</span>`).join('')}</div>` : ''}</td><td><div>${esc(c.excludedLocations ?? '—')}</div>${c.excludedCategories ? `<div class="chips" style="margin-top:6px">${c.excludedCategories.split(',').map((x) => `<span class="chip bad">${esc(x.trim())}</span>`).join('')}</div>` : ''}</td><td>${c.minimumMatchScore}%</td><td><div class="chips">${c.hasPassword ? '<span class="chip ok">Password</span>' : ''}${c.hasGoogle ? '<span class="chip ok">Google</span>' : ''}${!c.hasPassword && !c.hasGoogle ? '<span class="muted">Not enabled</span>' : ''}</div></td><td>${c.active ? '<span class="pill ok">Active</span>' : '<span class="pill">Disabled</span>'}</td><td><a href="/candidates?edit=${c.id}">Edit</a></td></tr>`).join('');
+  const [candidates, editCandidate, categories] = await Promise.all([
+    listCandidates(),
+    editId > 0 ? getCandidateById(editId) : Promise.resolve(null),
+    listCategories(),
+  ]);
+  const rows = candidates
+    .map(
+      (c) =>
+        `<tr><td><strong>${esc(c.name)}</strong><div class="muted">${esc(c.email)}</div></td><td>${esc(c.expertise ?? '—')}</td><td>${esc(c.skills ?? '—')}</td><td><div>${esc(c.preferredLocations ?? '—')}</div>${
+          c.preferredCategories
+            ? `<div class="chips" style="margin-top:6px">${c.preferredCategories
+                .split(',')
+                .map((x) => `<span class="chip ok">${esc(x.trim())}</span>`)
+                .join('')}</div>`
+            : ''
+        }</td><td><div>${esc(c.excludedLocations ?? '—')}</div>${
+          c.excludedCategories
+            ? `<div class="chips" style="margin-top:6px">${c.excludedCategories
+                .split(',')
+                .map((x) => `<span class="chip bad">${esc(x.trim())}</span>`)
+                .join('')}</div>`
+            : ''
+        }</td><td>${c.minimumMatchScore}%</td><td><div class="chips">${c.hasPassword ? '<span class="chip ok">Password</span>' : ''}${c.hasGoogle ? '<span class="chip ok">Google</span>' : ''}${!c.hasPassword && !c.hasGoogle ? '<span class="muted">Not enabled</span>' : ''}</div></td><td>${c.active ? '<span class="pill ok">Active</span>' : '<span class="pill">Disabled</span>'}</td><td><a href="/candidates?edit=${c.id}">Edit</a></td></tr>`,
+    )
+    .join('');
   const body = `<div class="top"><div><h1>Candidates</h1><div class="muted">Profiles used by the matching engine</div></div></div>
   ${candidateForm(editCandidate, categories)}
   <div class="section"><h2>Candidate list</h2><div class="table-wrap">${rows ? `<table><thead><tr><th>Candidate</th><th>Expertise</th><th>Skills</th><th>Preferred</th><th>Excluded</th><th>Threshold</th><th>Auth</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="empty">No candidates yet.</div>'}</div></div>`;
@@ -266,7 +356,12 @@ async function crawlLogsPage(url: URL, res: ServerResponse): Promise<void> {
   const page = pageNumber(url);
   const pageSize = 100;
   const data = await listCrawlLogs(page, pageSize);
-  const rows = data.rows.map((log) => `<tr><td>${esc(log.companyName)}</td><td>${esc(fmtDate(log.checkedAt))}</td><td>${log.success ? '<span class="pill ok">Success</span>' : '<span class="pill bad">Failed</span>'}</td><td>${log.jobsFound}</td><td>${esc(log.error ?? '—')}</td></tr>`).join('');
+  const rows = data.rows
+    .map(
+      (log) =>
+        `<tr><td>${esc(log.companyName)}</td><td>${esc(fmtDate(log.checkedAt))}</td><td>${log.success ? '<span class="pill ok">Success</span>' : '<span class="pill bad">Failed</span>'}</td><td>${log.jobsFound}</td><td>${esc(log.error ?? '—')}</td></tr>`,
+    )
+    .join('');
   const body = `<div class="top"><div><h1>Crawler</h1><div class="muted">Recent career-page checks</div></div></div><div class="notice">This page is monitoring only. Run the crawler through the scheduled worker or <span class="code">npm run crawl:daily</span>.</div><div class="table-wrap">${rows ? `<table><thead><tr><th>Company</th><th>Checked</th><th>Status</th><th>Jobs found</th><th>Error</th></tr></thead><tbody>${rows}</tbody></table>` : '<div class="empty">No crawl logs yet.</div>'}</div>${pager('/crawl-logs', page, pageSize, data.total, {})}`;
   send(res, 200, layout('Crawler', body));
 }
@@ -293,11 +388,25 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   if (req.method === 'GET' && url.pathname === '/health') {
     try {
       await db.query('SELECT 1');
-      res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
-      return res.end(JSON.stringify({ status: 'ok', database: 'ok', databaseMode: env.databaseMode }));
+      res.writeHead(200, {
+        'content-type': 'application/json; charset=utf-8',
+        'cache-control': 'no-store',
+      });
+      return res.end(
+        JSON.stringify({ status: 'ok', database: 'ok', databaseMode: env.databaseMode }),
+      );
     } catch {
-      res.writeHead(503, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
-      return res.end(JSON.stringify({ status: 'unavailable', database: 'error', databaseMode: env.databaseMode }));
+      res.writeHead(503, {
+        'content-type': 'application/json; charset=utf-8',
+        'cache-control': 'no-store',
+      });
+      return res.end(
+        JSON.stringify({
+          status: 'unavailable',
+          database: 'error',
+          databaseMode: env.databaseMode,
+        }),
+      );
     }
   }
   if (url.pathname.startsWith('/portal') || url.pathname.startsWith('/auth/google')) {
@@ -305,7 +414,10 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     return;
   }
   if (!authOk(req)) {
-    res.writeHead(401, { 'www-authenticate': 'Basic realm="Job Intelligence Admin"', 'content-type': 'text/plain; charset=utf-8' });
+    res.writeHead(401, {
+      'www-authenticate': 'Basic realm="Job Intelligence Admin"',
+      'content-type': 'text/plain; charset=utf-8',
+    });
     return res.end('Authentication required');
   }
 
@@ -316,11 +428,17 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     if (req.method === 'POST' && url.pathname === '/categories') {
       const form = await readForm(req);
       const typeRaw = form.get('type') ?? 'other';
-      const type = ['technology','domain','sector','other'].includes(typeRaw) ? typeRaw as 'technology'|'domain'|'sector'|'other' : 'other';
+      const type = ['technology', 'domain', 'sector', 'other'].includes(typeRaw)
+        ? (typeRaw as 'technology' | 'domain' | 'sector' | 'other')
+        : 'other';
       await createCategory(form.get('name') ?? '', type);
       return await categoriesPage(res, 'Category saved.');
     }
-    if (req.method === 'GET' && /^\/companies\/[^/]+$/.test(url.pathname)) return await companyEditPage(decodeURIComponent(url.pathname.slice('/companies/'.length)), res);
+    if (req.method === 'GET' && /^\/companies\/[^/]+$/.test(url.pathname))
+      return await companyEditPage(
+        decodeURIComponent(url.pathname.slice('/companies/'.length)),
+        res,
+      );
     if (req.method === 'POST' && /^\/companies\/[^/]+$/.test(url.pathname)) {
       const id = decodeURIComponent(url.pathname.slice('/companies/'.length));
       const form = await readForm(req);
@@ -343,14 +461,20 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       return redirect(res, `/companies/${encodeURIComponent(id)}`);
     }
     if (req.method === 'GET' && url.pathname === '/jobs') return await jobsPage(url, res);
-    if (req.method === 'GET' && url.pathname === '/candidates') return await candidatesPage(url, res);
+    if (req.method === 'GET' && url.pathname === '/candidates')
+      return await candidatesPage(url, res);
     if (req.method === 'POST' && url.pathname === '/candidates/save') {
       const form = await readForm(req);
       const rawId = Number(form.get('id') ?? '0');
-      const score = Math.max(0, Math.min(100, Number(form.get('minimum_match_score') ?? '70') || 70));
+      const score = Math.max(
+        0,
+        Math.min(100, Number(form.get('minimum_match_score') ?? '70') || 70),
+      );
       const excludedCategories = form.getAll('excluded_category').filter(Boolean);
       const excludedCategorySet = new Set(excludedCategories);
-      const preferredCategories = form.getAll('preferred_category').filter((name) => name && !excludedCategorySet.has(name));
+      const preferredCategories = form
+        .getAll('preferred_category')
+        .filter((name) => name && !excludedCategorySet.has(name));
       const candidateId = await saveCandidate({
         id: rawId > 0 ? rawId : undefined,
         name: form.get('name') ?? '',
@@ -371,7 +495,8 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
       else await ensureCandidateDefaultPassword(candidateId);
       return redirect(res, '/candidates');
     }
-    if (req.method === 'GET' && url.pathname === '/crawl-logs') return await crawlLogsPage(url, res);
+    if (req.method === 'GET' && url.pathname === '/crawl-logs')
+      return await crawlLogsPage(url, res);
     if (req.method === 'GET' && url.pathname === '/settings') return await settingsPage(res);
     if (req.method === 'POST' && url.pathname === '/settings') {
       const form = await readForm(req);
@@ -381,11 +506,31 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
         ['ai_provider', form.get('ai_provider') ?? ''],
         ['ai_daily_limit', String(Math.max(0, Number(form.get('ai_daily_limit') ?? '0') || 0))],
         ['ai_skill_extraction_enabled', String(form.get('ai_skill_extraction_enabled') === 'true')],
-        ['default_match_threshold', String(Math.max(0, Math.min(100, Number(form.get('default_match_threshold') ?? '70') || 70)))],
+        [
+          'default_match_threshold',
+          String(
+            Math.max(0, Math.min(100, Number(form.get('default_match_threshold') ?? '70') || 70)),
+          ),
+        ],
         ['email_enabled', String(form.get('email_enabled') === 'true')],
-        ['quick_search_daily_limit', String(Math.max(0, Math.min(20, Number(form.get('quick_search_daily_limit') ?? '3') || 3)))],
-        ['quick_search_ai_daily_limit', String(Math.max(0, Math.min(20, Number(form.get('quick_search_ai_daily_limit') ?? '1') || 1)))],
-        ['quick_search_company_limit', String(Math.max(1, Math.min(25, Number(form.get('quick_search_company_limit') ?? '8') || 8)))],
+        [
+          'quick_search_daily_limit',
+          String(
+            Math.max(0, Math.min(20, Number(form.get('quick_search_daily_limit') ?? '3') || 3)),
+          ),
+        ],
+        [
+          'quick_search_ai_daily_limit',
+          String(
+            Math.max(0, Math.min(20, Number(form.get('quick_search_ai_daily_limit') ?? '1') || 1)),
+          ),
+        ],
+        [
+          'quick_search_company_limit',
+          String(
+            Math.max(1, Math.min(25, Number(form.get('quick_search_company_limit') ?? '8') || 8)),
+          ),
+        ],
       ];
       for (const [key, value] of values) await setSetting(key, value);
       return await settingsPage(res, 'Settings saved.');
@@ -394,11 +539,20 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   } catch (error) {
     console.error(error);
     const message = error instanceof Error ? error.message : String(error);
-    return send(res, 500, layout('Error', `<div class="card"><h2>Request failed</h2><div class="code">${esc(message)}</div></div>`));
+    return send(
+      res,
+      500,
+      layout(
+        'Error',
+        `<div class="card"><h2>Request failed</h2><div class="code">${esc(message)}</div></div>`,
+      ),
+    );
   }
 }
 
-const server = createServer((req, res) => { void handle(req, res); });
+const server = createServer((req, res) => {
+  void handle(req, res);
+});
 server.listen(port, host, () => {
   console.log(`Admin UI running at http://${host}:${port}`);
 });

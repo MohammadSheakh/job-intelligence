@@ -28,19 +28,25 @@ try {
   const row = result.rows[0];
   const url = new URL(env.databaseUrl);
   const provider = inferredProvider(url.hostname);
-  console.log(JSON.stringify({
-    configuredMode: env.databaseMode,
-    detectedProvider: provider,
-    host: url.hostname,
-    database: row?.database_name ?? url.pathname.replace(/^\//,''),
-    serverAddress: row?.server_addr ?? null,
-    serverPort: row?.server_port ?? null,
-    counts: {
-      companies: Number(row?.companies ?? 0),
-      candidates: Number(row?.candidates ?? 0),
-      jobs: Number(row?.jobs ?? 0),
-    },
-  }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        configuredMode: env.databaseMode,
+        detectedProvider: provider,
+        host: url.hostname,
+        database: row?.database_name ?? url.pathname.replace(/^\//, ''),
+        serverAddress: row?.server_addr ?? null,
+        serverPort: row?.server_port ?? null,
+        counts: {
+          companies: Number(row?.companies ?? 0),
+          candidates: Number(row?.candidates ?? 0),
+          jobs: Number(row?.jobs ?? 0),
+        },
+      },
+      null,
+      2,
+    ),
+  );
 } finally {
   await closeDb();
 }

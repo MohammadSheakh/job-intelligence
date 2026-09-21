@@ -12,7 +12,7 @@ services:
     volumes:
       - job_intelligence_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U jobapp -d job_intelligence"]
+      test: ['CMD-SHELL', 'pg_isready -U jobapp -d job_intelligence']
       interval: 5s
       timeout: 5s
       retries: 20
@@ -39,9 +39,15 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "${APP_PORT:-3000}:3000"
+      - '${APP_PORT:-3000}:3000'
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       start_period: 30s
@@ -56,7 +62,7 @@ services:
     environment:
       DATABASE_URL: postgresql://jobapp:${LOCAL_DB_PASSWORD:-jobapp_local}@db:5432/job_intelligence
       DATABASE_MODE: local
-      SKIP_DOCKER_BOOTSTRAP: "true"
+      SKIP_DOCKER_BOOTSTRAP: 'true'
       TZ: Asia/Dhaka
       DAILY_CRAWL_HOUR: ${DAILY_CRAWL_HOUR:-6}
       DAILY_CRAWL_MINUTE: ${DAILY_CRAWL_MINUTE:-15}
@@ -64,7 +70,7 @@ services:
     depends_on:
       app:
         condition: service_healthy
-    command: ["npm", "run", "docker:scheduler"]
+    command: ['npm', 'run', 'docker:scheduler']
 
 volumes:
   job_intelligence_pgdata:

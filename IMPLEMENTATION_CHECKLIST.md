@@ -222,3 +222,13 @@ entries describe the legacy runtime.
 - [x] Admin candidate creation and password resets persist atomically; invalid/overflowing candidate IDs return HTTP 400.
 - [ ] Browser verification of login, mandatory password change, and candidate workflows.
 - [ ] Complete feature parity, operational cutover, and rollback validation before replacing the legacy runtime.
+
+## Source readability and style checks
+
+- [x] Shared Prettier, ESLint, and EditorConfig for legacy code, backend, frontend, and maintained scripts/configuration.
+- [x] Multiline Nest decorators/declarations and readable DTO/controller/service formatting.
+- [x] Root and package-level formatting/lint commands; lint runs with zero warnings.
+- [x] VS Code format/fix-on-save settings and recommended extensions.
+- [x] Code style CI workflow checks formatting and lint on pushes and pull requests.
+- [x] Formatting cleanup verified with all 65 backend tests, backend source/test typechecks and build, and frontend typecheck/build.
+- [~] Legacy root typecheck retains the previously documented compatibility errors; formatting/lint checks pass independently.

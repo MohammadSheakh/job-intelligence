@@ -64,13 +64,16 @@ export async function getRecentCrawlLogs(limit = 10): Promise<RecentCrawlLog[]> 
     success: boolean;
     jobs_found: number;
     error: string | null;
-  }>(`
+  }>(
+    `
     SELECT l.id, l.company_id, c.name AS company_name, l.checked_at, l.success, l.jobs_found, l.error
     FROM crawl_logs l
     JOIN companies c ON c.id = l.company_id
     ORDER BY l.checked_at DESC, l.id DESC
     LIMIT $1
-  `, [limit]);
+  `,
+    [limit],
+  );
   return result.rows.map((row) => ({
     id: Number(row.id),
     companyId: row.company_id,
@@ -114,7 +117,9 @@ export async function listCompanies(input: {
   const params: unknown[] = [];
   if (input.search?.trim()) {
     params.push(`%${input.search.trim()}%`);
-    where.push(`(c.name ILIKE $${params.length} OR COALESCE(c.website_url, '') ILIKE $${params.length} OR COALESCE(c.location, '') ILIKE $${params.length})`);
+    where.push(
+      `(c.name ILIKE $${params.length} OR COALESCE(c.website_url, '') ILIKE $${params.length} OR COALESCE(c.location, '') ILIKE $${params.length})`,
+    );
   }
   if (input.action?.trim()) {
     params.push(input.action.trim());
@@ -122,10 +127,15 @@ export async function listCompanies(input: {
   }
   if (input.category?.trim()) {
     params.push(input.category.trim());
-    where.push(`EXISTS (SELECT 1 FROM company_categories cc JOIN categories cat ON cat.id = cc.category_id WHERE cc.company_id = c.id AND cat.name = $${params.length})`);
+    where.push(
+      `EXISTS (SELECT 1 FROM company_categories cc JOIN categories cat ON cat.id = cc.category_id WHERE cc.company_id = c.id AND cat.name = $${params.length})`,
+    );
   }
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
-  const countResult = await db.query<{ count: string }>(`SELECT count(*) FROM companies c ${whereSql}`, params);
+  const countResult = await db.query<{ count: string }>(
+    `SELECT count(*) FROM companies c ${whereSql}`,
+    params,
+  );
 
   params.push(input.pageSize);
   const limitRef = `$${params.length}`;
@@ -146,7 +156,8 @@ export async function listCompanies(input: {
     needs_manual_review: boolean;
     last_checked_at: Date | null;
     categories: string[] | null;
-  }>(`
+  }>(
+    `
     SELECT c.id, c.name, c.website_url, c.career_url, c.linkedin_url, c.email,
            c.location, c.tech_stack, c.active, c.recommended_action,
            c.needs_manual_review, c.last_checked_at,
@@ -155,7 +166,9 @@ export async function listCompanies(input: {
     ${whereSql}
     ORDER BY c.name ASC
     LIMIT ${limitRef} OFFSET ${offsetRef}
-  `, params);
+  `,
+    params,
+  );
 
   return {
     total: Number(countResult.rows[0].count),
@@ -172,7 +185,10 @@ export async function listCompanies(input: {
       recommendedAction: row.recommended_action,
       needsManualReview: row.needs_manual_review,
       lastCheckedAt: row.last_checked_at,
-      categories: (() => { const cats = row.categories ?? []; return cats.length > 1 ? cats.filter((name) => name !== 'Other') : cats; })(),
+      categories: (() => {
+        const cats = row.categories ?? [];
+        return cats.length > 1 ? cats.filter((name) => name !== 'Other') : cats;
+      })(),
     })),
   };
 }
@@ -199,12 +215,15 @@ export async function getCompanyById(id: string): Promise<CompanyEditRow | null>
     last_checked_at: Date | null;
     status_research_hint: string | null;
     categories: string[] | null;
-  }>(`
+  }>(
+    `
     SELECT c.id, c.name, c.website_url, c.career_url, c.linkedin_url, c.email, c.location,
            c.tech_stack, c.notes, c.active, c.recommended_action, c.needs_manual_review, c.last_checked_at, c.status_research_hint,
            ARRAY(SELECT cat.name FROM company_categories cc JOIN categories cat ON cat.id = cc.category_id WHERE cc.company_id = c.id ORDER BY cat.type, cat.name) AS categories
     FROM companies c WHERE c.id = $1
-  `, [id]);
+  `,
+    [id],
+  );
   const row = result.rows[0];
   if (!row) return null;
   return {
@@ -221,15 +240,28 @@ export async function getCompanyById(id: string): Promise<CompanyEditRow | null>
     recommendedAction: row.recommended_action,
     needsManualReview: row.needs_manual_review,
     lastCheckedAt: row.last_checked_at,
-    categories: (() => { const cats = row.categories ?? []; return cats.length > 1 ? cats.filter((name) => name !== 'Other') : cats; })(),
+    categories: (() => {
+      const cats = row.categories ?? [];
+      return cats.length > 1 ? cats.filter((name) => name !== 'Other') : cats;
+    })(),
     statusResearchHint: row.status_research_hint,
   };
 }
 
-export interface CategoryAdminRow { id: number; name: string; type: 'technology'|'domain'|'sector'|'other'; companyCount: number; }
+export interface CategoryAdminRow {
+  id: number;
+  name: string;
+  type: 'technology' | 'domain' | 'sector' | 'other';
+  companyCount: number;
+}
 
 export async function listCategories(): Promise<CategoryAdminRow[]> {
-  const result = await db.query<{id:string|number; name:string; type:'technology'|'domain'|'sector'|'other'; company_count:string}>(`
+  const result = await db.query<{
+    id: string | number;
+    name: string;
+    type: 'technology' | 'domain' | 'sector' | 'other';
+    company_count: string;
+  }>(`
     SELECT cat.id, cat.name, cat.type,
       CASE WHEN cat.name = 'Other' THEN (
         SELECT count(*)::text FROM companies c
@@ -245,28 +277,50 @@ export async function listCategories(): Promise<CategoryAdminRow[]> {
     GROUP BY cat.id, cat.name, cat.type
     ORDER BY CASE cat.type WHEN 'technology' THEN 1 WHEN 'domain' THEN 2 WHEN 'sector' THEN 3 ELSE 4 END, cat.name
   `);
-  return result.rows.map(r => ({ id:Number(r.id), name:r.name, type:r.type, companyCount:Number(r.company_count) }));
+  return result.rows.map((r) => ({
+    id: Number(r.id),
+    name: r.name,
+    type: r.type,
+    companyCount: Number(r.company_count),
+  }));
 }
 
-export async function createCategory(name: string, type: 'technology'|'domain'|'sector'|'other'): Promise<void> {
+export async function createCategory(
+  name: string,
+  type: 'technology' | 'domain' | 'sector' | 'other',
+): Promise<void> {
   const clean = name.trim();
   if (!clean) return;
-  await db.query(`INSERT INTO categories(name,type) VALUES($1,$2) ON CONFLICT(name) DO UPDATE SET type=EXCLUDED.type`, [clean, type]);
+  await db.query(
+    `INSERT INTO categories(name,type) VALUES($1,$2) ON CONFLICT(name) DO UPDATE SET type=EXCLUDED.type`,
+    [clean, type],
+  );
 }
 
-export async function replaceCompanyCategories(companyId: string, categoryNames: string[]): Promise<void> {
+export async function replaceCompanyCategories(
+  companyId: string,
+  categoryNames: string[],
+): Promise<void> {
   const client = await db.connect();
   try {
     await client.query('BEGIN');
     await client.query('DELETE FROM company_categories WHERE company_id = $1', [companyId]);
     const names = categoryNames.length ? categoryNames : ['Other'];
-    await client.query(`
+    await client.query(
+      `
       INSERT INTO company_categories(company_id, category_id, source)
       SELECT $1, id, 'admin' FROM categories WHERE name = ANY($2::text[])
       ON CONFLICT (company_id, category_id) DO UPDATE SET source = 'admin'
-    `, [companyId, names]);
+    `,
+      [companyId, names],
+    );
     await client.query('COMMIT');
-  } catch (e) { await client.query('ROLLBACK'); throw e; } finally { client.release(); }
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
 }
 
 export async function updateCompany(input: {
@@ -283,7 +337,8 @@ export async function updateCompany(input: {
   statusResearchHint?: string;
   active: boolean;
 }): Promise<void> {
-  await db.query(`
+  await db.query(
+    `
     UPDATE companies SET
       name = $2,
       website_url = NULLIF($3, ''),
@@ -298,20 +353,22 @@ export async function updateCompany(input: {
       active = $12,
       updated_at = now()
     WHERE id = $1
-  `, [
-    input.id,
-    input.name.trim(),
-    input.websiteUrl?.trim() ?? '',
-    input.careerUrl?.trim() ?? '',
-    input.linkedinUrl?.trim() ?? '',
-    input.email?.trim() ?? '',
-    input.location?.trim() ?? '',
-    input.techStack?.trim() ?? '',
-    input.notes?.trim() ?? '',
-    input.recommendedAction?.trim() ?? '',
-    input.statusResearchHint?.trim() ?? '',
-    input.active,
-  ]);
+  `,
+    [
+      input.id,
+      input.name.trim(),
+      input.websiteUrl?.trim() ?? '',
+      input.careerUrl?.trim() ?? '',
+      input.linkedinUrl?.trim() ?? '',
+      input.email?.trim() ?? '',
+      input.location?.trim() ?? '',
+      input.techStack?.trim() ?? '',
+      input.notes?.trim() ?? '',
+      input.recommendedAction?.trim() ?? '',
+      input.statusResearchHint?.trim() ?? '',
+      input.active,
+    ],
+  );
 }
 
 export interface JobAdminRow {
@@ -329,21 +386,31 @@ export interface JobAdminRow {
   lastSeenAt: Date;
 }
 
-export async function listJobs(input: { search?: string; status?: string; page: number; pageSize: number }): Promise<{ rows: JobAdminRow[]; total: number }> {
+export async function listJobs(input: {
+  search?: string;
+  status?: string;
+  page: number;
+  pageSize: number;
+}): Promise<{ rows: JobAdminRow[]; total: number }> {
   const where: string[] = [];
   const params: unknown[] = [];
   if (input.search?.trim()) {
     params.push(`%${input.search.trim()}%`);
-    where.push(`(j.title ILIKE $${params.length} OR c.name ILIKE $${params.length} OR COALESCE(j.location, '') ILIKE $${params.length})`);
+    where.push(
+      `(j.title ILIKE $${params.length} OR c.name ILIKE $${params.length} OR COALESCE(j.location, '') ILIKE $${params.length})`,
+    );
   }
   if (input.status?.trim()) {
     params.push(input.status.trim());
     where.push(`j.status = $${params.length}`);
   }
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
-  const countResult = await db.query<{ count: string }>(`
+  const countResult = await db.query<{ count: string }>(
+    `
     SELECT count(*) FROM jobs j JOIN companies c ON c.id = j.company_id ${whereSql}
-  `, params);
+  `,
+    params,
+  );
   params.push(input.pageSize);
   const limitRef = `$${params.length}`;
   params.push((input.page - 1) * input.pageSize);
@@ -361,7 +428,8 @@ export async function listJobs(input: { search?: string; status?: string; page: 
     status: string;
     first_seen_at: Date;
     last_seen_at: Date;
-  }>(`
+  }>(
+    `
     SELECT j.id, c.name AS company_name,
            COALESCE((
              SELECT array_agg(cat.name ORDER BY cat.name)
@@ -375,7 +443,9 @@ export async function listJobs(input: { search?: string; status?: string; page: 
     ${whereSql}
     ORDER BY j.first_seen_at DESC, j.id DESC
     LIMIT ${limitRef} OFFSET ${offsetRef}
-  `, params);
+  `,
+    params,
+  );
   return {
     total: Number(countResult.rows[0].count),
     rows: result.rows.map((row) => ({
@@ -477,7 +547,8 @@ export async function saveCandidate(input: {
   active: boolean;
 }): Promise<number> {
   if (input.id) {
-    const result = await db.query<{ id: string | number }>(`
+    const result = await db.query<{ id: string | number }>(
+      `
       UPDATE candidates SET
         name = $2,
         email = $3,
@@ -494,8 +565,37 @@ export async function saveCandidate(input: {
         updated_at = now()
       WHERE id = $1
       RETURNING id
-    `, [
-      input.id,
+    `,
+      [
+        input.id,
+        input.name.trim(),
+        input.email.toLowerCase().trim(),
+        input.expertise?.trim() ?? '',
+        input.skills?.trim() ?? '',
+        input.experienceLevel?.trim() ?? '',
+        input.preferredLocations?.trim() ?? '',
+        input.excludedLocations?.trim() ?? '',
+        input.preferredWorkModes?.trim() ?? '',
+        input.preferredCategories?.trim() ?? '',
+        input.excludedCategories?.trim() ?? '',
+        input.minimumMatchScore,
+        input.active,
+      ],
+    );
+    if (!result.rows[0]) throw new Error('Candidate not found');
+    return Number(result.rows[0].id);
+  }
+
+  const result = await db.query<{ id: string | number }>(
+    `
+    INSERT INTO candidates (
+      name, email, expertise, skills, experience_level,
+      preferred_locations, excluded_locations, preferred_work_modes,
+      preferred_categories, excluded_categories, minimum_match_score, active, updated_at
+    ) VALUES ($1,$2,NULLIF($3,''),NULLIF($4,''),NULLIF($5,''),NULLIF($6,''),NULLIF($7,''),NULLIF($8,''),NULLIF($9,''),NULLIF($10,''),$11,$12,now())
+    RETURNING id
+  `,
+    [
       input.name.trim(),
       input.email.toLowerCase().trim(),
       input.expertise?.trim() ?? '',
@@ -508,36 +608,15 @@ export async function saveCandidate(input: {
       input.excludedCategories?.trim() ?? '',
       input.minimumMatchScore,
       input.active,
-    ]);
-    if (!result.rows[0]) throw new Error('Candidate not found');
-    return Number(result.rows[0].id);
-  }
-
-  const result = await db.query<{ id: string | number }>(`
-    INSERT INTO candidates (
-      name, email, expertise, skills, experience_level,
-      preferred_locations, excluded_locations, preferred_work_modes,
-      preferred_categories, excluded_categories, minimum_match_score, active, updated_at
-    ) VALUES ($1,$2,NULLIF($3,''),NULLIF($4,''),NULLIF($5,''),NULLIF($6,''),NULLIF($7,''),NULLIF($8,''),NULLIF($9,''),NULLIF($10,''),$11,$12,now())
-    RETURNING id
-  `, [
-    input.name.trim(),
-    input.email.toLowerCase().trim(),
-    input.expertise?.trim() ?? '',
-    input.skills?.trim() ?? '',
-    input.experienceLevel?.trim() ?? '',
-    input.preferredLocations?.trim() ?? '',
-    input.excludedLocations?.trim() ?? '',
-    input.preferredWorkModes?.trim() ?? '',
-    input.preferredCategories?.trim() ?? '',
-    input.excludedCategories?.trim() ?? '',
-    input.minimumMatchScore,
-    input.active,
-  ]);
+    ],
+  );
   return Number(result.rows[0].id);
 }
 
-export async function listCrawlLogs(page: number, pageSize: number): Promise<{ rows: RecentCrawlLog[]; total: number }> {
+export async function listCrawlLogs(
+  page: number,
+  pageSize: number,
+): Promise<{ rows: RecentCrawlLog[]; total: number }> {
   const countResult = await db.query<{ count: string }>('SELECT count(*) FROM crawl_logs');
   const result = await db.query<{
     id: string | number;
@@ -547,12 +626,15 @@ export async function listCrawlLogs(page: number, pageSize: number): Promise<{ r
     success: boolean;
     jobs_found: number;
     error: string | null;
-  }>(`
+  }>(
+    `
     SELECT l.id, l.company_id, c.name AS company_name, l.checked_at, l.success, l.jobs_found, l.error
     FROM crawl_logs l JOIN companies c ON c.id = l.company_id
     ORDER BY l.checked_at DESC, l.id DESC
     LIMIT $1 OFFSET $2
-  `, [pageSize, (page - 1) * pageSize]);
+  `,
+    [pageSize, (page - 1) * pageSize],
+  );
   return {
     total: Number(countResult.rows[0].count),
     rows: result.rows.map((row) => ({

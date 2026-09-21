@@ -9,8 +9,8 @@ const WEIGHTS = {
   workMode: 5,
 } as const;
 
-
-const NON_CONTEXT_TITLE_RE = /\b(sales|marketing|finance|accounts?|accounting|human resources|hr|recruiter|talent|business development|partnerships?|customer service|operations?|administration|administrator|procurement|legal)\b/;
+const NON_CONTEXT_TITLE_RE =
+  /\b(sales|marketing|finance|accounts?|accounting|human resources|hr|recruiter|talent|business development|partnerships?|customer service|operations?|administration|administrator|procurement|legal)\b/;
 
 const CATEGORY_ALIASES: Record<string, string[]> = {
   'node.js': ['node', 'node js', 'node.js', 'nodejs'],
@@ -28,7 +28,18 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
   wordpress: ['wordpress', 'wp developer', 'wpdeveloper'],
   joomla: ['joomla'],
   'odoo erp': ['odoo', 'erp'],
-  backend: ['backend', 'back end', 'server side', 'node.js', 'nodejs', 'django', 'laravel', 'spring boot', 'php', 'dotnet'],
+  backend: [
+    'backend',
+    'back end',
+    'server side',
+    'node.js',
+    'nodejs',
+    'django',
+    'laravel',
+    'spring boot',
+    'php',
+    'dotnet',
+  ],
   frontend: ['frontend', 'front end', 'react', 'vue', 'angular', 'nextjs'],
   'full stack': ['full stack', 'fullstack', 'mern', 'mean'],
   ai: ['ai', 'artificial intelligence', 'generative ai', 'llm'],
@@ -36,9 +47,24 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
   'data analytics': ['data analytics', 'data analyst', 'analytics'],
   'data engineering': ['data engineer', 'data engineering'],
   'data science': ['data science', 'data scientist'],
-  cybersecurity: ['cybersecurity', 'cyber security', 'security engineer', 'soc analyst', 'penetration testing'],
+  cybersecurity: [
+    'cybersecurity',
+    'cyber security',
+    'security engineer',
+    'soc analyst',
+    'penetration testing',
+  ],
   networking: ['networking', 'network engineer', 'network administrator'],
-  'devops cloud': ['devops', 'cloud', 'sre', 'site reliability', 'aws', 'azure', 'gcp', 'kubernetes'],
+  'devops cloud': [
+    'devops',
+    'cloud',
+    'sre',
+    'site reliability',
+    'aws',
+    'azure',
+    'gcp',
+    'kubernetes',
+  ],
   'qa sqa': ['qa', 'sqa', 'quality assurance', 'test engineer', 'tester'],
   'ui ux': ['ui ux', 'ux designer', 'ui designer', 'product designer'],
   'embedded iot': ['embedded', 'iot', 'internet of things'],
@@ -59,7 +85,10 @@ const CATEGORY_ALIASES: Record<string, string[]> = {
 function detectFamily(text: string): string | null {
   const t = normalizeText(text);
   const rules: Array<[string, RegExp]> = [
-    ['backend', /\b(back ?end|server ?side|node|nest|django|spring|laravel|php|java|asp\.net|dotnet|c#)\b/],
+    [
+      'backend',
+      /\b(back ?end|server ?side|node|nest|django|spring|laravel|php|java|asp\.net|dotnet|c#)\b/,
+    ],
     ['frontend', /\b(front ?end|react|angular|vue|ui developer)\b/],
     ['fullstack', /\b(full ?stack|mern|mean)\b/],
     ['mobile', /\b(android|ios|flutter|react native|mobile)\b/],
@@ -83,28 +112,42 @@ function expertiseScore(candidate: CandidateForMatch, job: JobForMatch): number 
   const jobFamily = detectFamily(`${job.title} ${job.description ?? ''}`);
   if (candidateFamily && jobFamily) return candidateFamily === jobFamily ? 100 : 15;
 
-  const candidateWords = new Set(normalizeText(candidate.expertise).split(' ').filter((w) => w.length > 2));
+  const candidateWords = new Set(
+    normalizeText(candidate.expertise)
+      .split(' ')
+      .filter((w) => w.length > 2),
+  );
   const jobText = normalizeText(`${job.title} ${job.description ?? ''}`);
   if (!candidateWords.size || !jobText) return undefined;
   const matched = [...candidateWords].filter((word) => jobText.includes(word)).length;
   return Math.round((matched / candidateWords.size) * 100);
 }
 
-function skillsScore(candidate: CandidateForMatch, job: JobForMatch): { score?: number; matched: string[] } {
+function skillsScore(
+  candidate: CandidateForMatch,
+  job: JobForMatch,
+): { score?: number; matched: string[] } {
   const candidateSkills = skillList(candidate.skills);
   if (!candidateSkills.length) return { matched: [] };
-  const jobSignal = [job.skills, job.description, job.title, job.companyTechStack].filter(Boolean).join(' ');
+  const jobSignal = [job.skills, job.description, job.title, job.companyTechStack]
+    .filter(Boolean)
+    .join(' ');
   if (!jobSignal.trim()) return { matched: [] };
 
   const compactJobSignal = normalizeText(jobSignal).replace(/[^a-z0-9+#]+/g, '');
-  const matched = candidateSkills.filter((skill) => compactJobSignal.includes(skill.replace(/[^a-z0-9+#]+/g, '')));
+  const matched = candidateSkills.filter((skill) =>
+    compactJobSignal.includes(skill.replace(/[^a-z0-9+#]+/g, '')),
+  );
   return {
     score: Math.round((matched.length / candidateSkills.length) * 100),
     matched,
   };
 }
 
-function locationScore(candidate: CandidateForMatch, job: JobForMatch): { score?: number; rejected?: string } {
+function locationScore(
+  candidate: CandidateForMatch,
+  job: JobForMatch,
+): { score?: number; rejected?: string } {
   const location = job.location || job.companyLocation;
   if (!location) return {};
 
@@ -124,7 +167,9 @@ function experienceScore(candidate: CandidateForMatch, job: JobForMatch): number
   if (!jobText) return undefined;
 
   const levels = ['intern', 'junior', 'mid', 'senior', 'lead'];
-  const candidateLevel = levels.find((level) => normalizeText(candidate.experienceLevel).includes(level));
+  const candidateLevel = levels.find((level) =>
+    normalizeText(candidate.experienceLevel).includes(level),
+  );
   const jobLevel = levels.find((level) => jobText.includes(level));
   if (!candidateLevel || !jobLevel) return undefined;
   if (candidateLevel === jobLevel) return 100;
@@ -133,7 +178,10 @@ function experienceScore(candidate: CandidateForMatch, job: JobForMatch): number
   return Math.abs(c - j) === 1 ? 65 : 20;
 }
 
-function workModeScore(candidate: CandidateForMatch, job: JobForMatch): { score?: number; rejected?: string } {
+function workModeScore(
+  candidate: CandidateForMatch,
+  job: JobForMatch,
+): { score?: number; rejected?: string } {
   if (!job.workMode) return {};
   const preferred = splitList(candidate.preferredWorkModes);
   if (!preferred.length) return {};
@@ -154,15 +202,21 @@ function categoryMatchesSignal(category: string, signal: string): boolean {
   });
 }
 
-function companyContext(candidate: CandidateForMatch, job: JobForMatch): { bonus: number; matched: string[] } {
+function companyContext(
+  candidate: CandidateForMatch,
+  job: JobForMatch,
+): { bonus: number; matched: string[] } {
   const normalizedTitle = normalizeText(job.title);
   if (NON_CONTEXT_TITLE_RE.test(normalizedTitle)) return { bonus: 0, matched: [] };
 
   const candidateFamily = detectFamily(`${candidate.expertise ?? ''} ${candidate.skills ?? ''}`);
   const jobFamily = detectFamily(`${job.title} ${job.description ?? ''}`);
-  if (candidateFamily && jobFamily && candidateFamily !== jobFamily) return { bonus: 0, matched: [] };
+  if (candidateFamily && jobFamily && candidateFamily !== jobFamily)
+    return { bonus: 0, matched: [] };
 
-  const categories = (job.companyCategories ?? []).filter((category) => normalizeText(category) !== 'other');
+  const categories = (job.companyCategories ?? []).filter(
+    (category) => normalizeText(category) !== 'other',
+  );
   if (!categories.length) return { bonus: 0, matched: [] };
 
   const candidateSignal = normalizeText(`${candidate.expertise ?? ''} ${candidate.skills ?? ''}`);
@@ -171,7 +225,8 @@ function companyContext(candidate: CandidateForMatch, job: JobForMatch): { bonus
   const matched = categories.filter((category) => categoryMatchesSignal(category, candidateSignal));
   if (!matched.length) return { bonus: 0, matched: [] };
 
-  const hasRichJobData = Boolean(job.skills?.trim()) || (job.description?.trim().length ?? 0) >= 120;
+  const hasRichJobData =
+    Boolean(job.skills?.trim()) || (job.description?.trim().length ?? 0) >= 120;
   const perMatch = hasRichJobData ? 2 : 4;
   const maxBonus = hasRichJobData ? 4 : 8;
   return {
@@ -180,20 +235,35 @@ function companyContext(candidate: CandidateForMatch, job: JobForMatch): { bonus
   };
 }
 
-
 function categoryPreferenceList(value?: string | null): string[] {
   if (!value) return [];
-  return [...new Set(value.split(/[,;|\n]+/).map(normalizeText).filter(Boolean))];
+  return [
+    ...new Set(
+      value
+        .split(/[,;|\n]+/)
+        .map(normalizeText)
+        .filter(Boolean),
+    ),
+  ];
 }
 
-function candidateCategoryPreferences(candidate: CandidateForMatch, job: JobForMatch): { bonus: number; matched: string[]; rejected?: string } {
+function candidateCategoryPreferences(
+  candidate: CandidateForMatch,
+  job: JobForMatch,
+): { bonus: number; matched: string[]; rejected?: string } {
   const preferred = categoryPreferenceList(candidate.preferredCategories);
   const excluded = categoryPreferenceList(candidate.excludedCategories);
   if (!preferred.length && !excluded.length) return { bonus: 0, matched: [] };
 
-  const companyCategories = new Set((job.companyCategories ?? []).map(normalizeText).filter(Boolean));
-  const companySectors = new Set((job.companySectorCategories ?? []).map(normalizeText).filter(Boolean));
-  const jobSignal = normalizeText([job.title, job.description, job.skills].filter(Boolean).join(' '));
+  const companyCategories = new Set(
+    (job.companyCategories ?? []).map(normalizeText).filter(Boolean),
+  );
+  const companySectors = new Set(
+    (job.companySectorCategories ?? []).map(normalizeText).filter(Boolean),
+  );
+  const jobSignal = normalizeText(
+    [job.title, job.description, job.skills].filter(Boolean).join(' '),
+  );
 
   for (const category of excluded) {
     if (companySectors.has(category)) {
@@ -281,10 +351,13 @@ export function deterministicMatch(candidate: CandidateForMatch, job: JobForMatc
   const deterministicScore = Math.min(100, baseScore + context.bonus + preferredCategoryBonus);
 
   const reasons: string[] = [];
-  if (expertise !== undefined && expertise >= 70) reasons.push('Expertise is closely aligned with the role');
+  if (expertise !== undefined && expertise >= 70)
+    reasons.push('Expertise is closely aligned with the role');
   if (skills.matched.length) reasons.push(`Matched skills: ${skills.matched.join(', ')}`);
-  if (context.matched.length) reasons.push(`Company context matches: ${context.matched.join(', ')}`);
-  if (categoryPreferences.matched.length) reasons.push(`Preferred categories matched: ${categoryPreferences.matched.join(', ')}`);
+  if (context.matched.length)
+    reasons.push(`Company context matches: ${context.matched.join(', ')}`);
+  if (categoryPreferences.matched.length)
+    reasons.push(`Preferred categories matched: ${categoryPreferences.matched.join(', ')}`);
   if (location.score === 100) reasons.push('Preferred location matched');
   if (experience !== undefined && experience >= 65) reasons.push('Experience level is compatible');
   if (workMode.score === 100) reasons.push('Preferred work mode matched');

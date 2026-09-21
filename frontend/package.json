@@ -5,7 +5,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "format": "pnpm --dir .. exec prettier --write frontend",
+    "format:check": "pnpm --dir .. exec prettier --check frontend",
+    "lint": "pnpm --dir .. exec eslint frontend --max-warnings 0",
+    "lint:fix": "pnpm --dir .. exec eslint frontend --fix --max-warnings 0"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.3",

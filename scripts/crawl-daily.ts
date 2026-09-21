@@ -43,23 +43,32 @@ try {
       stats.jobsInserted += inserted;
       stats.jobsUpdated += updated;
 
-      console.log(JSON.stringify({
-        companyId: company.id,
-        company: company.name,
-        careerUrl: resolvedCareerUrl,
-        finalUrl: result.finalUrl,
-        jobsFound: result.jobs.length,
-        inserted,
-        updated,
-        noOpeningsSignal: result.noOpeningsSignal,
-        pageHash: result.pageHash.slice(0, 12),
-      }));
+      console.log(
+        JSON.stringify({
+          companyId: company.id,
+          company: company.name,
+          careerUrl: resolvedCareerUrl,
+          finalUrl: result.finalUrl,
+          jobsFound: result.jobs.length,
+          inserted,
+          updated,
+          noOpeningsSignal: result.noOpeningsSignal,
+          pageHash: result.pageHash.slice(0, 12),
+        }),
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       stats.failed += 1;
       await markCompanyChecked(company.id).catch(() => undefined);
-      await recordCrawlLog({ companyId: company.id, success: false, jobsFound: 0, error: message }).catch(() => undefined);
-      console.error(JSON.stringify({ companyId: company.id, company: company.name, error: message }));
+      await recordCrawlLog({
+        companyId: company.id,
+        success: false,
+        jobsFound: 0,
+        error: message,
+      }).catch(() => undefined);
+      console.error(
+        JSON.stringify({ companyId: company.id, company: company.name, error: message }),
+      );
     }
 
     if (delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs));

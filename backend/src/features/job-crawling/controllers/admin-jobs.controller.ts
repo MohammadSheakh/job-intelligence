@@ -7,5 +7,12 @@ import { AdminJobCatalogService } from '../services/admin-job-catalog.service.js
 @UseGuards(AdminBasicAuthGuard)
 export class AdminJobsController {
   constructor(private readonly jobs: AdminJobCatalogService) {}
-  @Get() list(@Query() query: JobListQueryDto) { return this.jobs.list(query); }
+
+  @Get()
+  list(
+    @Query()
+    query: JobListQueryDto,
+  ) {
+    return this.jobs.list(query);
+  }
 }

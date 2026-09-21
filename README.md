@@ -385,3 +385,29 @@ npm run env:check -- --mode=worker
 ## Production-readiness status
 
 Do not infer production completion from source existence alone. External integrations and broad runtime coverage are tracked honestly in [`IMPLEMENTATION_CHECKLIST.md`](IMPLEMENTATION_CHECKLIST.md), including Docker runtime validation, Google OAuth, SMTP, AI provider validation, broad crawler coverage, browser QA, and public hosting/TLS.
+
+## Code formatting and linting
+
+Install root tooling with `pnpm install --frozen-lockfile`. All maintained
+TypeScript/JavaScript, JSX, CSS, JSON, and YAML source/config files share the
+root Prettier and ESLint configuration, including legacy `src/` and `scripts/`,
+Nest `backend/`, and Next `frontend/`.
+
+```sh
+pnpm format        # format maintained source/config files
+pnpm lint:fix      # apply safe lint fixes
+pnpm check:style   # verify formatting and lint with zero warnings
+```
+
+The backend and frontend packages also expose `format`, `format:check`, `lint`,
+and `lint:fix` commands through the root tools. Install root dependencies before
+using these package commands. VS Code extension recommendations and workspace
+settings enable Prettier formatting and ESLint fixes on save. The Code style
+workflow runs the same checks on pushes and pull requests.
+
+Use two-space indentation, single quotes, semicolons, and a 100-column target.
+Nest decorators and declarations occupy separate lines. ESLint checks unused
+variables and React hook rules as well as recommended JavaScript/TypeScript
+rules. Generated clients/builds, lockfiles, data/SQL assets, bundled skills, and
+Markdown documentation are excluded from automatic formatting. Embedded HTML
+and SQL template contents are preserved to avoid changing runtime output.

@@ -1,4 +1,4 @@
-const TRUE_VALUES = new Set(['1','true','yes','on']);
+const TRUE_VALUES = new Set(['1', 'true', 'yes', 'on']);
 
 function text(name: string, fallback = ''): string {
   return (process.env[name] ?? fallback).trim();
@@ -45,18 +45,25 @@ export const env = {
 export function environmentProblems(mode: 'server' | 'worker' | 'all' = 'all'): string[] {
   const problems: string[] = [];
   if (!env.databaseUrl) problems.push('DATABASE_URL is missing.');
-  if (!['local','neon','unknown'].includes(env.databaseMode)) problems.push('DATABASE_MODE must be local, neon, or unknown.');
+  if (!['local', 'neon', 'unknown'].includes(env.databaseMode))
+    problems.push('DATABASE_MODE must be local, neon, or unknown.');
 
   if (mode !== 'worker') {
     if (!env.adminUsername) problems.push('ADMIN_USERNAME is missing.');
     if (!env.adminPassword) problems.push('ADMIN_PASSWORD is missing.');
-    if (env.adminPassword === 'change-me') problems.push('ADMIN_PASSWORD still uses the placeholder value change-me.');
+    if (env.adminPassword === 'change-me')
+      problems.push('ADMIN_PASSWORD still uses the placeholder value change-me.');
     if (!env.candidateSessionSecret) problems.push('CANDIDATE_SESSION_SECRET is missing.');
-    if (env.candidateSessionSecret && env.candidateSessionSecret.length < 32) problems.push('CANDIDATE_SESSION_SECRET must be at least 32 characters.');
-    if (env.defaultCandidatePassword.length < 8) problems.push('DEFAULT_CANDIDATE_PASSWORD must be at least 8 characters.');
+    if (env.candidateSessionSecret && env.candidateSessionSecret.length < 32)
+      problems.push('CANDIDATE_SESSION_SECRET must be at least 32 characters.');
+    if (env.defaultCandidatePassword.length < 8)
+      problems.push('DEFAULT_CANDIDATE_PASSWORD must be at least 8 characters.');
   }
 
-  if ((env.googleClientId && !env.googleClientSecret) || (!env.googleClientId && env.googleClientSecret)) {
+  if (
+    (env.googleClientId && !env.googleClientSecret) ||
+    (!env.googleClientId && env.googleClientSecret)
+  ) {
     problems.push('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be configured together.');
   }
   return problems;
@@ -64,5 +71,6 @@ export function environmentProblems(mode: 'server' | 'worker' | 'all' = 'all'): 
 
 export function assertEnvironment(mode: 'server' | 'worker' | 'all' = 'all'): void {
   const problems = environmentProblems(mode);
-  if (problems.length) throw new Error(`Environment configuration error:\n- ${problems.join('\n- ')}`);
+  if (problems.length)
+    throw new Error(`Environment configuration error:\n- ${problems.join('\n- ')}`);
 }

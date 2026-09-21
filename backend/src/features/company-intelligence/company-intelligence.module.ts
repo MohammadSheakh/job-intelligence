@@ -5,5 +5,9 @@ import { AdminCompaniesController } from './controllers/admin-companies.controll
 import { CategoryCatalogService } from './services/category-catalog.service.js';
 import { CompanyIntelligenceService } from './services/company-intelligence.service.js';
 
-@Module({ imports: [AuthenticationModule], controllers: [AdminCompaniesController, AdminCategoriesController], providers: [CompanyIntelligenceService, CategoryCatalogService] })
+@Module({
+  imports: [AuthenticationModule],
+  controllers: [AdminCompaniesController, AdminCategoriesController],
+  providers: [CompanyIntelligenceService, CategoryCatalogService],
+})
 export class CompanyIntelligenceModule {}

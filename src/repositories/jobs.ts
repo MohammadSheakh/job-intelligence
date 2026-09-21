@@ -13,7 +13,8 @@ export async function upsertJob(job: CrawledJob): Promise<UpsertJobResult> {
   const title = normalizeTitle(job.title);
   const location = normalizeLocation(job.location) ?? null;
 
-  const result = await db.query<{ id: number; inserted: boolean }>(`
+  const result = await db.query<{ id: number; inserted: boolean }>(
+    `
     INSERT INTO jobs (
       company_id,
       title,
@@ -33,14 +34,9 @@ export async function upsertJob(job: CrawledJob): Promise<UpsertJobResult> {
       last_seen_at = now(),
       status = 'OPEN'
     RETURNING id, (xmax = 0) AS inserted
-  `, [
-    job.companyId,
-    title,
-    job.description ?? null,
-    location,
-    job.applicationUrl,
-    jobHash,
-  ]);
+  `,
+    [job.companyId, title, job.description ?? null, location, job.applicationUrl, jobHash],
+  );
 
   return {
     id: Number(result.rows[0].id),

@@ -60,7 +60,8 @@ export interface UpsertCandidateInput {
 }
 
 export async function upsertCandidate(input: UpsertCandidateInput): Promise<number> {
-  const result = await db.query<{ id: string | number }>(`
+  const result = await db.query<{ id: string | number }>(
+    `
     INSERT INTO candidates (
       name, email, expertise, skills, experience_level,
       preferred_locations, excluded_locations, preferred_work_modes,
@@ -80,30 +81,37 @@ export async function upsertCandidate(input: UpsertCandidateInput): Promise<numb
       active = true,
       updated_at = now()
     RETURNING id
-  `, [
-    input.name,
-    input.email.toLowerCase().trim(),
-    input.expertise ?? null,
-    input.skills ?? null,
-    input.experienceLevel ?? null,
-    input.preferredLocations ?? null,
-    input.excludedLocations ?? null,
-    input.preferredWorkModes ?? null,
-    input.preferredCategories ?? null,
-    input.excludedCategories ?? null,
-    input.minimumMatchScore ?? 70,
-  ]);
+  `,
+    [
+      input.name,
+      input.email.toLowerCase().trim(),
+      input.expertise ?? null,
+      input.skills ?? null,
+      input.experienceLevel ?? null,
+      input.preferredLocations ?? null,
+      input.excludedLocations ?? null,
+      input.preferredWorkModes ?? null,
+      input.preferredCategories ?? null,
+      input.excludedCategories ?? null,
+      input.minimumMatchScore ?? 70,
+    ],
+  );
   return Number(result.rows[0].id);
 }
 
-export async function getActiveCandidateById(candidateId: number): Promise<CandidateForMatch | null> {
-  const result = await db.query<CandidateRow>(`
+export async function getActiveCandidateById(
+  candidateId: number,
+): Promise<CandidateForMatch | null> {
+  const result = await db.query<CandidateRow>(
+    `
     SELECT id, name, email, expertise, skills, experience_level,
            preferred_locations, excluded_locations, preferred_work_modes,
            preferred_categories, excluded_categories, minimum_match_score
     FROM candidates
     WHERE id=$1 AND active=true
     LIMIT 1
-  `, [candidateId]);
+  `,
+    [candidateId],
+  );
   return result.rows[0] ? mapCandidate(result.rows[0]) : null;
 }
