@@ -331,3 +331,12 @@ validated; private/reserved addresses and URL credentials are rejected. The
 crawler must not forward candidate/admin credentials or bypass access challenges.
 The initial transport supports UTF-8 HTML with identity encoding; unsupported
 sources fail explicitly and may require a reviewed adapter.
+
+
+Replacement daily execution runs once per external scheduler invocation, defaults
+to 750 ms between company attempts, and processes a bounded-memory company scan.
+Only active monitor-ready companies with nonblank career URLs are checked. Normal
+overlap between replacement workers is prevented through database run ownership.
+Per-company failures are logged and processing continues; inability to persist a
+failure stops the run. Graceful shutdown finishes current bounded work and starts
+no new companies. Scheduler cutover must not overlap legacy daily execution.

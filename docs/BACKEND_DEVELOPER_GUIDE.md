@@ -158,3 +158,39 @@ may require explicit source adapters for otherwise legitimate sites.
 Transport errors contain stable codes and fixed diagnostic messages without
 remote URLs, response content, or raw network errors. Deployment egress controls
 remain useful defense in depth; no live-network security verification is claimed.
+
+## Daily command and source orchestration
+
+Build the backend, then run `pnpm --dir backend crawl:daily --help` to inspect the
+command without loading the worker context or opening database connections.
+The command without `--help` performs real network requests and job/log writes.
+It is designed for an external scheduler at 06:15 Asia/Dhaka; existing deployment
+scripts still invoke the legacy runtime until cutover is reviewed.
+
+`CrawlExecutionModule` provides the transport, ingestion, single-company
+orchestrator, and daily runner. `DailyCrawlRepository` owns catalog reads and
+run-lock connections. Companies are selected in batches of 50 using ascending IDs
+and a fixed upper ID. Reads are live, not a frozen database snapshot. Per-company
+failures continue only after their sanitized failure log is persisted; failures
+in that persistence abort the command. `jobsFound` counts detected/upserted jobs,
+not exclusively newly inserted jobs.
+
+`CRAWL_DELAY_MS` defaults to 750 (integer 0–60000). Optional `CRAWL_LIMIT` bounds
+checked companies (integer 1–100000). Blank career URLs are skipped and do not
+consume that limit. SIGINT/SIGTERM stops scheduling the next company, finishes
+current bounded fetch/persistence, closes providers, and returns a nonzero status.
+An already-running replacement worker produces an `already-running` summary.
+
+Run ownership uses `pg_try_advisory_lock(124631, 1)` on one dedicated PostgreSQL
+connection, not a Prisma transaction or pooled session. This costs one additional
+connection for the duration of the job. `CRAWLER_LOCK_DATABASE_URL` can supply a
+direct connection to the **same database**; otherwise DATABASE_URL is used.
+Transaction pooling is incompatible with session locks. Known Neon pooler URLs
+are rejected; other proxy configurations must be checked by the operator.
+The worker checks connection health at phase boundaries but does not implement
+a fencing token for persistence already underway when a connection is lost.
+Do not overlap the legacy daily script, which does not take this lock.
+
+Standard Quick Search should reuse `CompanyCrawlService` after reserving quota,
+and must finalize its own search-run record. Daily crawling does not reserve
+candidate quotas or provide the pending AI/Quick Search UI.

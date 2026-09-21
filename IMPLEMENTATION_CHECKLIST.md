@@ -284,3 +284,13 @@ entries describe the legacy runtime.
 - [~] Shared deadline, bounded headers/body, per-process concurrency cap, and sanitized failure codes implemented.
 - [ ] Daily/source orchestration and Standard Quick Search execution remain pending; milestone 13 is partial and overall progress stays 50%.
 - [~] Static style/type/build validation only; tests and live-network checks deferred at user request.
+
+
+## Replacement daily execution
+
+- [~] Shared source-override/fetch/ingest/failure orchestration implemented.
+- [~] Compiled daily CLI with bounded company batches, pacing/limit controls, graceful stop, and aggregate outcomes.
+- [~] Dedicated direct-connection advisory lock coordinates replacement daily runners; runtime lock-loss/concurrency validation deferred.
+- [x] Static formatting/lint, backend typecheck/build, and no-connection CLI help verified.
+- [ ] Deployed scheduler cutover, live source coverage, and runtime parity remain pending; no tests or database operations run for this milestone.
+- [x] Scorecard advanced to 13/24 implementation milestones (54.17%); 11 milestones (45.83%) remain.

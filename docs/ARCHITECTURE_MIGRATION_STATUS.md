@@ -2,16 +2,16 @@
 
 **Last updated:** 2026-09-21
 **Status:** In progress — candidate core flows, Company Intelligence admin UI, and selected admin APIs are implemented with local regression coverage.
-**Overall implementation progress: 50% complete / 50% remaining** — 12 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
+**Overall implementation progress: 54.17% complete / 45.83% remaining** — 13 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
 
 ## Completion scorecard
 
 Each row contributes 1/24 of the implementation scope (about 4.17%). Count a row
 only when its stated code deliverable exists; partial rows receive no credit.
 The denominator includes the accepted `gpt1.md` refinements and final cutover work.
-Milestones differ in effort, so 50% remaining does **not** mean half the time remains.
-This is the first explicit scoring baseline, not a measured increase from an
-older percentage. Update the table and numerator together as scope changes.
+Milestones differ in effort, so the remaining percentage is **not** a time estimate.
+The initial explicit baseline was 12/24 (50%); daily/source execution now completes
+milestone 13. Update the table and numerator together as scope changes.
 
 | # | Milestone | Status |
 | --- | --- | --- |
@@ -27,7 +27,7 @@ older percentage. Update the table and numerator together as scope changes.
 | 10 | Persistent Quick Search quota and shortlist services, usage UI | Implemented; runtime checks deferred |
 | 11 | Shared formatting/lint tooling and backend developer documentation | Implemented |
 | 12 | Crawler HTML extraction and atomic job/log ingestion service | Implemented; runtime checks deferred |
-| 13 | Bounded HTTP crawler transport, daily execution, source orchestration | Partial: transport implemented; orchestration pending |
+| 13 | Bounded HTTP crawler transport, daily execution, source orchestration | Implemented; runtime checks deferred |
 | 14 | Standard Quick Search execution, run finalization, execution UI | Pending |
 | 15 | Optional AI provider integration, limits, and AI-assisted search | Pending |
 | 16 | Email digests, notifications, delivery deduplication integration | Pending |
@@ -298,9 +298,9 @@ imply completed migration parity:
 
 ## In progress / next verification work
 
-1. Connect the new bounded HTTP transport to source overrides, extraction/ingestion,
-   daily execution, and Standard Quick Search; add run finalization and the execution UI. Recommendations and quota services exist;
-   runtime verification is deferred.
+1. Connect Standard Quick Search to the shared company-crawl service and quota
+   reservation, add run finalization, and build the execution UI. Daily execution
+   is implemented as a command; deployed scheduler cutover remains separate.
 2. Continue feature parity work below; Quick Search and Google OAuth
    remain outside the migrated core API scope.
 3. Broaden candidate QA to visual/mobile/cross-browser behavior and production
@@ -396,3 +396,27 @@ Do not run `prisma migrate`, `prisma db push`, `prisma db seed`, or
   Milestone 13 remains partial, so the score stays **12/24 = 50%**.
 - Validation: formatting/lint, backend source typecheck and build. No tests,
   live crawls, or database operations were run at the user's request.
+
+## Daily crawler execution
+
+- Added `CrawlExecutionModule` shared by the API module and a minimal worker
+  context. `CompanyCrawlService` resolves overrides, fetches outside transactions,
+  ingests jobs, and persists sanitized per-company failures. Failure-log write
+  errors abort the run rather than silently losing diagnostics.
+- `pnpm --dir backend crawl:daily` runs the compiled worker after a backend build.
+  It sweeps active monitor-ready companies in 50-row keyset batches, with a fixed
+  upper key, sequential requests, legacy 750 ms default pacing, and optional
+  `CRAWL_LIMIT`. It records aggregate counts and returns nonzero on failures or stop.
+- A dedicated PostgreSQL session advisory lock prevents normal overlap between
+  replacement runners. Lock health is checked before fetch/persistence phases;
+  closing the connection releases ownership. It is not shared with legacy daily
+  scripts and is not distributed fencing for a write already in progress.
+- Direct/session-preserving connections are required. Set `CRAWLER_LOCK_DATABASE_URL`
+  to a direct URL for the same database when `DATABASE_URL` is transaction-pooled.
+  Recognizable Neon pooler URLs are rejected for lock ownership.
+- Signals stop new companies and allow current bounded work to finish. No HTTP
+  server is opened; no existing scheduler, deployment, or cloud data was changed.
+- Checks: formatting/lint, backend typecheck/build, and compiled CLI `--help`.
+  No test suite, live crawl, database connection, or lock-concurrency check ran.
+- Milestone 13 is implemented: **13/24 = 54.17% complete, 45.83% remaining**.
+  Runtime verification and scheduler cutover remain in milestones 23–24.
