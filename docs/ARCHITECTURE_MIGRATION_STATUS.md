@@ -27,7 +27,7 @@ older percentage. Update the table and numerator together as scope changes.
 | 10 | Persistent Quick Search quota and shortlist services, usage UI | Implemented; runtime checks deferred |
 | 11 | Shared formatting/lint tooling and backend developer documentation | Implemented |
 | 12 | Crawler HTML extraction and atomic job/log ingestion service | Implemented; runtime checks deferred |
-| 13 | Bounded HTTP crawler transport, daily execution, source orchestration | Pending |
+| 13 | Bounded HTTP crawler transport, daily execution, source orchestration | Partial: transport implemented; orchestration pending |
 | 14 | Standard Quick Search execution, run finalization, execution UI | Pending |
 | 15 | Optional AI provider integration, limits, and AI-assisted search | Pending |
 | 16 | Email digests, notifications, delivery deduplication integration | Pending |
@@ -298,9 +298,8 @@ imply completed migration parity:
 
 ## In progress / next verification work
 
-1. Add bounded HTTP transport (timeouts, response-size limits, redirect/address
-   validation), then connect extraction/ingestion to Standard Quick Search, run
-   finalization, and the execution UI. Recommendations and quota services exist;
+1. Connect the new bounded HTTP transport to source overrides, extraction/ingestion,
+   daily execution, and Standard Quick Search; add run finalization and the execution UI. Recommendations and quota services exist;
    runtime verification is deferred.
 2. Continue feature parity work below; Quick Search and Google OAuth
    remain outside the migrated core API scope.
@@ -378,3 +377,22 @@ Do not run `prisma migrate`, `prisma db push`, `prisma db seed`, or
   Migration CLI wiring is available; database baseline and actual migration
   execution remain unverified and must be reviewed before use on Neon.
 - See `backend/prisma/_doc.md` for command behavior and verification boundaries.
+
+## Bounded HTTP crawler transport
+
+- Added exported `CareerPageFetcherService` for public HTTP(S) pages on default
+  ports, with no URL credentials. It resolves DNS once per hop, rejects non-public
+  results, and pins the validated address while preserving Host and TLS identity.
+- Redirects are followed manually (maximum three), with address validation for
+  each destination and no HTTPS-to-HTTP downgrade. Requests carry no application
+  cookies or authorization headers.
+- A shared 20-second deadline covers DNS, redirects, and body reads; HTML bodies
+  are limited to 2 MiB while streaming and headers to 16 KiB. At most four fetches
+  run per process; additional calls fail promptly rather than queueing in memory.
+- Only HTML/XHTML and identity encoding are accepted; compressed responses,
+  authentication challenges, unsupported content, and oversized pages fail with
+  fixed diagnostic messages. No anti-bot bypass or automatic retries are added.
+- Transport is exported but not exposed over HTTP or wired to a scheduler yet.
+  Milestone 13 remains partial, so the score stays **12/24 = 50%**.
+- Validation: formatting/lint, backend source typecheck and build. No tests,
+  live crawls, or database operations were run at the user's request.

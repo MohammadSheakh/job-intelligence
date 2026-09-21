@@ -323,3 +323,11 @@ crawl log using stable legacy hashes. Missing descriptions preserve prior conten
 a single empty/no-opening result does not close existing jobs. Parsing is bounded
 to 2 MiB HTML and 150 jobs. HTTP execution and richer deadline/log persistence
 remain separate migration milestones.
+
+
+Replacement crawler HTTP requests must use public HTTP(S) endpoints with bounded
+redirects, request duration, and response size. Each redirect destination is
+validated; private/reserved addresses and URL credentials are rejected. The
+crawler must not forward candidate/admin credentials or bypass access challenges.
+The initial transport supports UTF-8 HTML with identity encoding; unsupported
+sources fail explicitly and may require a reviewed adapter.

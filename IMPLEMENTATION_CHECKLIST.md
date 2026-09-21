@@ -276,3 +276,11 @@ entries describe the legacy runtime.
 - [ ] HTTP transport, scheduling, Quick Search execution/finalization, and richer gpt1 deadline/log fields remain pending.
 - [x] Explicit migration scorecard added: 12/24 equally weighted implementation milestones = 50%; no runtime-readiness percentage claimed.
 - [~] Parser/ingestion runtime parity remains unverified; test development and execution deferred at user request.
+
+
+## Replacement crawler HTTP transport
+
+- [~] Public-address validation, pinned DNS, TLS hostname verification, and manually validated redirects implemented.
+- [~] Shared deadline, bounded headers/body, per-process concurrency cap, and sanitized failure codes implemented.
+- [ ] Daily/source orchestration and Standard Quick Search execution remain pending; milestone 13 is partial and overall progress stays 50%.
+- [~] Static style/type/build validation only; tests and live-network checks deferred at user request.

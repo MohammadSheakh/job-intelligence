@@ -118,9 +118,8 @@ for the complete command table; there is no platform database in this project.
 ## Crawler ingestion boundary
 
 `job-crawling/domain/career-page.parser.ts` accepts fetched HTML without performing
-network requests. The 2 MiB limit protects parsing; a future HTTP transport must
-also enforce a streaming body limit, timeout, and safe redirect/address checks
-before allocating the full response. HTTP(S) scheme checks alone are not SSRF
+network requests. The 2 MiB limit protects parsing; the exported `CareerPageFetcherService` also enforces a streaming body limit,
+timeout, and redirect/address checks before allocating the full response. HTTP(S) scheme checks alone are not SSRF
 protection. Known source overrides are preserved as a pure resolver.
 
 `CrawlIngestionService.ingest` parses first, then atomically persists at most 150
@@ -134,3 +133,28 @@ The orchestrator must call `recordFailure` with a sanitized diagnostic after
 fetch, parsing, or persistence errors. This separate path updates the check time
 and failure log without changing jobs. Rich log fields and persisted application
 deadlines from gpt1 still require schema work. No execution endpoint is exposed.
+
+## HTTP crawler transport
+
+`CareerPageFetcherService.fetch` returns the `CareerPage` input consumed by
+`CrawlIngestionService`. Keep these phases separate: never open a transaction
+before fetching. The future orchestrator resolves source overrides, fetches,
+ingests, and records sanitized failures. The transport itself never writes data.
+
+Every URL uses HTTP(S), its default port, and no credentials. DNS responses must
+contain only permitted public addresses; IPv6 additionally requires global
+unicast space. The socket connects to one validated IP, while TLS certificate
+verification and SNI use the original host. Every redirect repeats validation.
+No environment proxy, cookies, or application authorization are forwarded.
+
+The 20-second budget spans all hops. Bodies are streamed to a 2 MiB ceiling;
+headers have a 16 KiB ceiling. The four-request capacity guard is per process,
+not a distributed scheduler limit. DNS resolution uses the OS resolver and cannot
+be cancelled; results arriving after the deadline are ignored. Only the first
+validated address is tried; there are no network retries. HTML is decoded as UTF-8;
+compressed responses and non-HTML content are rejected deliberately. These limits
+may require explicit source adapters for otherwise legitimate sites.
+
+Transport errors contain stable codes and fixed diagnostic messages without
+remote URLs, response content, or raw network errors. Deployment egress controls
+remain useful defense in depth; no live-network security verification is claimed.

@@ -1,3 +1,4 @@
+import { CareerPageFetcherService } from './services/career-page-fetcher.service.js';
 import { CrawlIngestionService } from './services/crawl-ingestion.service.js';
 import { Module } from '@nestjs/common';
 import { AuthenticationModule } from '../authentication/authentication.module.js';
@@ -9,7 +10,12 @@ import { AdminCrawlLogService } from './services/admin-crawl-log.service.js';
 @Module({
   imports: [AuthenticationModule],
   controllers: [AdminJobsController, AdminCrawlLogsController],
-  providers: [AdminJobCatalogService, AdminCrawlLogService, CrawlIngestionService],
-  exports: [CrawlIngestionService],
+  providers: [
+    AdminJobCatalogService,
+    AdminCrawlLogService,
+    CrawlIngestionService,
+    CareerPageFetcherService,
+  ],
+  exports: [CrawlIngestionService, CareerPageFetcherService],
 })
 export class JobCrawlingModule {}
