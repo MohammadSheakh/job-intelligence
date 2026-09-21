@@ -1,8 +1,16 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 
+/**
+ * Creates and verifies stateless, HMAC-signed candidate cookies; account activity is checked
+ * separately by the guard.
+ */
 @Injectable()
 export class CandidateSessionService {
+  /**
+   * Sign the candidate ID and a 30-day Unix expiry; preserve bigint precision in the token
+   * payload.
+   */
   create(candidateId: bigint): { token: string; expiresAt: Date } {
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const payload = `${candidateId}.${Math.floor(expiresAt.getTime() / 1000)}`;
@@ -10,6 +18,10 @@ export class CandidateSessionService {
     return { token: `${payload}.${signature}`, expiresAt };
   }
 
+  /**
+   * Return the candidate ID only for an exact three-field, untampered, unexpired token; malformed
+   * input returns null.
+   */
   verify(token: string): bigint | null {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
@@ -25,6 +37,7 @@ export class CandidateSessionService {
     return Number(expiry) > Math.floor(Date.now() / 1000) ? BigInt(id) : null;
   }
 
+  /** Fail closed when the configured signing secret is missing or too short. */
   private secret(): string {
     const secret = process.env.CANDIDATE_SESSION_SECRET;
     if (!secret || secret.length < 32)

@@ -2,10 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { JobListQueryDto } from '../dto/job-list-query.dto.js';
 
+/**
+ * Exposes a read-only jobs catalog; crawler execution and job mutation are outside this service.
+ */
 @Injectable()
 export class AdminJobCatalogService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Filter jobs and paginate by discovery time with an ID tie-breaker, projecting company/category
+   * context.
+   */
   async list(input: JobListQueryDto) {
     const search = input.search?.trim();
     const where = {

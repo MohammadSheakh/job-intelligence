@@ -10,6 +10,10 @@ type ScryptAsync = (
 const scrypt = promisify(callback) as unknown as ScryptAsync;
 const parameters = { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
 
+/**
+ * Verify legacy-encoded scrypt credentials; malformed records and derivation failures return
+ * false.
+ */
 export async function verifyLegacyScrypt(password: string, encoded: string): Promise<boolean> {
   try {
     const [kind, n, r, p, salt, hash] = encoded.split('$');
@@ -27,6 +31,10 @@ export async function verifyLegacyScrypt(password: string, encoded: string): Pro
   }
 }
 
+/**
+ * Create a random-salted scrypt record using the legacy encoding so existing and migrated
+ * authentication remain compatible.
+ */
 export async function hashLegacyScrypt(password: string): Promise<string> {
   if (password.length < 8 || password.length > 256)
     throw new Error('Password must be 8–256 characters.');

@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsInt, Max, Min } from 'class-validator';
 
+/** Bounds operational crawl-history pagination. */
 export class CrawlLogListQueryDto {
   @Type(() => Number)
   @IsInt()

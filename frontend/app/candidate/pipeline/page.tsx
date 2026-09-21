@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '../../../lib/api';
+import { api, candidateAuthRedirect } from '../../../lib/api';
 
 type PipelineItem = {
   companyId: string;
@@ -28,9 +28,9 @@ export default function CandidatePipelinePage() {
     try {
       setItems(await api<PipelineItem[]>('/candidate/pipeline'));
     } catch (reason) {
+      const destination = candidateAuthRedirect(reason);
+      if (destination) router.replace(destination);
       setError(reason instanceof Error ? reason.message : 'Pipeline could not be loaded.');
-      if (reason instanceof Error && /unauthor/i.test(reason.message))
-        router.replace('/candidate/login');
     } finally {
       setLoading(false);
     }
@@ -57,6 +57,8 @@ export default function CandidatePipelinePage() {
       });
       await load();
     } catch (reason) {
+      const destination = candidateAuthRedirect(reason);
+      if (destination) router.replace(destination);
       setError(reason instanceof Error ? reason.message : 'Pipeline item could not be saved.');
     } finally {
       setSavingId(null);
@@ -69,6 +71,8 @@ export default function CandidatePipelinePage() {
       await api(`/candidate/pipeline/${companyId}`, { method: 'DELETE' });
       await load();
     } catch (reason) {
+      const destination = candidateAuthRedirect(reason);
+      if (destination) router.replace(destination);
       setError(reason instanceof Error ? reason.message : 'Pipeline item could not be removed.');
     } finally {
       setSavingId(null);

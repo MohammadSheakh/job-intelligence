@@ -3,10 +3,12 @@ import { PrismaService } from '@app/database';
 import { CompanyListQueryDto } from '../dto/company-list-query.dto.js';
 import { UpdateCompanyDto } from '../dto/update-company.dto.js';
 
+/** Implements administrator company browsing and atomic profile/category replacement. */
 @Injectable()
 export class CompanyIntelligenceService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Apply validated filters and pagination, returning matching rows and their total count. */
   async list(input: CompanyListQueryDto) {
     const search = input.search?.trim();
     const category = input.category?.trim();
@@ -41,6 +43,7 @@ export class CompanyIntelligenceService {
     };
   }
 
+  /** Return company details or a domain 404, normalizing category placeholders for display. */
   async getById(id: string) {
     const company = await this.prisma.company.findUnique({
       where: { id },
@@ -55,6 +58,10 @@ export class CompanyIntelligenceService {
     };
   }
 
+  /**
+   * Validate requested categories, then update the company and replace assignments in one
+   * transaction so failures leave the previous state intact.
+   */
   async update(id: string, input: UpdateCompanyDto): Promise<void> {
     const name = input.name.trim();
     if (!name)
@@ -133,6 +140,10 @@ export class CompanyIntelligenceService {
     },
   };
 
+  /**
+   * Translate persistence names to API fields and omit Other when a meaningful category is
+   * present.
+   */
   private toCompanySummary(company: {
     id: string;
     name: string;

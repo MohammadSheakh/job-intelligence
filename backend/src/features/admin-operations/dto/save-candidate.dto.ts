@@ -11,6 +11,10 @@ import {
   MinLength,
 } from 'class-validator';
 
+/**
+ * Validates the full administrator candidate form; password omission preserves existing
+ * credentials on update.
+ */
 export class SaveCandidateDto {
   @IsString()
   @MaxLength(120)

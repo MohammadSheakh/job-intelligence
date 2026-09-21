@@ -7,11 +7,17 @@ import {
 import { SaveCompanyStateDto } from '../dto/save-company-state.dto.js';
 import { CandidatePipelineService } from '../services/candidate-pipeline.service.js';
 import { CandidatePipelineQueryDto } from '../dto/candidate-pipeline-query.dto.js';
+
+/**
+ * Authenticated pipeline endpoints; shared companies are never deleted by candidate tracking
+ * actions.
+ */
 @Controller('candidate/pipeline')
 @UseGuards(CandidateSessionGuard, CandidatePasswordChangedGuard)
 export class CandidatePipelineController {
   constructor(private readonly pipeline: CandidatePipelineService) {}
 
+  /** List the signed-in candidate’s tracking rows with an optional validated workflow filter. */
   @Get()
   list(
     @Req()
@@ -22,6 +28,7 @@ export class CandidatePipelineController {
     return this.pipeline.list(request.candidate.id, query.status);
   }
 
+  /** Save a validated company state for the principal attached by the session guard. */
   @Post('company-state')
   async save(
     @Req()
@@ -33,6 +40,7 @@ export class CandidatePipelineController {
     return { ok: true };
   }
 
+  /** Remove the principal’s tracking row for the selected company; repeated removal is safe. */
   @Delete(':companyId')
   async remove(
     @Req()

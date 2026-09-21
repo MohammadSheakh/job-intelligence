@@ -220,7 +220,8 @@ entries describe the legacy runtime.
 - [x] Initial database coverage for all six implemented admin API groups (24 admin database tests; 65 tests total).
 - [x] Real constraint failures verify company/category, settings, and candidate profile/password transaction rollback.
 - [x] Admin candidate creation and password resets persist atomically; invalid/overflowing candidate IDs return HTTP 400.
-- [ ] Browser verification of login, mandatory password change, and candidate workflows.
+- [x] Eight desktop Chromium checks cover login failures, mandatory-password direct navigation, profile/pipeline mutations, and logout (73 checks total).
+- [ ] Visual, mobile, cross-browser, and production bootstrap verification.
 - [ ] Complete feature parity, operational cutover, and rollback validation before replacing the legacy runtime.
 
 ## Source readability and style checks
@@ -232,3 +233,9 @@ entries describe the legacy runtime.
 - [x] Code style CI workflow checks formatting and lint on pushes and pull requests.
 - [x] Formatting cleanup verified with all 65 backend tests, backend source/test typechecks and build, and frontend typecheck/build.
 - [~] Legacy root typecheck retains the previously documented compatibility errors; formatting/lint checks pass independently.
+
+## Backend handoff documentation
+
+- [x] Controller/service responsibilities and important method contracts documented in JSDoc.
+- [x] Guard ordering, transaction boundaries, pipeline defaults, and session limitations explained for maintainers.
+- [x] `docs/BACKEND_DEVELOPER_GUIDE.md` documents request flow and commenting conventions.

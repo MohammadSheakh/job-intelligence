@@ -1,4 +1,9 @@
 import { IsArray, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+
+/**
+ * Allows self-service profile fields only; email and candidate identity are intentionally
+ * excluded.
+ */
 export class UpdateCandidateProfileDto {
   @IsString()
   @MaxLength(120)

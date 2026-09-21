@@ -1,4 +1,9 @@
 import { IsDateString, IsIn, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+
+/**
+ * Validates pipeline form values; defaults and date-preservation behavior are applied by the
+ * service.
+ */
 export class SaveCompanyStateDto {
   @IsString()
   @MaxLength(80)

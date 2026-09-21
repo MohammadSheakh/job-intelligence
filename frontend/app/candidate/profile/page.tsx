@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '../../../lib/api';
+import { api, candidateAuthRedirect } from '../../../lib/api';
 
 type Profile = {
   name: string;
@@ -45,7 +45,11 @@ export default function CandidateProfilePage() {
         setProfile(candidate);
         setCategories(catalog.map((category) => category.name));
       })
-      .catch(() => router.replace('/candidate/login'));
+      .catch((reason) => {
+        const destination = candidateAuthRedirect(reason);
+        if (destination) router.replace(destination);
+        else setError(reason instanceof Error ? reason.message : 'Profile could not be loaded.');
+      });
   }, [router]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -73,6 +77,8 @@ export default function CandidateProfilePage() {
       });
       setSaved(true);
     } catch (reason) {
+      const destination = candidateAuthRedirect(reason);
+      if (destination) router.replace(destination);
       setError(reason instanceof Error ? reason.message : 'Profile could not be saved.');
     } finally {
       setSaving(false);
@@ -82,7 +88,9 @@ export default function CandidateProfilePage() {
   if (!profile)
     return (
       <main className="auth">
-        <p className="muted">Loading your profile…</p>
+        <p className={error ? 'error' : 'muted'} role={error ? 'alert' : undefined}>
+          {error || 'Loading your profile…'}
+        </p>
       </main>
     );
   const preferred = new Set(split(profile.preferred_categories));

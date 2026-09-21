@@ -6,6 +6,7 @@ import { CandidateAuthenticationController } from './controllers/candidate-authe
 import { CandidateSessionGuard } from './guards/candidate-session.guard.js';
 import { AdminBasicAuthGuard } from './guards/admin-basic-auth.guard.js';
 
+// Export guard dependencies because importing feature modules also resolve these guards.
 @Module({
   controllers: [CandidateAuthenticationController],
   providers: [

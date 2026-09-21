@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
+/** Validates read-only job filters and bounded pagination before Prisma queries. */
 export class JobListQueryDto {
   @IsOptional()
   @IsString()

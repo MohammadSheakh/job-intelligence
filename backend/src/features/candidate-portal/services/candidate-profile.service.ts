@@ -1,10 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { UpdateCandidateProfileDto } from '../dto/update-candidate-profile.dto.js';
+
+/**
+ * Reads and updates self-service profile fields without exposing password data or changing login
+ * identity.
+ */
 @Injectable()
 export class CandidateProfileService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Project only editable profile data and the read-only email for an active candidate. */
   async get(candidateId: bigint) {
     const profile = await this.prisma.candidate.findFirst({
       where: { id: candidateId, active: true },
@@ -30,6 +36,10 @@ export class CandidateProfileService {
     return profile;
   }
 
+  /**
+   * Normalize profile values against the category catalog; exclusions override preferences and
+   * unknown categories are discarded.
+   */
   async update(candidateId: bigint, input: UpdateCandidateProfileDto): Promise<void> {
     const clean = (value: string | undefined) => value?.trim().replace(/\s+/g, ' ') || null;
     const allowedCategories = new Set(

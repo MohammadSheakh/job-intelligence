@@ -4,6 +4,9 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { AppConfigService } from './config/config.service.js';
 
+/**
+ * Start the Nest API with strict DTO validation, credentialed CORS, and the shared /api/v1 prefix.
+ */
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(

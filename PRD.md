@@ -248,3 +248,10 @@ edit. Candidate identifiers accepted by admin endpoints must be positive decimal
 values within PostgreSQL's signed bigint range; invalid values return HTTP 400.
 Local regression tests cover the implemented admin API groups, including real
 transaction rollback for candidate, company/category, and settings writes.
+
+Candidate UI navigation must distinguish an expired/missing session (login) from
+an initial password change requirement (change-password), including direct links
+to profile, companies, and pipeline. The overview provides Sign out, which clears
+the session cookie through the authentication API and returns to login. Desktop
+Chromium verification covers these core flows; visual/mobile and cross-browser
+validation remain pending.

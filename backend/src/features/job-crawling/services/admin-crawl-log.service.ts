@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { CrawlLogListQueryDto } from '../dto/crawl-log-list-query.dto.js';
 
+/** Exposes read-only crawler history for logs still linked to a company. */
 @Injectable()
 export class AdminCrawlLogService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Exclude unlinked logs and paginate newest first with an ID tie-breaker for equal timestamps.
+   */
   async list(input: CrawlLogListQueryDto) {
     const where = { company_id: { not: null } };
     const [total, rows] = await this.prisma.$transaction([

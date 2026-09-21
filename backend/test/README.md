@@ -43,3 +43,31 @@ bootstrap/CORS configuration, concurrency under load, or exhaustive feature pari
 Tests are excluded from the production TypeScript build and checked separately
 with `typecheck:test`. The database suite is deliberately excluded from `test`
 so the fast suite needs no Docker or database.
+
+## Browser verification
+
+Install backend and frontend dependencies and the Chromium binary first:
+
+```bash
+pnpm --dir backend exec playwright install chromium
+pnpm --dir backend test:browser
+```
+
+The browser command reuses the disposable PostgreSQL runner. Eight Jest/Playwright
+checks run real Chromium against Nest feature modules and Next development mode:
+unsigned direct navigation, mandatory password-change navigation, invalid login,
+password replacement, profile persistence, company tracking/pipeline edits and
+removal, and logout. Nest listens on loopback with credentialed CORS for the test
+frontend. No cloud database, user account, or live credentials are used.
+
+The fixture copies frontend source/configuration into a temporary directory and
+links its installed dependencies. Next writes its generated configuration and
+build output there, not in the developer's frontend directory. Browser contexts,
+the Next subprocess, temporary source copy, Nest, and the disposable database are
+closed/removed after the run. Tests require Docker, installed frontend dependencies,
+and Playwright Chromium with its system libraries; on a fresh Linux machine use
+`pnpm --dir backend exec playwright install --with-deps chromium` if needed.
+
+These are desktop Chromium functional checks, not visual QA, cross-browser/mobile
+coverage, production bootstrap verification, or full recommendation/Quick Search
+parity. Browser checks are separate from the fast and database-only suites.

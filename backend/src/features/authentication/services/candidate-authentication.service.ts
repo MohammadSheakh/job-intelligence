@@ -10,10 +10,18 @@ export interface CandidatePrincipal {
   mustChangePassword: boolean;
 }
 
+/**
+ * Authenticates existing active candidates using legacy-compatible scrypt hashes; it does not
+ * register accounts.
+ */
 @Injectable()
 export class CandidateAuthenticationService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Look up an active candidate case-insensitively and return only the principal when the password
+   * verifies.
+   */
   async authenticate(email: string, password: string): Promise<CandidatePrincipal | null> {
     const row = await this.prisma.candidate.findFirst({
       where: { email: { equals: email.trim(), mode: 'insensitive' }, active: true },
@@ -29,6 +37,10 @@ export class CandidateAuthenticationService {
     };
   }
 
+  /**
+   * Reload account activity and password-change state on each request so admin changes affect
+   * existing sessions.
+   */
   async getActiveCandidate(candidateId: bigint): Promise<CandidatePrincipal | null> {
     const row = await this.prisma.candidate.findFirst({
       where: { id: candidateId, active: true },
@@ -44,10 +56,15 @@ export class CandidateAuthenticationService {
       : null;
   }
 
+  /** Set the candidate’s chosen password and clear the mandatory-change flag. */
   async changePassword(candidateId: bigint, password: string): Promise<void> {
     await this.setPassword(candidateId, password, false);
   }
 
+  /**
+   * Hash before persistence; an optional transaction lets admin profile and password changes
+   * commit or roll back together.
+   */
   async setPassword(
     candidateId: bigint,
     password: string,

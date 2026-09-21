@@ -6,6 +6,7 @@ import {
 } from '../services/candidate-authentication.service.js';
 import { CandidateSessionService } from '../services/candidate-session.service.js';
 
+/** Validates the session cookie and attaches a freshly loaded active principal to the request. */
 @Injectable()
 export class CandidateSessionGuard implements CanActivate {
   constructor(
@@ -13,6 +14,10 @@ export class CandidateSessionGuard implements CanActivate {
     private readonly authentication: CandidateAuthenticationService,
   ) {}
 
+  /**
+   * Treat malformed cookie encoding as unauthenticated and recheck account activity before the
+   * controller runs.
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
       .switchToHttp()

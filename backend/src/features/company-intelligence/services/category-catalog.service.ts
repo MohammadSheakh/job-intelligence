@@ -2,10 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { CreateCategoryDto } from '../dto/create-category.dto.js';
 
+/** Manages the shared company category catalog and its administrator-facing usage counts. */
 @Injectable()
 export class CategoryCatalogService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Count Other only for companies lacking a meaningful category; order category groups for the
+   * admin UI.
+   */
   async list() {
     const [categories, otherOnlyCount] = await this.prisma.$transaction([
       this.prisma.category.findMany({
@@ -36,6 +41,10 @@ export class CategoryCatalogService {
       }));
   }
 
+  /**
+   * Upsert by normalized category name so changing its type preserves existing company
+   * assignments.
+   */
   async create(input: CreateCategoryDto): Promise<void> {
     const name = input.name.trim();
     if (!name) return;

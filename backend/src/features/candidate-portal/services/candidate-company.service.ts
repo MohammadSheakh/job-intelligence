@@ -1,10 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { CandidateCompanyQueryDto } from '../dto/candidate-company-query.dto.js';
+
+/**
+ * Provides the active-company catalog with tracking state belonging only to the signed-in
+ * candidate.
+ */
 @Injectable()
 export class CandidateCompanyService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Apply bounded search/category filters and flatten company/category/tracking relations for the
+   * portal UI.
+   */
   async list(candidateId: bigint, query: CandidateCompanyQueryDto) {
     const q = query.q?.trim();
     const category = query.category?.trim();

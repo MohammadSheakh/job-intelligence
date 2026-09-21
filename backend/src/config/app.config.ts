@@ -6,6 +6,9 @@ export interface AppConfig {
   defaultCandidatePassword: string;
 }
 
+/**
+ * Read application settings with local-development defaults; secrets remain environment-provided.
+ */
 export function appConfig(): AppConfig {
   return {
     apiPort: Number(process.env.API_PORT ?? 4000),

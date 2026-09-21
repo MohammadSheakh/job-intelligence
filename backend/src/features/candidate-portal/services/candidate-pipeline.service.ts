@@ -1,10 +1,19 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { SaveCompanyStateDto } from '../dto/save-company-state.dto.js';
+
+/**
+ * Owns per-candidate company tracking; every read and mutation is scoped by the authenticated
+ * candidate ID.
+ */
 @Injectable()
 export class CandidatePipelineService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Upsert one company state using legacy form semantics: blank notes clear, omitted counts reset,
+   * and Applied defaults to today in UTC.
+   */
   async save(candidateId: bigint, input: SaveCompanyStateDto): Promise<void> {
     const company = await this.prisma.company.findUnique({
       where: { id: input.companyId },
@@ -12,6 +21,7 @@ export class CandidatePipelineService {
     });
     if (!company)
       throw new NotFoundException({ code: 'COMPANY_NOT_FOUND', message: 'Company was not found.' });
+    // Non-Applied states without a date keep the previous application date on update.
     const lastAppliedAt = input.lastAppliedAt
       ? new Date(input.lastAppliedAt)
       : input.status === 'APPLIED'
@@ -30,10 +40,15 @@ export class CandidatePipelineService {
         ...state,
         last_applied_at: lastAppliedAt,
       },
+      // Prisma treats undefined as omitted; null would erase the existing date.
       update: { ...state, last_applied_at: lastAppliedAt ?? undefined, updated_at: new Date() },
     });
   }
 
+  /**
+   * Return the candidate pipeline ordered by workflow stage, then company name; hide the Other
+   * category placeholder.
+   */
   async list(candidateId: bigint, status?: 'PLANNING' | 'APPLIED' | 'EXCLUDED') {
     const rows = await this.prisma.candidate_company_state.findMany({
       where: { candidate_id: candidateId, ...(status ? { status } : {}) },
@@ -64,6 +79,10 @@ export class CandidatePipelineService {
       }));
   }
 
+  /**
+   * Idempotently remove only this candidate’s tracking row, leaving the shared company and other
+   * candidates untouched.
+   */
   async remove(candidateId: bigint, companyId: string): Promise<void> {
     await this.prisma.candidate_company_state.deleteMany({
       where: { candidate_id: candidateId, company_id: companyId },

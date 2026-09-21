@@ -3,10 +3,15 @@ import { timingSafeEqual } from 'node:crypto';
 import type { Request } from 'express';
 import { AppConfigService } from '../../../config/config.service.js';
 
+/** Keeps administrator Basic authentication separate from candidate cookie sessions. */
 @Injectable()
 export class AdminBasicAuthGuard implements CanActivate {
   constructor(private readonly config: AppConfigService) {}
 
+  /**
+   * Reject missing credentials and compare configured credential bytes with a timing-safe equality
+   * check.
+   */
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<Request>();
     const header = request.headers.authorization;
@@ -34,6 +39,7 @@ export class AdminBasicAuthGuard implements CanActivate {
     return true;
   }
 
+  /** Emit the same authentication failure shape regardless of which credential check failed. */
   private reject(): never {
     throw new UnauthorizedException({
       code: 'ADMIN_AUTH_REQUIRED',

@@ -1,5 +1,6 @@
 import { IsBoolean, IsInt, IsString, Max, MaxLength, Min } from 'class-validator';
 
+/** Validates the complete editable settings form with legacy numeric bounds. */
 export class UpdateSettingsDto {
   @IsBoolean()
   aiEnabled!: boolean;

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '../../../lib/api';
+import { api, candidateAuthRedirect } from '../../../lib/api';
 
 type Company = {
   id: string;
@@ -31,6 +31,8 @@ export default function CandidateCompaniesPage() {
         const suffix = search.trim() ? `?q=${encodeURIComponent(search.trim())}` : '';
         setCompanies(await api<Company[]>(`/candidate/companies${suffix}`));
       } catch (reason) {
+        const destination = candidateAuthRedirect(reason);
+        if (destination) router.replace(destination);
         setError(reason instanceof Error ? reason.message : 'Companies could not be loaded.');
         if (reason instanceof Error && /unauthor/i.test(reason.message))
           router.replace('/candidate/login');
@@ -62,6 +64,8 @@ export default function CandidateCompaniesPage() {
         ),
       );
     } catch (reason) {
+      const destination = candidateAuthRedirect(reason);
+      if (destination) router.replace(destination);
       setError(reason instanceof Error ? reason.message : 'Company status could not be saved.');
     } finally {
       setSavingId(null);
@@ -76,6 +80,8 @@ export default function CandidateCompaniesPage() {
         current.map((item) => (item.id === company.id ? { ...item, trackingStatus: null } : item)),
       );
     } catch (reason) {
+      const destination = candidateAuthRedirect(reason);
+      if (destination) router.replace(destination);
       setError(reason instanceof Error ? reason.message : 'Company status could not be removed.');
     } finally {
       setSavingId(null);

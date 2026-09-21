@@ -16,6 +16,7 @@ const actions = [
   'MANUAL_REVIEW',
 ] as const;
 
+/** Validates company edits and requested category names before atomic category replacement. */
 export class UpdateCompanyDto {
   @IsString()
   @MaxLength(300)

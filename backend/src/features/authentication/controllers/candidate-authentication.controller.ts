@@ -15,6 +15,10 @@ import { CandidateAuthenticationService } from '../services/candidate-authentica
 import { CandidateSessionService } from '../services/candidate-session.service.js';
 import { CandidateSessionGuard, type CandidateRequest } from '../guards/candidate-session.guard.js';
 
+/**
+ * HTTP boundary for candidate login, identity, password change, and logout; password-change gating
+ * intentionally excludes these routes.
+ */
 @Controller('candidate-auth')
 export class CandidateAuthenticationController {
   constructor(
@@ -22,6 +26,10 @@ export class CandidateAuthenticationController {
     private readonly sessions: CandidateSessionService,
   ) {}
 
+  /**
+   * Issue an HTTP-only session cookie after password verification and tell the UI whether an
+   * initial password change is required.
+   */
   @Post('login')
   async login(
     @Body()
@@ -49,6 +57,7 @@ export class CandidateAuthenticationController {
     };
   }
 
+  /** Expose the active principal with a string ID and no credential material. */
   @Get('me')
   @UseGuards(CandidateSessionGuard)
   async me(
@@ -64,6 +73,10 @@ export class CandidateAuthenticationController {
     };
   }
 
+  /**
+   * Change only the authenticated candidate’s password; request input cannot select another
+   * account.
+   */
   @Post('change-password')
   @UseGuards(CandidateSessionGuard)
   async changePassword(
@@ -77,6 +90,7 @@ export class CandidateAuthenticationController {
     return { ok: true };
   }
 
+  /** Expire the browser cookie. Stateless tokens are not server-revoked by this endpoint. */
   @Post('logout')
   @UseGuards(CandidateSessionGuard)
   logout(

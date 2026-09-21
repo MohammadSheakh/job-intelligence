@@ -140,13 +140,33 @@ code or Prisma platform placeholders belong in the replacement.
   The previously documented legacy root typecheck errors remain; this cleanup
   does not change those legacy runtime/type compatibility issues.
 
+## Backend documentation and browser verification
+
+- Backend controllers/services, authentication guards, DTOs, configuration
+  helpers, and database lifecycle methods now explain their responsibilities and
+  important rules in JSDoc. Inline notes clarify transaction and pipeline-date
+  behavior. `docs/BACKEND_DEVELOPER_GUIDE.md` explains request flow and commenting
+  conventions for future contributors.
+- Added eight real Chromium checks via `pnpm --dir backend test:browser`, using
+  disposable local PostgreSQL, synthetic accounts, Nest feature modules, and a
+  temporary copy of the Next frontend in development mode.
+- Browser tests reproduced five navigation failures. Structured API errors now
+  direct unsigned candidates to login and accounts requiring a password change
+  to the change-password page, including direct profile/company/pipeline URLs.
+- Verified login failure, password change, profile persistence, company tracking,
+  pipeline update/removal, and cookie-clearing logout. Added Sign out to the
+  candidate overview so the browser flow includes ending a session.
+- All 73 checks (20 isolated, 45 PostgreSQL, eight browser), style/lint checks,
+  backend source/test typechecks and build, and frontend typecheck/build pass.
+  Visual/mobile/cross-browser QA and production bootstrap checks remain separate.
+
 ## In progress / next verification work
 
-1. Verify the complete candidate flow in a browser, including direct navigation
-   during mandatory password change; API enforcement is now tested.
-2. Build the Company Intelligence admin UI against the verified APIs.
-3. Continue feature parity work below; candidate recommendations, Quick Search,
+1. Build the Company Intelligence admin UI against the verified APIs.
+2. Continue feature parity work below; candidate recommendations, Quick Search,
    and Google OAuth are not included in the verified core API scope.
+3. Broaden candidate QA to visual/mobile/cross-browser behavior and production
+   deployment configuration; the core desktop Chromium flow is now covered.
 
 ## Remaining work (ordered)
 
@@ -193,6 +213,7 @@ code or Prisma platform placeholders belong in the replacement.
 # Run from the repository root (job-intelligence-prd-db-switch/).
 pnpm --dir backend test
 pnpm --dir backend test:database # requires Docker and postgres:16
+pnpm --dir backend test:browser # also requires Playwright Chromium and frontend dependencies
 pnpm --dir backend typecheck
 pnpm --dir backend typecheck:test
 pnpm --dir backend build

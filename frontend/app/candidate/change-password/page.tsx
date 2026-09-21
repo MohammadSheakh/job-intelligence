@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { api } from '../../../lib/api';
+import { api, candidateAuthRedirect } from '../../../lib/api';
 
 export default function ChangePasswordPage() {
   const router = useRouter();
@@ -28,6 +28,8 @@ export default function ChangePasswordPage() {
       });
       router.replace('/candidate');
     } catch (reason) {
+      const destination = candidateAuthRedirect(reason);
+      if (destination) router.replace(destination);
       setError(reason instanceof Error ? reason.message : 'Password change failed.');
     } finally {
       setLoading(false);

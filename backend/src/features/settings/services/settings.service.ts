@@ -2,10 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { UpdateSettingsDto } from '../dto/update-settings.dto.js';
 
+/**
+ * Reads persisted runtime settings with legacy defaults and writes only the supported editable
+ * keys.
+ */
 @Injectable()
 export class SettingsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Convert stored strings into the UI settings shape, applying fallback values and legacy bounds.
+   */
   async get() {
     const values = new Map(
       (await this.prisma.setting.findMany({ select: { key: true, value: true } })).map(
@@ -32,6 +39,7 @@ export class SettingsService {
     };
   }
 
+  /** Persist all ten editable settings in one transaction; unrelated settings remain untouched. */
   async update(input: UpdateSettingsDto): Promise<void> {
     const entries: Array<[string, string]> = [
       ['ai_enabled', String(input.aiEnabled)],

@@ -1,5 +1,7 @@
 import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { Type } from 'class-transformer';
+
+/** Bounds candidate company searches and requires an integer result limit. */
 export class CandidateCompanyQueryDto {
   @IsOptional()
   @IsString()

@@ -9,6 +9,7 @@ const actions = [
   'MANUAL_REVIEW',
 ] as const;
 
+/** Bounds administrator company pagination and restricts research-action filters. */
 export class CompanyListQueryDto {
   @IsOptional()
   @IsString()

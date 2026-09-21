@@ -10,6 +10,10 @@ import { AppConfigService } from '../../../config/config.service.js';
 import { CandidateAuthenticationService } from '../../authentication/services/candidate-authentication.service.js';
 import { SaveCandidateDto } from '../dto/save-candidate.dto.js';
 
+/**
+ * Manages candidate accounts; profile writes and authentication initialization/reset share one
+ * transaction.
+ */
 @Injectable()
 export class AdminCandidatesService {
   constructor(
@@ -18,6 +22,10 @@ export class AdminCandidatesService {
     private readonly authentication: CandidateAuthenticationService,
   ) {}
 
+  /**
+   * List active accounts first and expose authentication availability as booleans rather than
+   * password hashes or Google identifiers.
+   */
   async list() {
     const candidates = await this.prisma.candidate.findMany({
       include: { auth: { select: { passwordHash: true, google_sub: true } } },
@@ -26,6 +34,7 @@ export class AdminCandidatesService {
     return candidates.map((candidate) => this.toResponse(candidate));
   }
 
+  /** Resolve a validated candidate ID and return the administrator-safe profile projection. */
   async get(id: string) {
     const candidate = await this.prisma.candidate.findUnique({
       where: { id: this.id(id) },
@@ -39,6 +48,10 @@ export class AdminCandidatesService {
     return this.toResponse(candidate);
   }
 
+  /**
+   * Create the profile and initialize a hashed password atomically; new accounts must change the
+   * administrator-provided password.
+   */
   async create(input: SaveCandidateDto): Promise<{ id: string }> {
     return this.prisma.$transaction(async (transaction) => {
       const candidate = await this.save(transaction, input);
@@ -47,6 +60,10 @@ export class AdminCandidatesService {
     });
   }
 
+  /**
+   * Save profile changes with any password reset atomically; ordinary edits preserve an existing
+   * password.
+   */
   async update(id: string, input: SaveCandidateDto): Promise<void> {
     const candidateId = this.id(id);
     await this.prisma.$transaction(async (transaction) => {
@@ -55,6 +72,10 @@ export class AdminCandidatesService {
     });
   }
 
+  /**
+   * Normalize form values and persist through the caller’s transaction; translate duplicate emails
+   * into HTTP 409.
+   */
   private async save(transaction: Prisma.TransactionClient, input: SaveCandidateDto, id?: bigint) {
     const name = input.name.trim();
     if (!name)
@@ -111,6 +132,10 @@ export class AdminCandidatesService {
     }
   }
 
+  /**
+   * Reset an explicit password or initialize a missing one; never replace an existing hash on a
+   * normal profile edit.
+   */
   private async ensurePassword(
     transaction: Prisma.TransactionClient,
     candidateId: bigint,
@@ -133,6 +158,10 @@ export class AdminCandidatesService {
       );
   }
 
+  /**
+   * Reject non-decimal, non-positive, and out-of-range identifiers before passing them to
+   * PostgreSQL bigint queries.
+   */
   private id(value: string): bigint {
     if (!/^[1-9]\d{0,18}$/.test(value) || BigInt(value) > 9223372036854775807n) {
       throw new BadRequestException({
@@ -143,6 +172,10 @@ export class AdminCandidatesService {
     return BigInt(value);
   }
 
+  /**
+   * Serialize bigint IDs and authentication flags while keeping credential material out of API
+   * responses.
+   */
   private toResponse(candidate: {
     id: bigint;
     name: string;
