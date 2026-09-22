@@ -1,7 +1,11 @@
-# Database and persistence
+# Single-tenant database rules — Job Intelligence
 
-Applies to Prisma models, SQL, repositories, transactions, seeds, and database
-operations. Read [backend scope](../../backend/AGENTS.md),
+**Active rules for this application.** Applies to Prisma models, SQL, repositories,
+transactions, seeds, and database operations. The separate
+[multi-tenant reference](backend-database-multi-tenant.md) applies only to explicitly
+scoped multi-tenant work; it does not authorize changing this application's tenancy.
+
+Read [backend scope](../../backend/AGENTS.md),
 [Prisma scope](../../backend/prisma/AGENTS.md), and
 [transaction rules](backend-transactions.md). Before connecting to a database,
 read [database switching](../../docs/DATABASE_SWITCHING.md).
@@ -60,64 +64,22 @@ The normal model-edit flow is:
    A client generated from new fields must not be deployed before those fields
    exist in the target database; use the migration sequence below.
 
-### Ferio comparison: what transfers and what does not
-
-Ferio's `prisma/schema/` uses the same base/shared/user/feature fragment convention
-and V2 builder for its **tenant commerce** `schema.prisma`. Its separate
-`prisma/platform.prisma` is authored outside that fragment tree and generates to
-`src/platform/generated/platform-client`. V2 does not assemble the platform file.
-
-Ferio's root `prisma.config.ts` loads `dotenv/config`, uses `DATABASE_URL`, selects
-`prisma/migrations`, and conditionally accepts `SHADOW_DATABASE_URL`.
-`prisma/platform.config.ts` selects `PLATFORM_DATABASE_URL`, `platform.prisma`,
-and `platform-migrations` relative to that config. Platform deployment explicitly
-uses `--config prisma/platform.config.ts`. **Selecting `--schema` alone is not a
-switch to the platform datasource or migration configuration.**
-
-Ferio has separate tenant/platform SQL histories and a checksum manifest checked
-by `scripts/validate-migration-integrity.mjs`. Job Intelligence has neither those
-histories nor that validator. Prisma's own migration history/checksums are a
-separate mechanism; never edit a checksum to disguise modified applied SQL.
-Ferio's `seed.ts` writes commerce/bootstrap data (including users, delivery zones,
-providers, and warehouses). Neither its seeds nor its migration chains belong in
-Job Intelligence. Folder/tooling similarity does not mean database parity.
-
 ## Exact package scripts and side effects
 
-Snapshot from [backend/package.json](../../backend/package.json) and the sibling
-`ferio-nest-prisma/package.json`. Recheck these files when modifying commands.
-Run backend scripts from `backend/`, or use `pnpm --dir backend <script>` from the
-repository root. Run Ferio scripts from its own package root.
-
-These six definitions are identical in both packages:
+Definitions from [backend/package.json](../../backend/package.json). Run from
+`backend/`, or use `pnpm --dir backend <script>` from the repository root.
+Recheck the package file whenever changing commands.
 
 ```json
 {
   "prisma:schema:build": "node prisma/scripts/build-prisma-schemaV2.js",
+  "prisma:generate": "pnpm prisma generate --schema prisma/schema.prisma",
+  "prisma:db:pull": "prisma db pull --print",
   "prisma:sync": "pnpm run prisma:schema:build && pnpm run prisma:generate",
   "prisma:seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
   "prisma:migrate:dev": "pnpm run prisma:schema:build && pnpm prisma migrate dev --schema prisma/schema.prisma",
   "prisma:migrate:status": "pnpm prisma migrate status --schema prisma/schema.prisma",
   "prisma:migrate:deploy": "pnpm prisma migrate deploy --schema prisma/schema.prisma"
-}
-```
-
-Job Intelligence's additional/different definitions:
-
-```json
-{
-  "prisma:generate": "pnpm prisma generate --schema prisma/schema.prisma",
-  "prisma:db:pull": "prisma db pull --print"
-}
-```
-
-Ferio's additional/different definitions:
-
-```json
-{
-  "prisma:generate": "pnpm prisma generate --schema prisma/schema.prisma && pnpm prisma generate --schema prisma/platform.prisma",
-  "prisma:generate:platform": "pnpm prisma generate --schema prisma/platform.prisma",
-  "prisma:migrate:platform": "pnpm exec prisma migrate deploy --config prisma/platform.config.ts"
 }
 ```
 
@@ -130,7 +92,7 @@ Ferio's additional/different definitions:
 | `prisma:migrate:status` | Connects and inspects migration history; not an offline check or a complete drift audit. |
 | `prisma:migrate:dev` | Rebuilds schema then runs development migration workflow; may use a shadow database and request reset. Only for an authorized disposable development target after baseline planning. |
 | `prisma:migrate:deploy` | Applies pending migration files; does not create them, rebuild fragments, or generate clients. Not a substitute for drift review. |
-| `prisma:seed` | Identical command text, different behavior: Job Intelligence refuses writes; Ferio mutates data. |
+| `prisma:seed` | Executes the refusal entry point; exits unsuccessfully without writes. |
 
 Job Intelligence config loads `../.env` relative to the command's working
 directory and reads `DATABASE_URL`; execute CLI operations in the backend package.
@@ -240,7 +202,7 @@ Never add a platform command/schema or copy Ferio's seed merely for script parit
 
 ## Verification and handoff
 
-For documentation-only changes, compare commands to both package files, inspect
+For documentation-only changes, compare commands to the backend package file, inspect
 actual scripts/configs, and check local links and contradictions. Do not run live
 commands merely to document them.
 
