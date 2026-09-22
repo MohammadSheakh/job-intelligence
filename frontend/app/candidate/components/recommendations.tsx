@@ -14,10 +14,21 @@ interface Recommendation {
   location: string | null;
   workMode: string | null;
   applicationUrl: string | null;
+  applicationDeadline?: string | null;
   score: number;
   reasons: string[];
   categories: string[];
   trackingStatus: string | null;
+}
+
+function formatDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
 }
 
 /** Research URLs are untrusted data; only web links may become clickable actions. */
@@ -132,6 +143,11 @@ export function Recommendations() {
                   {row.location ?? 'Location not listed'}
                   {row.workMode ? ` · ${row.workMode}` : ''} · Match score: {row.score}/100
                 </p>
+                {row.applicationDeadline && (
+                  <p className="text-xs text-slate-600">
+                    Application deadline: {formatDate(row.applicationDeadline)}
+                  </p>
+                )}
                 <p className="tags">{row.categories.join(' · ')}</p>
                 {row.reasons.length > 0 && (
                   <ul>

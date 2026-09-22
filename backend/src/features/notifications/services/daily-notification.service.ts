@@ -70,8 +70,15 @@ export class DailyNotificationService {
       },
     });
 
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
     const jobs = await this.prisma.job.findMany({
-      where: { status: 'OPEN' },
+      where: {
+        status: 'OPEN',
+        OR: [{ application_deadline: null }, { application_deadline: { gte: now } }],
+        last_seen_at: { gte: thirtyDaysAgo },
+      },
       select: {
         id: true,
         companyId: true,

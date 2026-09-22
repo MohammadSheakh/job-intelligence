@@ -520,3 +520,28 @@ product milestone credit.
   - **Company detail view (`/admin/companies/[id]`)**: adds manual review callout with "Complete Review" button, enrichment callout with "Enrich Company" site inspection action, and companion external links next to URL inputs.
 - Verification: style/formatting (`pnpm check:style`), agent instruction integrity (`pnpm check:agents`), backend & frontend typechecks (`pnpm typecheck`), 71 unit tests across 7 test suites (`pnpm test`), and production builds (`nest build` and `next build` with 18 static routes).
 - Milestone 19 is implemented: **19/24 = 79.17% complete, 20.83% remaining**.
+
+## Application deadline persistence, freshness policy, and job/company links (gpt1)
+
+- **Database & Prisma**:
+  - Added `application_deadline timestamptz` column definition to `sql/008_runtime_schema.sql`.
+  - Added `application_deadline DateTime? @db.Timestamptz(6)` to `backend/prisma/schema/job-crawling.module/job.prisma`.
+  - Synced modular schemas with Prisma Client via `pnpm --dir backend prisma:sync`.
+- **Crawler & Ingestion**:
+  - Enhanced `parseDeadlineFromText` in `backend/src/features/job-crawling/domain/career-page.parser.ts` supporting standard ISO, slash/dash numeric dates, and natural English date patterns (`"apply before 25 October 2026"`, `"deadline: 2026-11-15"`).
+  - Attached parsed `deadline` to extracted jobs in `CrawledJob`.
+  - Updated `CrawlIngestionService`: persists `application_deadline` in PostgreSQL and marks openings whose deadline has already elapsed as `status = 'CLOSED'` at crawl time.
+- **Evidence-Based Freshness & Matching**:
+  - Updated `CandidateRecommendationsService`: excludes expired jobs (`application_deadline < now()`), excludes stale openings unverified on the company career page within 30 days (`last_seen_at < now() - 30 days`), while properly retaining older jobs that continue to be verified on the active career page. Projects `applicationDeadline` and `companyWebsiteUrl`.
+  - Updated `DailyNotificationService`: applies matching deadline and freshness filters so expired or stale vacancies are never emailed to candidates.
+  - Updated `AdminJobCatalogService`: projects `applicationDeadline`, `companyWebsiteUrl`, and `companyId`.
+- **Frontend UI**:
+  - **Admin Jobs Catalog (`/admin/jobs`)**: Added Deadline column with formatted date and `Expired` badge, made company names clickable links to official websites (`job.companyWebsiteUrl ↗` with `rel="noopener noreferrer"`), and made application links `Apply ↗`.
+  - **Candidate Recommendations (`/candidate`)**: Displays deadline date and direct link to verified company website.
+- **Verification**:
+  - Unit test suite `backend/test/job-crawling.spec.ts` testing deadline parsing across multiple formats, crawl ingestion freshness rules, admin catalog projections, and candidate recommendations filtering.
+  - 80 unit tests across 8 test suites passing (`pnpm --dir backend test`).
+  - Code style & formatting passing (`pnpm check:style`), agent instruction integrity passing (`pnpm check:agents`).
+  - Strict TypeScript typechecks passing for backend source, backend tests, and frontend (`pnpm --dir backend typecheck`, `pnpm --dir backend typecheck:test`, `pnpm --dir frontend typecheck`).
+  - Production builds passing for both backend (`nest build`) and frontend (`next build` with 18 static routes).
+- Milestone 20 is implemented: **20/24 = 83.33% complete, 16.67% remaining**.

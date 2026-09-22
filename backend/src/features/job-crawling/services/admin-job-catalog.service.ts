@@ -42,12 +42,15 @@ export class AdminJobCatalogService {
           skills: true,
           experience: true,
           application_url: true,
+          application_deadline: true,
           status: true,
           first_seen_at: true,
           last_seen_at: true,
           company: {
             select: {
+              id: true,
               name: true,
+              website_url: true,
               categories: { include: { category: { select: { name: true } } } },
             },
           },
@@ -60,7 +63,9 @@ export class AdminJobCatalogService {
       pageSize: input.pageSize,
       rows: rows.map((job) => ({
         id: job.id.toString(),
+        companyId: job.company.id,
         companyName: job.company.name,
+        companyWebsiteUrl: job.company.website_url,
         companyCategories: job.company.categories
           .map((item) => item.category.name)
           .filter((name) => name !== 'Other'),
@@ -70,6 +75,7 @@ export class AdminJobCatalogService {
         skills: job.skills,
         experience: job.experience,
         applicationUrl: job.application_url,
+        applicationDeadline: job.application_deadline,
         status: job.status,
         firstSeenAt: job.first_seen_at,
         lastSeenAt: job.last_seen_at,

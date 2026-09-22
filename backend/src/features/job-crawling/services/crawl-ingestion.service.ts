@@ -27,11 +27,17 @@ export class CrawlIngestionService {
         if (company.count !== 1)
           throw new NotFoundException('Company is not available for monitoring.');
         for (const job of result.jobs) {
+          const isExpiredDeadline =
+            job.deadline !== undefined &&
+            job.deadline !== null &&
+            job.deadline.getTime() < checkedAt.getTime();
+          const status = isExpiredDeadline ? 'CLOSED' : 'OPEN';
           const values = {
             title: normalizeTitle(job.title),
             location: normalizeLocation(job.location) ?? null,
             application_url: job.applicationUrl,
-            status: 'OPEN',
+            application_deadline: job.deadline ?? null,
+            status,
             last_seen_at: checkedAt,
           };
           const jobHash = createJobHash(job);
@@ -44,8 +50,12 @@ export class CrawlIngestionService {
               description: job.description ?? null,
               first_seen_at: checkedAt,
             },
-            // Missing descriptions must not erase previously extracted content.
-            update: { ...values, description: job.description ?? undefined },
+            // Missing descriptions or deadlines must not erase previously extracted content.
+            update: {
+              ...values,
+              application_deadline: job.deadline ?? undefined,
+              description: job.description ?? undefined,
+            },
           });
         }
         await transaction.crawlLog.create({

@@ -254,7 +254,7 @@ entries describe the legacy runtime.
 - [~] Candidate overview recommendations with explanations, safe external links, and company pipeline actions implemented. Runtime/browser validation deferred; no tests added or run for this milestone at user request.
 - [x] Quick Search crawler orchestration, persisted quota enforcement, and optional AI enhancement migrated to Nest/Next (milestone 15).
 - [x] Admin company manual-review completion, creation, controlled enrichment, and table external links from gpt1.md.
-- [ ] Application-deadline persistence/display and evidence-based job freshness rules.
+- [x] Application-deadline persistence/display and evidence-based job freshness rules.
 - [ ] Controlled experience levels/numeric years and separate admin candidate list/new/detail views.
 - [ ] Expanded crawler diagnostics/detail view (the gpt1 request concerns crawler logs).
 - [ ] Candidate active-company directory pagination and location/personal-state filters, independent of matching.

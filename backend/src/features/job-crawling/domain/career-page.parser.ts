@@ -87,9 +87,22 @@ function nearbyLocation($: cheerio.CheerioAPI, el: Element): string | undefined 
   return location || undefined;
 }
 
-function parseDeadlineFromText(text: string): Date | null {
+export function parseDeadlineFromText(text: string): Date | null {
+  const numMatch = text.match(
+    /(?:deadline|apply before|apply by|last date(?:\s+of application)?)\s*:?\s*(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]\d{2,4})/i,
+  );
+  if (numMatch) {
+    const raw = numMatch[1].trim();
+    const timestamp = Date.parse(raw);
+    if (!Number.isNaN(timestamp)) {
+      const date = new Date(timestamp);
+      date.setHours(23, 59, 59, 999);
+      return date;
+    }
+  }
+
   const match = text.match(
-    /deadline\s*:?\s*([0-9]{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\s*,?\s+[0-9]{4}|[A-Za-z]+\s+[0-9]{1,2}(?:st|nd|rd|th)?\s*,?\s+[0-9]{4})/i,
+    /(?:deadline|apply before|apply by|last date(?:\s+of application)?)\s*:?\s*([0-9]{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\s*,?\s+[0-9]{4}|[A-Za-z]+\s+[0-9]{1,2}(?:st|nd|rd|th)?\s*,?\s+[0-9]{4})/i,
   );
   if (!match) return null;
 
@@ -103,11 +116,6 @@ function parseDeadlineFromText(text: string): Date | null {
   const date = new Date(timestamp);
   date.setHours(23, 59, 59, 999);
   return date;
-}
-
-function isExpired(text: string, now = new Date()): boolean {
-  const deadline = parseDeadlineFromText(text);
-  return deadline ? deadline.getTime() < now.getTime() : false;
 }
 
 function addJob(jobs: CrawledJob[], seen: Set<string>, job: CrawledJob): void {
@@ -143,14 +151,15 @@ function extractAnchorJobs(
     const strongContextSignal = JOB_CONTEXT.test(context);
 
     if (!strongUrlSignal && !strongContextSignal) return;
-    if (isExpired(context)) return;
 
+    const deadline = parseDeadlineFromText(context);
     addJob(jobs, seen, {
       companyId,
       title,
       location: nearbyLocation($, el),
       applicationUrl,
       sourceUrl,
+      deadline,
     });
   });
 }
@@ -170,10 +179,10 @@ function extractTableJobs(
     if (!roleLike(title)) return;
 
     const rowText = normalizeWhitespace($(row).text());
-    if (isExpired(rowText)) return;
 
     const href = $(row).find('a[href]').first().attr('href');
     const applicationUrl = href ? (absoluteUrl(sourceUrl, href) ?? sourceUrl) : sourceUrl;
+    const deadline = parseDeadlineFromText(rowText);
 
     addJob(jobs, seen, {
       companyId,
@@ -181,6 +190,7 @@ function extractTableJobs(
       applicationUrl,
       sourceUrl,
       description: rowText || undefined,
+      deadline,
     });
   });
 }
@@ -222,14 +232,15 @@ function extractListingSectionJobs(
       // Avoid generic career-family headings such as "Back-end Development" unless
       // the item has an apply/detail link or vacancy/experience/deadline context.
       if (!hasPerItemCue && !href) return;
-      if (isExpired(context)) return;
 
       const applicationUrl = href ? (absoluteUrl(sourceUrl, href) ?? sourceUrl) : sourceUrl;
+      const deadline = parseDeadlineFromText(context);
       addJob(jobs, seen, {
         companyId,
         title,
         applicationUrl,
         sourceUrl,
+        deadline,
       });
     });
   }
@@ -253,11 +264,13 @@ function extractLongOpeningBlocks(
         if (!roleLike(title) || title.length > 120) return;
         if (/current openings?|open positions?/i.test(title)) return;
 
+        const deadline = parseDeadlineFromText(fullText);
         addJob(jobs, seen, {
           companyId,
           title,
           applicationUrl: sourceUrl,
           sourceUrl,
+          deadline,
         });
       });
   });

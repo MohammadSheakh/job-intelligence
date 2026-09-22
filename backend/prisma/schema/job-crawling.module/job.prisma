@@ -8,6 +8,7 @@ model Job {
   skills          String?
   experience      String?
   application_url String?
+  application_deadline DateTime? @db.Timestamptz(6)
   published_at    DateTime?      @db.Timestamptz(6)
   first_seen_at   DateTime       @default(now()) @db.Timestamptz(6)
   last_seen_at    DateTime       @default(now()) @db.Timestamptz(6)

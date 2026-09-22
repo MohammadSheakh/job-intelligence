@@ -11,6 +11,7 @@ export interface CrawledJob {
   applicationUrl: string;
   description?: string;
   sourceUrl?: string;
+  deadline?: Date | null;
 }
 
 export interface CrawlResult {

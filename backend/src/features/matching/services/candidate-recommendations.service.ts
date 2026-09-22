@@ -12,6 +12,7 @@ export interface CandidateRecommendation {
   location: string | null;
   workMode: string | null;
   applicationUrl: string | null;
+  applicationDeadline?: string | null;
   score: number;
   reasons: string[];
   categories: string[];
@@ -26,8 +27,7 @@ export class CandidateRecommendationsService {
 
   /**
    * Scan by descending bigint ID in bounded batches, retaining only the best results.
-   * Newer inserts cannot extend a scan already in progress. This is a live read,
-   * not a database snapshot: concurrent profile/job edits appear on the next refresh.
+   * Excludes explicitly expired vacancies and stale unverified jobs.
    */
   async list(
     candidateId: bigint,
@@ -66,11 +66,15 @@ export class CandidateRecommendationsService {
     const best: CandidateRecommendation[] = [];
     const batchSize = 200;
     let beforeId: bigint | undefined;
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     for (;;) {
       const jobs = await this.prisma.job.findMany({
         where: {
           status: 'OPEN',
+          OR: [{ application_deadline: null }, { application_deadline: { gte: now } }],
+          last_seen_at: { gte: thirtyDaysAgo },
           ...(beforeId === undefined ? {} : { id: { lt: beforeId } }),
           company: {
             candidate_company_state: {
@@ -90,6 +94,7 @@ export class CandidateRecommendationsService {
           skills: true,
           experience: true,
           application_url: true,
+          application_deadline: true,
           company: {
             select: {
               name: true,
@@ -144,6 +149,7 @@ export class CandidateRecommendationsService {
           location: job.location ?? company.location,
           workMode: job.work_mode,
           applicationUrl: job.application_url ?? company.careerUrl ?? company.website_url,
+          applicationDeadline: job.application_deadline?.toISOString() ?? null,
           score: result.finalScore,
           reasons: result.reasons.slice(0, 3),
           categories: names.slice(0, 5),

@@ -1,11 +1,14 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useAdminApi } from '../../../lib/admin-api';
 
 interface JobRow {
   id: string;
+  companyId: string;
   companyName: string;
+  companyWebsiteUrl: string | null;
   companyCategories: string[];
   title: string;
   location: string | null;
@@ -13,6 +16,7 @@ interface JobRow {
   skills: string | null;
   experience: string | null;
   applicationUrl: string | null;
+  applicationDeadline: string | null;
   status: string;
   firstSeenAt: string;
   lastSeenAt: string;
@@ -25,7 +29,8 @@ interface JobPage {
   rows: JobRow[];
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string | null): string {
+  if (!iso) return '—';
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '—';
   return new Intl.DateTimeFormat('en-US', {
@@ -33,6 +38,12 @@ function formatDate(iso: string): string {
     day: 'numeric',
     year: 'numeric',
   }).format(date);
+}
+
+function isPastDeadline(iso: string | null): boolean {
+  if (!iso) return false;
+  const date = new Date(iso);
+  return !Number.isNaN(date.getTime()) && date.getTime() < Date.now();
 }
 
 export default function AdminJobsPage() {
@@ -135,66 +146,96 @@ export default function AdminJobsPage() {
                   <th>Job Title & Company</th>
                   <th>Location</th>
                   <th>Work Mode</th>
+                  <th>Deadline</th>
                   <th>Status</th>
                   <th>First Seen</th>
                   <th>Application</th>
                 </tr>
               </thead>
               <tbody>
-                {result.rows.map((job) => (
-                  <tr key={job.id}>
-                    <td>
-                      <div className="font-semibold text-slate-900">{job.title}</div>
-                      <div className="text-xs text-slate-600">{job.companyName}</div>
-                      {job.companyCategories.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {job.companyCategories.map((cat) => (
-                            <span
-                              key={cat}
-                              className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600"
+                {result.rows.map((job) => {
+                  const expired = isPastDeadline(job.applicationDeadline);
+                  return (
+                    <tr key={job.id}>
+                      <td>
+                        <div className="font-semibold text-slate-900">{job.title}</div>
+                        <div className="text-xs text-slate-600 mt-0.5">
+                          {job.companyWebsiteUrl ? (
+                            <a
+                              href={job.companyWebsiteUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline text-slate-800 hover:text-black"
                             >
-                              {cat}
-                            </span>
-                          ))}
+                              {job.companyName} ↗
+                            </a>
+                          ) : (
+                            <Link
+                              href={`/admin/companies/${encodeURIComponent(job.companyId)}`}
+                              className="underline text-slate-800"
+                            >
+                              {job.companyName}
+                            </Link>
+                          )}
                         </div>
-                      )}
-                    </td>
-                    <td className="whitespace-nowrap text-xs text-slate-700">
-                      {job.location || '—'}
-                    </td>
-                    <td className="whitespace-nowrap text-xs text-slate-700">
-                      {job.workMode || '—'}
-                    </td>
-                    <td>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                          job.status === 'OPEN'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}
-                      >
-                        {job.status}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap text-xs text-slate-600">
-                      {formatDate(job.firstSeenAt)}
-                    </td>
-                    <td className="whitespace-nowrap">
-                      {job.applicationUrl ? (
-                        <a
-                          href={job.applicationUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-semibold"
+                        {job.companyCategories.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {job.companyCategories.map((cat) => (
+                              <span
+                                key={cat}
+                                className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600"
+                              >
+                                {cat}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap text-xs text-slate-700">
+                        {job.location || '—'}
+                      </td>
+                      <td className="whitespace-nowrap text-xs text-slate-700">
+                        {job.workMode || '—'}
+                      </td>
+                      <td className="whitespace-nowrap text-xs text-slate-700">
+                        <div>{formatDate(job.applicationDeadline)}</div>
+                        {expired && (
+                          <span className="inline-block mt-0.5 rounded bg-rose-100 px-1.5 py-0.2 text-[10px] font-semibold text-rose-800">
+                            Expired
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                            job.status === 'OPEN'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
                         >
-                          Apply ↗
-                        </a>
-                      ) : (
-                        <span className="text-xs text-slate-400">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                          {job.status}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap text-xs text-slate-600">
+                        {formatDate(job.firstSeenAt)}
+                      </td>
+                      <td className="whitespace-nowrap">
+                        {job.applicationUrl ? (
+                          <a
+                            href={job.applicationUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-semibold"
+                          >
+                            Apply ↗
+                          </a>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

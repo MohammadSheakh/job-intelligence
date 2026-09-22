@@ -27,6 +27,9 @@ CREATE TABLE IF NOT EXISTS candidate_auth (
 ALTER TABLE candidate_auth
   ADD COLUMN IF NOT EXISTS must_change_password boolean NOT NULL DEFAULT false;
 
+ALTER TABLE jobs
+  ADD COLUMN IF NOT EXISTS application_deadline timestamptz;
+
 CREATE TABLE IF NOT EXISTS candidate_company_state (
   candidate_id bigint NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
   company_id text NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
