@@ -3,16 +3,19 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   Req,
   Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
+import { randomBytes } from 'node:crypto';
 import { ChangePasswordDto } from '../dto/change-password.dto.js';
 import { CandidateLoginDto } from '../dto/candidate-login.dto.js';
 import { CandidateAuthenticationService } from '../services/candidate-authentication.service.js';
 import { CandidateSessionService } from '../services/candidate-session.service.js';
+import { GoogleOAuthService } from '../services/google-oauth.service.js';
 import { CandidateSessionGuard, type CandidateRequest } from '../guards/candidate-session.guard.js';
 
 /**
@@ -24,6 +27,7 @@ export class CandidateAuthenticationController {
   constructor(
     private readonly authentication: CandidateAuthenticationService,
     private readonly sessions: CandidateSessionService,
+    private readonly googleAuth: GoogleOAuthService,
   ) {}
 
   /**
@@ -105,5 +109,158 @@ export class CandidateAuthenticationController {
       path: '/',
     });
     return { ok: true };
+  }
+
+  /** Expose whether Google OAuth is configured and available. */
+  @Get('google/status')
+  googleStatus(): { enabled: boolean } {
+    return { enabled: this.googleAuth.isEnabled() };
+  }
+
+  /**
+   * Initiate Google OAuth flow: sets a short-lived anti-forgery state cookie and redirects
+   * to Google's consent screen.
+   */
+  @Get('google/start')
+  googleStart(
+    @Res()
+    response: Response,
+  ): void {
+    const frontend = this.getFrontendOrigin();
+    if (!this.googleAuth.isEnabled()) {
+      response.redirect(`${frontend}/candidate/login?error=Google+login+is+not+configured`);
+      return;
+    }
+
+    const state = randomBytes(24).toString('base64url');
+    response.cookie('ji_google_state', state, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.COOKIE_SECURE === 'true',
+      maxAge: 600_000,
+      path: '/',
+    });
+    response.redirect(this.googleAuth.getAuthorizationUrl(state));
+  }
+
+  /**
+   * Handle the OAuth redirect from Google: verify state, exchange code, bind candidate,
+   * set session cookie, and redirect to the candidate portal.
+   */
+  @Get('google/callback')
+  async googleCallback(
+    @Req()
+    request: Request,
+    @Res()
+    response: Response,
+    @Query('state')
+    state?: string,
+    @Query('code')
+    code?: string,
+    @Query('error')
+    errorParam?: string,
+  ): Promise<void> {
+    const frontend = this.getFrontendOrigin();
+    const cookieState = this.parseCookie(request.headers.cookie, 'ji_google_state');
+
+    const clearStateCookie = () => {
+      response.cookie('ji_google_state', '', {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.COOKIE_SECURE === 'true',
+        maxAge: 0,
+        path: '/',
+      });
+    };
+
+    if (errorParam) {
+      clearStateCookie();
+      response.redirect(`${frontend}/candidate/login?error=${encodeURIComponent(errorParam)}`);
+      return;
+    }
+
+    if (!state || !cookieState || state !== cookieState) {
+      clearStateCookie();
+      response.redirect(`${frontend}/candidate/login?error=Invalid%20OAuth%20state`);
+      return;
+    }
+
+    if (!code) {
+      clearStateCookie();
+      response.redirect(`${frontend}/candidate/login?error=Missing%20authorization%20code`);
+      return;
+    }
+
+    let googleUser;
+    try {
+      googleUser = await this.googleAuth.exchangeCode(code);
+    } catch {
+      clearStateCookie();
+      response.redirect(
+        `${frontend}/candidate/login?error=Failed%20to%20exchange%20Google%20login%20token`,
+      );
+      return;
+    }
+
+    const candidate = await this.authentication.findOrBindGoogleCandidate({
+      email: googleUser.email,
+      sub: googleUser.sub,
+    });
+
+    if (!candidate) {
+      response.cookie('ji_google_state', '', {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.COOKIE_SECURE === 'true',
+        maxAge: 0,
+        path: '/',
+      });
+      response.redirect(
+        `${frontend}/candidate/login?error=Your+Google+email+is+not+an+active+candidate+account`,
+      );
+      return;
+    }
+
+    const session = this.sessions.create(candidate.id);
+    response.cookie('ji_candidate_session', session.token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.COOKIE_SECURE === 'true',
+      expires: session.expiresAt,
+      path: '/',
+    });
+    response.cookie('ji_google_state', '', {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.COOKIE_SECURE === 'true',
+      maxAge: 0,
+      path: '/',
+    });
+
+    const destination = candidate.mustChangePassword
+      ? `${frontend}/candidate/change-password`
+      : `${frontend}/candidate`;
+    response.redirect(destination);
+  }
+
+  private parseCookie(cookieHeader: string | undefined, name: string): string | null {
+    if (!cookieHeader) return null;
+    const prefix = `${name}=`;
+    const part = cookieHeader
+      .split(';')
+      .map((p) => p.trim())
+      .find((p) => p.startsWith(prefix));
+    if (!part) return null;
+    try {
+      return decodeURIComponent(part.slice(prefix.length));
+    } catch {
+      return null;
+    }
+  }
+
+  private getFrontendOrigin(): string {
+    const raw = process.env.FRONTEND_ORIGIN?.trim();
+    if (raw) return raw.split(',')[0].trim().replace(/\/$/, '');
+    return 'http://localhost:3000';
   }
 }

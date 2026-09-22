@@ -1,6 +1,6 @@
 'use client';
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+export const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
 /** Preserve the API error contract so navigation does not depend on display-message wording. */
 export class ApiError extends Error {

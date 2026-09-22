@@ -78,4 +78,65 @@ export class CandidateAuthenticationService {
       update: { passwordHash, mustChangePassword },
     });
   }
+
+  /**
+   * Find an active candidate bound to the verified Google account, or bind an existing active
+   * candidate matching the email. Rejects binding if email is unbound to any candidate or if
+   * candidate is already bound to a different Google sub.
+   */
+  async findOrBindGoogleCandidate(input: {
+    email: string;
+    sub: string;
+  }): Promise<CandidatePrincipal | null> {
+    const existingBound = await this.prisma.candidateAuth.findUnique({
+      where: { google_sub: input.sub },
+      include: { candidate: true },
+    });
+
+    if (existingBound) {
+      if (!existingBound.candidate.active) return null;
+      return {
+        id: existingBound.candidate.id,
+        name: existingBound.candidate.name,
+        email: existingBound.candidate.email,
+        mustChangePassword: existingBound.mustChangePassword,
+      };
+    }
+
+    const candidate = await this.prisma.candidate.findFirst({
+      where: {
+        email: { equals: input.email.trim(), mode: 'insensitive' },
+        active: true,
+      },
+      include: { auth: true },
+    });
+
+    if (!candidate) return null;
+
+    if (candidate.auth?.google_sub && candidate.auth.google_sub !== input.sub) {
+      return null;
+    }
+
+    const updatedAuth = await this.prisma.candidateAuth.upsert({
+      where: { candidateId: candidate.id },
+      create: {
+        candidateId: candidate.id,
+        google_sub: input.sub,
+        google_email: input.email.toLowerCase().trim(),
+        mustChangePassword: candidate.auth?.mustChangePassword ?? false,
+      },
+      update: {
+        google_sub: input.sub,
+        google_email: input.email.toLowerCase().trim(),
+        updated_at: new Date(),
+      },
+    });
+
+    return {
+      id: candidate.id,
+      name: candidate.name,
+      email: candidate.email,
+      mustChangePassword: updatedAuth.mustChangePassword,
+    };
+  }
 }

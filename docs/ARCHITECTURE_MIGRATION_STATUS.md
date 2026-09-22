@@ -1,8 +1,8 @@
 # Architecture migration status
 
 **Last updated:** 2026-09-22
-**Status:** In progress — candidate core flows, Company Intelligence admin UI, selected admin APIs, crawler foundations, daily execution CLI, candidate Standard & AI Quick Search, and candidate email notifications are implemented.
-**Overall implementation progress: 66.67% complete / 33.33% remaining** — 16 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
+**Status:** In progress — candidate core flows, Company Intelligence admin UI, selected admin APIs, crawler foundations, daily execution CLI, candidate Standard & AI Quick Search, candidate email notifications, and Google OAuth candidate account binding are implemented.
+**Overall implementation progress: 70.83% complete / 29.17% remaining** — 17 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
 
 ## How to use this handoff
 
@@ -39,7 +39,7 @@ milestone 13. Update the table and numerator together as scope changes.
 | 14 | Standard Quick Search execution, run finalization, execution UI | Implemented; runtime checks deferred |
 | 15 | Optional AI provider integration, limits, and AI-assisted search | Implemented; runtime checks deferred |
 | 16 | Email digests, notifications, delivery deduplication integration | Implemented; runtime checks deferred |
-| 17 | Google OAuth and account binding | Pending |
+| 17 | Google OAuth and account binding | Implemented; runtime checks deferred |
 | 18 | Remaining admin dashboard/jobs/candidates/settings/logs views | Pending |
 | 19 | gpt1 company creation, review completion, enrichment, table links | Pending |
 | 20 | gpt1 deadline persistence, freshness policy, job/company links | Pending |
@@ -467,4 +467,26 @@ product milestone credit.
 - Created `NotifyWorkerModule` and `backend/src/commands/notify-daily.ts` CLI command with `--help` and signal handling (`pnpm notify:daily`), mirroring `crawl:daily`.
 - Verification: code style (`pnpm check:style`), agent instruction integrity (`pnpm check:agents`), backend & frontend typechecks (`pnpm typecheck`), 36 unit tests across 5 test suites (`pnpm test`), production builds (`nest build` and `next build`), and CLI help invocation (`node backend/dist/src/commands/notify-daily.js --help`).
 - Milestone 16 is implemented: **16/24 = 66.67% complete, 33.33% remaining**.
+
+## Google OAuth and candidate account binding
+
+- Implemented `GoogleOAuthService`: detects environment configuration (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL`), generates OAuth authorization URLs with `openid email profile` scopes and `select_account` prompt, and performs 15-second bounded authorization code exchange with Google's token endpoint followed by verified email profile lookup.
+- Implemented `findOrBindGoogleCandidate` in `CandidateAuthenticationService`:
+  - Directly authenticates candidates already bound to a matching `google_sub`.
+  - Rejects inactive candidate accounts immediately.
+  - Matches active candidate accounts by email (case-insensitive) and binds `google_sub` via `candidate_auth` upsert if currently unbound.
+  - Strictly prevents account hijacking if candidate is already bound to a different `google_sub`.
+  - Rejects sign-in attempts for non-existent candidate emails (never creates candidate accounts; candidates remain admin-created only).
+- Added Google OAuth controller endpoints in `CandidateAuthenticationController`:
+  - `GET /candidate-auth/google/status`: returns `{ enabled: boolean }`.
+  - `GET /candidate-auth/google/start`: sets short-lived `ji_google_state` cookie (HttpOnly, SameSite=Lax) and redirects to Google consent.
+  - `GET /candidate-auth/google/callback`: validates state cookie, handles error parameters, exchanges code, binds candidate, sets `ji_candidate_session` cookie, clears state cookie, and redirects to `/candidate` or `/candidate/change-password` (if `mustChangePassword` is true).
+- Upgraded candidate login page (`frontend/app/candidate/login/page.tsx`):
+  - Fetches `/candidate-auth/google/status` on mount.
+  - When enabled: renders a Ferio-compliant "Continue with Google" action button with divider.
+  - When disabled: displays an informative notice that Google login is available once configured.
+  - Reads `error` query parameter and displays user-friendly error banners.
+- Verification: style/formatting (`pnpm check:style`), agent instruction integrity (`pnpm check:agents`), backend & frontend typechecks (`pnpm typecheck`), 55 unit tests across 6 test suites (`pnpm test`), and production builds (`nest build` and `next build`).
+- Milestone 17 is implemented: **17/24 = 70.83% complete, 29.17% remaining**.
+
 
