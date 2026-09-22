@@ -5,7 +5,7 @@ import { loadCatalog } from './seeds/catalog';
 
 /** Preview by default. Apply uses a deliberately separate target, never implicit root .env. */
 async function main(): Promise<void> {
-  const args = process.argv.slice(2);
+  const args = process.argv.slice(2).filter((arg) => arg !== '--');
   if (
     args.some((arg) => !['--apply', '--dry-run'].includes(arg)) ||
     (args.includes('--apply') && args.includes('--dry-run'))
