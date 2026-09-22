@@ -17,3 +17,4 @@ jobs:
         with:
           node-version: '22'
       - run: node .agents/scripts/check-instructions.mjs
+      - run: node .agents/scripts/verify-instruction-checker.mjs

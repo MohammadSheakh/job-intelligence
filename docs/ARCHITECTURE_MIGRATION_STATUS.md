@@ -4,6 +4,14 @@
 **Status:** In progress — candidate core flows, Company Intelligence admin UI, and selected admin APIs are implemented with local regression coverage.
 **Overall implementation progress: 54.17% complete / 45.83% remaining** — 13 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
 
+## How to use this handoff
+
+Start here to resume migration work. This document owns migration progress and
+next steps. Consult relevant [PRD](../PRD.md) sections for product behavior and
+[checklist](../IMPLEMENTATION_CHECKLIST.md) items for acceptance evidence. Legacy
+completion in those documents does not imply replacement completion. Instruction
+maintenance does not advance this scorecard.
+
 ## Completion scorecard
 
 Each row contributes 1/24 of the implementation scope (about 4.17%). Count a row

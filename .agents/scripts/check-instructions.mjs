@@ -10,17 +10,37 @@ const skillRoot = resolve(root, '.agents/skills');
 const skills = readdirSync(skillRoot).filter((name) =>
   existsSync(resolve(skillRoot, name, 'SKILL.md')),
 );
+// Scan every local rule, skill entrypoint, and reference, not a selected subset.
+function markdownFiles(directory) {
+  return readdirSync(resolve(root, directory), { withFileTypes: true }).flatMap((entry) => {
+    const path = `${directory}/${entry.name}`;
+    if (entry.isDirectory()) return markdownFiles(path);
+    return entry.isFile() && entry.name.endsWith('.md') ? [path] : [];
+  });
+}
 const maintained = [
   'AGENTS.md', 'backend/AGENTS.md', 'frontend/AGENTS.md', 'backend/prisma/AGENTS.md',
-  '.agents/README.md', 'docs/agents/instruction-system.md',
-  'docs/agents/engineering-evidence.md', 'docs/DATABASE_ARCHITECTURE.md',
-  'docs/BACKEND_API_CONTRACTS.md', 'docs/FERIO_PRISMA_REFERENCE.md',
-  ...readdirSync(resolve(root, '.agents/rules'))
-    .filter((name) => name.endsWith('.md')).map((name) => `.agents/rules/${name}`),
-  ...['job-intelligence-backend', 'backend-coding-standards', 'ferio-frontend-design',
-    'owasp-security', 'nestjs-best-practices', 'tdd', 'git-commit-push']
-    .map((name) => `.agents/skills/${name}/SKILL.md`),
+  'PRD.md', 'IMPLEMENTATION_CHECKLIST.md', 'docs/ARCHITECTURE_MIGRATION_STATUS.md',
+  'docs/agents/instruction-system.md', 'docs/agents/engineering-evidence.md',
+  'docs/DATABASE_ARCHITECTURE.md', 'docs/BACKEND_API_CONTRACTS.md',
+  'docs/FERIO_PRISMA_REFERENCE.md', ...markdownFiles('.agents'),
 ];
+
+// Preserve links after fenced examples; closing fences must match the opening
+// marker and be at least as long. This is intentionally not a Markdown parser.
+function proseOnly(markdown) {
+  let fence;
+  return markdown.split(/\r?\n/).filter((line) => {
+    const marker = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
+    if (fence) {
+      if (marker && marker[1][0] === fence[0] && marker[1].length >= fence.length
+          && !marker[2].trim()) fence = undefined;
+      return false;
+    }
+    if (marker) { fence = marker[1]; return false; }
+    return true;
+  }).join('\n');
+}
 
 let linkCount = 0;
 for (const file of maintained) {
@@ -30,7 +50,7 @@ for (const file of maintained) {
   }
   // Deliberately checks inline Markdown links outside fenced examples, not a
   // complete Markdown parser. External URLs and same-file anchors are excluded.
-  const content = read(file).replace(/^(?:```|~~~)[\s\S]*?^(?:```|~~~).*$/gm, '');
+  const content = proseOnly(read(file));
   for (const match of content.matchAll(/\]\(([^\s)]+)(?:\s+"[^"]*")?\)/g)) {
     const target = match[1].replace(/^<|>$/g, '').split('#')[0];
     if (!target || /^[a-z][a-z\d+.-]*:/i.test(target)) continue;

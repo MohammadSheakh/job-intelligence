@@ -1,9 +1,15 @@
 # Job Intelligence - Product Requirements Document
 
-**Status:** MVP feature-complete in code; deployment/integration validation remains for external services and broad crawler coverage.  
+**Legacy implementation status:** MVP feature-complete in code; deployment/integration validation remains for external services and broad crawler coverage.
 **Primary market:** Bangladesh technology job search.  
 **Design system:** Ferio grayscale-first operations/product interface.  
-**Runtime:** One Node.js application with separate Admin and Candidate views, PostgreSQL, daily worker, optional AI, optional SMTP, optional Google OAuth.
+**Legacy runtime:** One Node.js application with separate Admin and Candidate views, PostgreSQL, daily worker, optional AI, optional SMTP, optional Google OAuth.
+
+This document owns product behavior, not replacement migration progress. The
+NestJS/Next.js replacement is still in progress; use the
+[migration handoff](docs/ARCHITECTURE_MIGRATION_STATUS.md) for its scorecard and next work.
+Read only the relevant requirement sections for the selected task. Later migration
+notes describe implementation context and do not override that scorecard.
 
 ## 1. Product goal
 

@@ -42,12 +42,15 @@ Do not require a fixed report template for small changes.
 ## Instruction integrity check
 
 Run `pnpm check:agents` from the repository root. The dependency-free checker covers
-local links in scoped instructions/rules and selected maintained references, required
+local links in all `.agents/` Markdown plus scoped instructions and selected project docs, required
 skill frontmatter fields across local skills, and skill UI invocation names. CI runs
-it independently of application tests. It does not parse every Markdown/YAML feature,
+it independently of application tests, followed by
+`node .agents/scripts/verify-instruction-checker.mjs`, which injects broken links,
+skill names, and invocation metadata into a disposable copy. It does not parse every Markdown/YAML feature,
 fetch external links, prove policy consistency, or evaluate agent judgment.
 
-When extending the maintained reference set, update the checker's explicit entry list.
+New `.agents/` Markdown is discovered automatically. When adding project docs to
+the maintained set, update the checker's explicit entry list.
 Scenario review in [instruction maintenance](instruction-system.md) complements the
 structural check. Record failures from real tasks and make narrow corrections instead
 of adding generic rules to every entrypoint.

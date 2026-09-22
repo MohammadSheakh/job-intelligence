@@ -1,5 +1,11 @@
 # Implementation checklist
 
+This document records feature-level acceptance evidence. Earlier product sections
+track the legacy application; sections explicitly labeled replacement track the
+NestJS/Next.js migration. A legacy `[x]` does not establish replacement completion.
+The [migration handoff](docs/ARCHITECTURE_MIGRATION_STATUS.md) owns replacement
+progress and next steps; do not derive another percentage from this mixed checklist.
+
 Legend: **[x] Done**, **[~] Implemented but external/runtime validation remains**, **[ ] Pending / not in MVP**.
 
 This checklist is intentionally conservative. A feature that exists in source code but still needs real external credentials or broad production validation is marked `[~]`, not `[x]`.

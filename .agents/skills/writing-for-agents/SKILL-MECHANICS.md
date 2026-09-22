@@ -1,22 +1,37 @@
 # Skill mechanics
 
-The skill-specific branch of [`writing-for-agents`](SKILL.md): what changes when the document is a skill (frontmatter, the invocation choice, and router skills). Everything else about writing it is the universal reference in `SKILL.md`.
+Read for skill packaging or invocation metadata changes. Use
+[writing guidance](SKILL.md) for scope, routing, and progressive disclosure.
 
-## Invocation
+## Portable entrypoint
 
-Two choices, trading the two loads:
+Keep `name` and a precise `description` in `SKILL.md` frontmatter. State when the
+workflow applies; do not assume a folder name alone establishes its trigger.
+Keep conditional examples and procedures in linked references. A Markdown link
+makes material discoverable; it does not guarantee that every editor automatically
+loads it or invokes a second skill.
 
-- A **model-invoked** skill keeps a `description`, so the agent can fire it autonomously, and other skills can reach it. You can still type its name: model-invocation always _includes_ user reach; a description only ever adds agent discovery, never removes the human's. The description is the skill's top-level context pointer, forced to stay loaded at all times: permanent context load in exchange for discoverability. A model-invoked skill whose content is all reference is also one home for shared reference: another skill can invoke it, so reference needed by several skills lives in one place. Mechanics: omit `disable-model-invocation`, and write a model-facing description carrying the trigger branches (the pointer-writing rules in `SKILL.md` apply in full).
-- A **user-invoked** skill strips the description from the agent's reach: only the human typing its name can invoke it, and no other skill can. Zero context load, but it spends cognitive load: you are the index that must remember it exists. Mechanics: set `disable-model-invocation: true`; the `description` becomes human-facing: a one-line summary, trigger lists stripped.
+## Host-specific invocation
 
-Pick model-invocation only when the agent must reach the skill on its own, or another skill must. If it only ever fires by hand, make it user-invoked and pay no context load.
+Invocation controls belong to the host's supported configuration. Do not treat
+`disable-model-invocation` as a portable switch or remove required descriptions
+to simulate it. For this repository's Codex UI metadata, invocation policy lives
+in `agents/openai.yaml` under `policy.allow_implicit_invocation`. Preserve existing
+policy unless the user requests a change; default discovery does not authorize
+external actions.
 
-Shared reference that two user-invoked skills both need can live in neither: with no descriptions, neither can fire the other. Push it to a plain file outside the skill system: external reference any skill can point at.
+Keep `interface.default_prompt` aligned with `$<skill-directory-name>` when a skill
+is renamed. Verify supported fields against the active skill-authoring instructions
+before introducing settings for another host. Do not translate one host's setting
+into another by name alone.
 
-## Splitting by invocation
+## Routing and validation
 
-The invocation cut of splitting (the sequence cut lives in `SKILL.md`): split off a model-invoked skill when you have a distinct leading word that should trigger it on its own (a trigger word you actually use in your prompts), or another skill must reach it. You pay context load for the new always-loaded description, so that independent reach has to be worth it.
+Link references with a loading condition. Split only when it saves irrelevant
+context; a short self-contained workflow does not need a router. References can
+be shared without becoming independently invokable skills.
 
-## Router skills
-
-When user-invoked skills multiply past what you can remember, that piled-up cognitive load is cured by a **router skill**: one user-invoked skill that names the others and when to reach for each, so the human has one skill to remember instead of many. It can only hint, never fire them: user-invoked skills have no description, so nothing but the human can reach them.
+Run `pnpm check:agents` for repository links, names, and UI invocation checks.
+Use the skill-authoring validator for full supported frontmatter checks. Structural
+success does not establish that the workflow chooses correctly; review realistic
+requests and record observed failures before tightening instructions.
