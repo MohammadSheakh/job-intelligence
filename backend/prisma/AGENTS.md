@@ -14,10 +14,11 @@ Applies to schema fragments, generated schema, migrations, seeds, and Prisma too
   `prisma:sync` to rebuild and generate; generation alone does not rebuild fragments.
 - Preserve V2 builder byte parity with the reference unless changing that requirement
   is in scope. Keep the application single-tenant and preserve database-only constraints.
-- Existing data has no reviewed Prisma Migrate baseline. Migration scripts are not
-  permission to apply SQL. Never reset shared data or bypass history with `db push`.
-- Seeds deliberately refuse writes. Preserve that behavior until a specific dataset
-  and target are authorized. Read [database switching](../../docs/DATABASE_SWITCHING.md)
+- `0_initial` bootstraps empty databases; existing Neon baseline adoption is pending.
+  Migration scripts are not permission to apply SQL. Never reset shared data or bypass history with `db push`.
+- Seeds preview by default; writes require `--apply` and explicit `SEED_DATABASE_URL`.
+  Preserve source data and insert-only behavior. Read [seed/adoption workflow](_doc.md)
+  and [database switching](../../docs/DATABASE_SWITCHING.md)
   before any database connection; switching targets does not transfer data.
 
 ## Verification

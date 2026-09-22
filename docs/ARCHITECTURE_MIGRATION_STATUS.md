@@ -370,7 +370,7 @@ Do not run `prisma migrate`, `prisma db push`, `prisma db seed`, or
   commands. `prisma:generate` now generates only; use `prisma:sync` after editing
   fragments. Registered the seed entry point in Prisma 7 configuration and added
   the required ts-node/tsconfig-paths development dependencies.
-- Seed invocation explicitly refuses writes under the existing data policy.
+- Original seed refusal has been superseded by the explicit preview/apply workflow below; existing Neon remains untouched.
   Migration CLI wiring is available; database baseline and actual migration
   execution remain unverified and must be reviewed before use on Neon.
 - See `backend/prisma/_doc.md` for command behavior and verification boundaries.
@@ -595,3 +595,23 @@ Static verification for milestone 22: Prisma schema rebuild/client generation wi
 an inert URL, backend typecheck/build, test-source typecheck, frontend typecheck/build,
 root formatting/lint, and instruction integrity checks passed. Runtime suites remain
 deferred. No seed, migration, or crawl was executed.
+
+## Fresh-database Prisma workflow and seed preparation
+
+The user authorized preparing existing data for repeatable seeding while preserving
+Neon and the source files. `prisma:seed` now previews 1,051 companies, 34 categories,
+1,188 assignments, and source fingerprints. Apply requires explicit `SEED_DATABASE_URL`
+and `--apply`, inserts missing records only, and does not seed accounts or historical
+jobs. Ten safe settings defaults are inserted only if absent.
+
+`0_initial` bootstraps all current models and five legacy CHECK constraints on empty
+PostgreSQL. Deploy checks a reviewed migration checksum manifest. `prisma:sync` remains
+schema assembly/client generation, not database synchronization. Existing Neon still
+requires a reviewed baseline adoption; no live baseline, schema change, or seed ran.
+See `backend/prisma/_doc.md` for commands and the explicit existing-data adoption path.
+
+Disposable PostgreSQL verification covered fresh deploy, seed, no-op rerun, preservation
+of operator edits, no-op redeploy, no-change development migration, status, five
+CHECK constraints, and modeled schema parity. All `data/` hashes
+were preserved. Milestone 23 remains partial (cutover and Neon adoption pending); the
+implementation scorecard remains 22/24, not a claim of deployment readiness.

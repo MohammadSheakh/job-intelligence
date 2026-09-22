@@ -282,7 +282,7 @@ entries describe the legacy runtime.
 - [x] Exact Ferio V2 builder, recursive schema assembly, and explicit script ESM boundary.
 - [x] Backend schema build/generate/sync and migrate dev/status/deploy scripts added; ts-node and tsconfig-paths available for the seed entry point.
 - [x] Local sync, schema validation, seed refusal, migration CLI help, style/lint, backend typecheck/build verified without database mutation.
-- [ ] Existing database Prisma Migrate baseline and live migration execution; seeding remains deliberately disabled.
+- [ ] Existing Neon baseline adoption and live migration execution; seed writes remain explicit and are not part of adoption.
 
 
 ## Replacement crawler foundation and progress accounting
@@ -318,3 +318,10 @@ entries describe the legacy runtime.
 - [~] Suggested actions preserve company workflow state; historical metrics remain nullable and refreshed counts are labeled accurately.
 - [ ] Review/apply `sql/009_crawl_log_diagnostics.sql` before deploying diagnostic consumers; database baseline remains separate work.
 - [ ] Runtime, browser, concurrency, and isolated migration checks deferred; existing test drafts retained without suite execution.
+
+## Prepared Prisma seed and initial migration
+
+- [x] Source-preserving seed preview and explicit insert-only apply workflow.
+- [x] Fresh PostgreSQL initial migration with legacy CHECK constraints and checksum guard.
+- [x] Disposable-database deploy/seed/rerun and preservation verification.
+- [ ] Existing Neon schema reconciliation, baseline adoption, and operational cutover.

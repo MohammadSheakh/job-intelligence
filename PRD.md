@@ -319,7 +319,7 @@ exposing a Quick Search execution action in the replacement UI.
 
 Prisma developer tooling follows the Ferio V2 schema-builder workflow while
 retaining the single-tenant Job Intelligence schema. Application generation has
-no platform-client step. Seed execution remains disabled for authoritative data;
+no platform-client step. Seed writes require an explicit target and apply flag; existing authoritative data is not overwritten;
 migration commands require a reviewed baseline before use on the existing database.
 
 

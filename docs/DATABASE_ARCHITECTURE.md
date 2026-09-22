@@ -42,9 +42,9 @@ Paths in this section are relative to this repository unless labeled Ferio.
 | `backend/prisma/scripts/package.json` | Local ESM boundary for the `.js` builder, without changing the Nest application module format. |
 | `backend/prisma/scripts/build-prisma-schema.mjs` | Compatibility entry point that imports V2. Ferio's older nonrecursive `build-prisma-schema.js` is not the active workflow. |
 | `backend/prisma.config.ts` | CLI schema, migration path, seed command, and datasource URL configuration. |
-| `backend/prisma/migrations/` | Reviewed forward SQL history belongs here. Currently only a README: no reviewed Prisma Migrate baseline exists. |
-| `backend/prisma/migration-checksums.json` | Currently `{}`; no backend checksum enforcement is wired. Its existence does not establish migration integrity. |
-| `backend/prisma/seed.ts`, `seeds/` | Seed entry point deliberately exits unsuccessfully without writes; the seeds directory documents the restriction. |
+| `backend/prisma/migrations/` | Reviewed forward SQL history belongs here. `0_initial` creates fresh databases; existing Neon adoption remains unverified. |
+| `backend/prisma/migration-checksums.json` | Reviewed SHA-256 manifest; `prisma:migrations:check` runs before deploy. |
+| `backend/prisma/seed.ts`, `seeds/` | Preview by default; explicit target/application flag enables insert-only seeding. |
 | `backend/libs/database/src/prisma.service.ts` | Application-scoped client and PostgreSQL pool lifecycle; runtime uses `DATABASE_URL` with `PrismaPg`. |
 
 The normal model-edit flow is:
@@ -82,7 +82,8 @@ Recheck the package file whenever changing commands.
   "prisma:seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
   "prisma:migrate:dev": "pnpm run prisma:schema:build && pnpm prisma migrate dev --schema prisma/schema.prisma",
   "prisma:migrate:status": "pnpm prisma migrate status --schema prisma/schema.prisma",
-  "prisma:migrate:deploy": "pnpm prisma migrate deploy --schema prisma/schema.prisma"
+  "prisma:migrate:deploy": "pnpm run prisma:migrations:check && pnpm prisma migrate deploy --schema prisma/schema.prisma",
+  "prisma:migrations:check": "node prisma/scripts/check-migrations.mjs"
 }
 ```
 
@@ -95,13 +96,13 @@ Recheck the package file whenever changing commands.
 | `prisma:migrate:status` | Connects and inspects migration history; not an offline check or a complete drift audit. |
 | `prisma:migrate:dev` | Rebuilds schema then runs development migration workflow; may use a shadow database and request reset. Only for an authorized disposable development target after baseline planning. |
 | `prisma:migrate:deploy` | Applies pending migration files; does not create them, rebuild fragments, or generate clients. Not a substitute for drift review. |
-| `prisma:seed` | Executes the refusal entry point; exits unsuccessfully without writes. |
+| `prisma:seed` | Validates and previews the catalog; `--apply` plus `SEED_DATABASE_URL` enables insert-only writes. |
 
 Job Intelligence config loads `../.env` relative to the command's working
 directory and reads `DATABASE_URL`; execute CLI operations in the backend package.
 Existing process environment can override dotenv values: identify the effective
 target without exposing credentials. CLI config is not runtime connection setup.
-Both `prisma:seed` and Prisma 7 `db seed` use the configured refusal entry point.
+Both `prisma:seed` and Prisma 7 `db seed` use the same preview/apply entry point; see [seed/adoption workflow](../backend/prisma/_doc.md).
 Never add a platform command/schema or copy Ferio's seed merely for script parity.
 
 ## Persistence boundaries and data correctness
@@ -196,9 +197,9 @@ Never add a platform command/schema or copy Ferio's seed merely for script parit
 5. Never rewrite shared/applied migrations. Add forward corrections. Specify backup
    and restore evidence, operational recovery, and any irreversible data loss;
    application rollback alone cannot reverse a destructive schema change.
-6. Keep seeds disabled until a specific dataset and target are authorized. Any future
-   seed must have environment guards, stable keys, repeatable/idempotent behavior,
-   bounded work, no embedded credentials, and explicit partial-failure handling.
+6. Keep seed writes explicit and insert-only. Preserve source files and existing
+   operator edits; preview validates data without connecting. Never seed Neon as
+   part of migration adoption. See the seed workflow for the exact approved dataset.
 7. Review source fragments, combined schema, SQL, generated-client compatibility,
    affected consumers, and docs together. Generated clients stay out of source
    control; the tracked combined schema is a separate reviewed artifact.

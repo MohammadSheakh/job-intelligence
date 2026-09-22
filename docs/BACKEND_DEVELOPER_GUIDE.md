@@ -114,7 +114,9 @@ client generation. `prisma:generate` alone does not rebuild fragments. The
 scripts-local ESM package leaves the Nest runtime module format unchanged.
 
 Migration commands are wired but require baseline review for the existing
-schema. Seed commands deliberately refuse writes. See `backend/prisma/_doc.md`
+schema. Seed commands preview by default; explicit `--apply` and `SEED_DATABASE_URL`
+enable insert-only catalog seeding. The fresh-database `0_initial` migration is
+available; existing Neon adoption still requires verified equivalence. See `backend/prisma/_doc.md`
 for the complete command table; there is no platform database in this project.
 
 ## Crawler ingestion boundary
