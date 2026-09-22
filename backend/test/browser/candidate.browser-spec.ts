@@ -232,9 +232,10 @@ describe('Candidate and Company Intelligence browser flows', () => {
         response.url().endsWith('/candidate/pipeline/company-state') &&
         response.request().method() === 'POST',
     );
-    await page.getByRole('combobox').selectOption('PLANNING');
+    await page.getByLabel(/Pipeline status/i).selectOption('PLANNING');
     expect((await planned).ok()).toBe(true);
     await page.getByRole('link', { name: 'Pipeline', exact: true }).click();
+    await page.waitForURL(`${baseUrl}/candidate/pipeline`);
     await page.getByRole('heading', { name: 'Browser Company' }).waitFor();
     await page.getByRole('combobox').selectOption('APPLIED');
     await page.getByLabel('Notes').fill('Browser note');
@@ -303,7 +304,7 @@ describe('Candidate and Company Intelligence browser flows', () => {
       await page.getByLabel('Username').fill('browser-admin');
       await page.getByLabel('Password').fill('incorrect');
       await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-      await page.getByRole('alert').waitFor();
+      await page.locator('p.error').waitFor();
       await adminLogin();
       await page.getByRole('link', { name: 'Admin Alpha', exact: true }).waitFor();
       expect(await page.evaluate(() => [localStorage.length, sessionStorage.length])).toEqual([

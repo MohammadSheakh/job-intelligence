@@ -62,7 +62,7 @@ try {
     }
   }
   if (!ready) throw new Error('Disposable PostgreSQL did not become ready.');
-  for (const file of ['001_init.sql', '008_runtime_schema.sql']) {
+  for (const file of ['001_init.sql', '008_runtime_schema.sql', '009_crawl_log_diagnostics.sql']) {
     const sql = readFileSync(new URL(`../../../sql/${file}`, import.meta.url), 'utf8');
     docker(
       [

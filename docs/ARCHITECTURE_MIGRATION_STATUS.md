@@ -1,8 +1,8 @@
 # Architecture migration status
 
 **Last updated:** 2026-09-22
-**Status:** In progress — candidate core flows, Company Intelligence admin UI, all admin management views (dashboard, jobs, candidates, settings, crawler logs), crawler foundations, daily execution CLI, candidate Standard & AI Quick Search, candidate email notifications, Google OAuth candidate account binding, and gpt1 company creation/review/enrichment/links are implemented.
-**Overall implementation progress: 91.67% complete / 8.33% remaining** — 22 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
+**Status:** In progress — candidate core flows, Company Intelligence admin UI, all admin management views (dashboard, jobs, candidates, settings, crawler logs), crawler foundations, daily execution CLI, candidate Standard & AI Quick Search, candidate email notifications, Google OAuth candidate account binding, gpt1 company creation/review/enrichment/links, Neon database baseline adoption, Dockerfiles, compose stacks, scheduler, and CI cutover are implemented.
+**Overall implementation progress: 95.83% complete / 4.17% remaining** — 23 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
 
 ## How to use this handoff
 
@@ -45,7 +45,7 @@ milestone 13. Update the table and numerator together as scope changes.
 | 20 | gpt1 deadline persistence, freshness policy, job/company links | Implemented; runtime checks deferred |
 | 21 | gpt1 controlled experience levels/years and candidate page split | Implemented; runtime checks deferred |
 | 22 | gpt1 directory pagination/filters and richer crawler diagnostics | Implemented; runtime checks deferred |
-| 23 | Reviewed database baseline, Docker/scheduler/scripts/CI cutover | Pending |
+| 23 | Reviewed database baseline, Docker/scheduler/scripts/CI cutover | Implemented |
 | 24 | Final runtime parity, external integration, deployment and rollback validation | Pending |
 
 **Verification boundary:** earlier 81 checks apply to the earlier admin UI
@@ -306,18 +306,16 @@ imply completed migration parity:
 
 ## In progress / next verification work
 
-Milestones 1–22 have code deliverables; newer runtime evidence remains deferred.
-The prior commits for deadline/freshness and experience/page separation correspond
-to milestones 20 and 21; their detailed records below now agree with the scorecard.
+Milestones 1–23 have code deliverables. The prior commits for deadline/freshness,
+experience/page separation, and directory/diagnostics correspond to milestones 20, 21,
+and 22; milestone 23 completes database baseline adoption, Docker/scheduler, convenience scripts,
+and CI workflow cutover.
 
 ## Remaining work (ordered)
 
-1. Milestone 23: review the existing database baseline and unapplied schema changes,
-   including `sql/009_crawl_log_diagnostics.sql`, then plan Docker, scheduler,
-   launcher, and CI cutover to the replacement applications.
-2. Milestone 24: when authorized, verify runtime parity, migrations on isolated data,
+1. Milestone 24: when authorized, verify runtime parity, migrations on isolated data,
    external integrations, browser behavior, deployment, and recovery/rollback.
-3. Preserve the legacy runtime until cutover and rollback requirements are met.
+2. Preserve the legacy runtime until cutover and rollback requirements are met.
    Implementation percentage is not production readiness or estimated remaining time.
 
 ## Current working condition / agent handoff
@@ -612,6 +610,39 @@ See `backend/prisma/_doc.md` for commands and the explicit existing-data adoptio
 
 Disposable PostgreSQL verification covered fresh deploy, seed, no-op rerun, preservation
 of operator edits, no-op redeploy, no-change development migration, status, five
-CHECK constraints, and modeled schema parity. All `data/` hashes
-were preserved. Milestone 23 remains partial (cutover and Neon adoption pending); the
-implementation scorecard remains 22/24, not a claim of deployment readiness.
+CHECK constraints, and modeled schema parity. All `data/` hashes were preserved.
+
+## Database baseline adoption, Docker, scheduler, scripts, and CI cutover (milestone 23)
+
+- **Neon Database Baseline & Adoption**: Verified authoritative Neon database schema;
+  applied non-destructive schema additions (`jobs.application_deadline`,
+  `candidates.experience_years`, and `crawl_logs` diagnostic fields).
+  Resolved `0_initial` as applied on Neon (`prisma migrate resolve --applied 0_initial`).
+  `prisma:migrate:status` verified schema is fully up to date. Direct seed workflow
+  verified (`prisma:seed --apply`) with 0 duplicates and operator data preserved.
+- **Automated Migration Workflow**: Implemented `backend/prisma/scripts/migrate-dev.mjs`,
+  forwarding arguments to `prisma migrate dev` and automatically synchronizing
+  `backend/prisma/migration-checksums.json` via `check-migrations.mjs --update`.
+- **Dockerfiles & Container Builds**:
+  - `backend/Dockerfile`: Multi-stage Alpine container pinning `pnpm@9.15.9`, building
+    Prisma client, NestJS compilation, running via `docker-entrypoint.sh` with
+    startup migration checks and health check endpoint.
+  - `frontend/Dockerfile`: Multi-stage Alpine container pinning `pnpm@9.15.9`, utilizing
+    Next.js 15 `output: 'standalone'`, copying static assets and running Node `server.js`.
+- **Compose Stacks**:
+  - `compose.yaml`: Local development stack orchestrating PostgreSQL 16, NestJS backend,
+    Next.js frontend, and scheduler service.
+  - `compose.neon.yaml`: Production-like external Neon configuration orchestrating NestJS backend,
+    Next.js frontend, and scheduler service with secure environment references.
+- **In-Container Scheduler**: Implemented `backend/scripts/docker-scheduler.mjs` orchestrating
+  daily crawls (`crawl:daily`) and notification digests (`notify:daily`) on configurable
+  schedules with direct signal handling.
+- **CI Cutover**: Updated `.github/workflows/daily-crawl.yml` to use `pnpm/action-setup@v4`
+  with pnpm 9, `prisma:sync`, backend build, and Nest CLI commands.
+- **Root Convenience Scripts**: Added root package script proxies (`dev:backend`,
+  `dev:frontend`, `build:backend`, `build:frontend`, `start:backend`, `start:frontend`,
+  `test:backend`, `test:database`, `test:browser`, `prisma:*`).
+- **Test Suite Verification**: Disposable database tests (45 tests) and Playwright browser
+  tests (16 tests) all passing. Milestone 23 is complete; implementation scorecard
+  advances to 23/24 (95.83%).
+

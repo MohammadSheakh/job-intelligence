@@ -19,14 +19,22 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare Prisma and build backend
+        run: pnpm --dir backend prisma:sync && pnpm --dir backend build
 
       - name: Crawl career pages
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           CRAWL_DELAY_MS: '750'
-        run: npm run crawl:daily
+        run: pnpm --dir backend crawl:daily
 
       - name: Match candidates and send enabled digests
         env:
@@ -40,4 +48,4 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-        run: npm run notify:daily
+        run: pnpm --dir backend notify:daily

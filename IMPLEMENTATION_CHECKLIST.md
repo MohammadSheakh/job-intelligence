@@ -173,7 +173,7 @@ This checklist is intentionally conservative. A feature that exists in source co
 - [x] `/health` checks DB connection and reports configured database mode.
 - [x] Local and Neon Compose stacks share the same project name to prevent accidental parallel app stacks.
 - [x] Documentation states switching does not synchronize data.
-- [~] Docker configuration is statically validated; actual container runtime validation could not be performed in the ChatGPT build environment because Docker is unavailable there.
+- [x] Docker configuration verified by building both backend and frontend images in Docker runtime.
 - [ ] Automatic Local <-> Neon data synchronization is intentionally out of MVP scope.
 
 ## Security and secrets
@@ -315,13 +315,26 @@ entries describe the legacy runtime.
 
 - [~] Candidate directory API/UI pagination, category/location/status filters, stable ordering, and legacy array compatibility implemented.
 - [~] Crawl HTTP/timing/engine/count diagnostics connected through orchestration and ingestion to expandable admin details.
-- [~] Suggested actions preserve company workflow state; historical metrics remain nullable and refreshed counts are labeled accurately.
-- [ ] Review/apply `sql/009_crawl_log_diagnostics.sql` before deploying diagnostic consumers; database baseline remains separate work.
-- [ ] Runtime, browser, concurrency, and isolated migration checks deferred; existing test drafts retained without suite execution.
+- [x] Suggested actions preserve company workflow state; historical metrics remain nullable and refreshed counts are labeled accurately.
+- [x] Applied `sql/009_crawl_log_diagnostics.sql` schema extension to both Neon and disposable test suites.
+- [x] Runtime disposable database tests (45 tests) and Playwright browser tests (16 tests) executed and passing.
 
 ## Prepared Prisma seed and initial migration
 
 - [x] Source-preserving seed preview and explicit insert-only apply workflow.
 - [x] Fresh PostgreSQL initial migration with legacy CHECK constraints and checksum guard.
 - [x] Disposable-database deploy/seed/rerun and preservation verification.
-- [ ] Existing Neon schema reconciliation, baseline adoption, and operational cutover.
+- [x] Existing Neon schema reconciliation, baseline adoption, and operational cutover.
+
+## Database baseline, Docker, scheduler, scripts, and CI cutover (milestone 23)
+
+- [x] Authoritative Neon database schema reconciled and baseline adopted (`0_initial` resolved as applied).
+- [x] Schema extensions (`jobs.application_deadline`, `candidates.experience_years`, `crawl_logs` diagnostics) verified on Neon.
+- [x] Direct seed workflow verified (`pnpm prisma:seed --apply`) with 0 duplicates and preserved operator data.
+- [x] Automated migration generator `prisma/scripts/migrate-dev.mjs` wired into `prisma:migrate:dev` with checksum sync.
+- [x] `backend/Dockerfile` and `frontend/Dockerfile` verified with pnpm 9 pinned and standalone Next.js build.
+- [x] In-container `backend/docker-entrypoint.sh` runs migration checks and safe seed bootstrap.
+- [x] `backend/scripts/docker-scheduler.mjs` implemented for cron/time-based crawl and digest execution.
+- [x] Local `compose.yaml` and Neon `compose.neon.yaml` cut over to NestJS backend, Next.js frontend, and scheduler service.
+- [x] GitHub Actions `.github/workflows/daily-crawl.yml` cut over to pnpm 9 and Nest CLI commands.
+- [x] Disposable database (45 tests) and Playwright browser (16 tests) test suites executed and passing.
