@@ -17,6 +17,7 @@ import { CandidateAuthenticationService } from '../services/candidate-authentica
 import { CandidateSessionService } from '../services/candidate-session.service.js';
 import { GoogleOAuthService } from '../services/google-oauth.service.js';
 import { CandidateSessionGuard, type CandidateRequest } from '../guards/candidate-session.guard.js';
+import { RateLimit } from '@app/common';
 
 /**
  * HTTP boundary for candidate login, identity, password change, and logout; password-change gating
@@ -32,9 +33,10 @@ export class CandidateAuthenticationController {
 
   /**
    * Issue an HTTP-only session cookie after password verification and tell the UI whether an
-   * initial password change is required.
+   * initial password change is required. Rate limited to 10 requests / minute.
    */
   @Post('login')
+  @RateLimit({ windowMs: 60_000, max: 10, keyPrefix: 'auth_login' })
   async login(
     @Body()
     input: CandidateLoginDto,
@@ -47,7 +49,7 @@ export class CandidateAuthenticationController {
         code: 'INVALID_CREDENTIALS',
         message: 'Invalid email or password.',
       });
-    const session = this.sessions.create(candidate.id);
+    const session = this.sessions.create(candidate.id, candidate.tokenVersion ?? 1);
     response.cookie('ji_candidate_session', session.token, {
       httpOnly: true,
       sameSite: 'lax',
@@ -79,10 +81,11 @@ export class CandidateAuthenticationController {
 
   /**
    * Change only the authenticated candidate’s password; request input cannot select another
-   * account.
+   * account. Automatically revokes all existing sessions.
    */
   @Post('change-password')
   @UseGuards(CandidateSessionGuard)
+  @RateLimit({ windowMs: 60_000, max: 10, keyPrefix: 'auth_change_pw' })
   async changePassword(
     @Req()
     request: CandidateRequest,
@@ -94,13 +97,35 @@ export class CandidateAuthenticationController {
     return { ok: true };
   }
 
-  /** Expire the browser cookie. Stateless tokens are not server-revoked by this endpoint. */
+  /** Expire the browser cookie; optionally pass ?revoke=true to revoke all server sessions. */
   @Post('logout')
-  @UseGuards(CandidateSessionGuard)
-  logout(
+  async logout(
+    @Req()
+    request: Request,
     @Res({ passthrough: true })
     response: Response,
-  ): { ok: true } {
+  ): Promise<{ ok: true }> {
+    const shouldRevoke =
+      (request as Request & { query?: { revoke?: string } }).query?.revoke === 'true';
+    if (shouldRevoke) {
+      const token =
+        request.headers.cookie
+          ?.split(';')
+          .map((part) => part.trim())
+          .find((part) => part.startsWith('ji_candidate_session='))
+          ?.slice(21) ?? '';
+      if (token) {
+        try {
+          const decodedToken = decodeURIComponent(token);
+          const sessionPayload = this.sessions.verifyPayload(decodedToken);
+          if (sessionPayload) {
+            await this.authentication.revokeSessions(sessionPayload.candidateId);
+          }
+        } catch {
+          // Ignore decoding errors on logout
+        }
+      }
+    }
     response.cookie('ji_candidate_session', '', {
       httpOnly: true,
       sameSite: 'lax',
@@ -108,6 +133,17 @@ export class CandidateAuthenticationController {
       expires: new Date(0),
       path: '/',
     });
+    return { ok: true };
+  }
+
+  /** Explicitly invalidate all active session tokens on the server for the current candidate. */
+  @Post('revoke')
+  @UseGuards(CandidateSessionGuard)
+  async revoke(
+    @Req()
+    request: CandidateRequest,
+  ): Promise<{ ok: true }> {
+    await this.authentication.revokeSessions(request.candidate.id);
     return { ok: true };
   }
 
@@ -221,7 +257,7 @@ export class CandidateAuthenticationController {
       return;
     }
 
-    const session = this.sessions.create(candidate.id);
+    const session = this.sessions.create(candidate.id, candidate.tokenVersion ?? 1);
     response.cookie('ji_candidate_session', session.token, {
       httpOnly: true,
       sameSite: 'lax',

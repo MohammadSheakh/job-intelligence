@@ -3,12 +3,21 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { AppConfigService } from './config/config.service.js';
+import { BigIntSerializerInterceptor, GlobalHttpExceptionFilter } from '@app/common';
+
+// Ensure BigInt primitives are converted to string if directly processed by JSON.stringify
+(BigInt.prototype as unknown as { toJSON: () => string }).toJSON = function () {
+  return this.toString();
+};
 
 /**
  * Start the Nest API with strict DTO validation, credentialed CORS, and the shared /api/v1 prefix.
  */
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
+  app.useGlobalInterceptors(new BigIntSerializerInterceptor());
+  app.useGlobalFilters(new GlobalHttpExceptionFilter());
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );

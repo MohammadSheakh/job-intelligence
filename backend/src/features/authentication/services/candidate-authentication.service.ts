@@ -8,11 +8,12 @@ export interface CandidatePrincipal {
   name: string;
   email: string;
   mustChangePassword: boolean;
+  tokenVersion?: number;
 }
 
 /**
  * Authenticates existing active candidates using legacy-compatible scrypt hashes; it does not
- * register accounts.
+ * register accounts. Supports token version revocation.
  */
 @Injectable()
 export class CandidateAuthenticationService {
@@ -34,12 +35,13 @@ export class CandidateAuthenticationService {
       name: row.name,
       email: row.email,
       mustChangePassword: row.auth.mustChangePassword,
+      tokenVersion: row.auth.token_version,
     };
   }
 
   /**
-   * Reload account activity and password-change state on each request so admin changes affect
-   * existing sessions.
+   * Reload account activity, password-change state, and token version on each request so
+   * admin changes or logouts affect existing sessions immediately.
    */
   async getActiveCandidate(candidateId: bigint): Promise<CandidatePrincipal | null> {
     const row = await this.prisma.candidate.findFirst({
@@ -52,18 +54,32 @@ export class CandidateAuthenticationService {
           name: row.name,
           email: row.email,
           mustChangePassword: row.auth?.mustChangePassword ?? false,
+          tokenVersion: row.auth?.token_version ?? 1,
         }
       : null;
   }
 
-  /** Set the candidate’s chosen password and clear the mandatory-change flag. */
+  /**
+   * Set the candidate’s chosen password, clear the mandatory-change flag, and revoke all
+   * active session tokens by incrementing token version.
+   */
   async changePassword(candidateId: bigint, password: string): Promise<void> {
     await this.setPassword(candidateId, password, false);
   }
 
   /**
-   * Hash before persistence; an optional transaction lets admin profile and password changes
-   * commit or roll back together.
+   * Revoke all existing sessions for a candidate by incrementing the persisted token version.
+   */
+  async revokeSessions(candidateId: bigint): Promise<void> {
+    await this.prisma.candidateAuth.upsert({
+      where: { candidateId },
+      create: { candidateId, token_version: 2 },
+      update: { token_version: { increment: 1 } },
+    });
+  }
+
+  /**
+   * Hash before persistence; atomically increments token_version to invalidate prior sessions.
    */
   async setPassword(
     candidateId: bigint,
@@ -74,7 +90,7 @@ export class CandidateAuthenticationService {
     const passwordHash = await hashLegacyScrypt(password);
     await database.candidateAuth.upsert({
       where: { candidateId },
-      create: { candidateId, passwordHash, mustChangePassword },
+      create: { candidateId, passwordHash, mustChangePassword, token_version: 1 },
       update: { passwordHash, mustChangePassword },
     });
   }
@@ -100,6 +116,7 @@ export class CandidateAuthenticationService {
         name: existingBound.candidate.name,
         email: existingBound.candidate.email,
         mustChangePassword: existingBound.mustChangePassword,
+        tokenVersion: existingBound.token_version,
       };
     }
 
@@ -137,6 +154,7 @@ export class CandidateAuthenticationService {
       name: candidate.name,
       email: candidate.email,
       mustChangePassword: updatedAuth.mustChangePassword,
+      tokenVersion: updatedAuth.token_version,
     };
   }
 }

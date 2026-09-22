@@ -71,6 +71,9 @@ export class CandidateRecommendationsService {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
+    const maxScan = parseInt(process.env.MAX_MATCH_SCAN_JOBS || '1000', 10);
+    let totalScanned = 0;
+
     for (;;) {
       const jobs = await this.prisma.job.findMany({
         where: {
@@ -116,6 +119,7 @@ export class CandidateRecommendationsService {
           },
         },
       });
+      totalScanned += jobs.length;
       for (const job of jobs) {
         const company = job.company;
         const trackingStatus = company.candidate_company_state[0]?.status ?? null;
@@ -162,7 +166,7 @@ export class CandidateRecommendationsService {
         best.sort((a, b) => b.score - a.score || (BigInt(a.jobId) > BigInt(b.jobId) ? -1 : 1));
         if (best.length > limit) best.pop();
       }
-      if (jobs.length < batchSize) break;
+      if (jobs.length < batchSize || totalScanned >= maxScan) break;
       beforeId = jobs[jobs.length - 1].id;
     }
     return best;

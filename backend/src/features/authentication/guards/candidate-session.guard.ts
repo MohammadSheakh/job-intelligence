@@ -6,7 +6,10 @@ import {
 } from '../services/candidate-authentication.service.js';
 import { CandidateSessionService } from '../services/candidate-session.service.js';
 
-/** Validates the session cookie and attaches a freshly loaded active principal to the request. */
+/**
+ * Validates the session cookie, checks token versioning against database state,
+ * and attaches a freshly loaded active principal to the request.
+ */
 @Injectable()
 export class CandidateSessionGuard implements CanActivate {
   constructor(
@@ -15,8 +18,7 @@ export class CandidateSessionGuard implements CanActivate {
   ) {}
 
   /**
-   * Treat malformed cookie encoding as unauthenticated and recheck account activity before the
-   * controller runs.
+   * Treat malformed cookie encoding or revoked token version as unauthenticated.
    */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
@@ -37,13 +39,30 @@ export class CandidateSessionGuard implements CanActivate {
         message: 'Candidate session is invalid or expired.',
       });
     }
-    const id = this.sessions.verify(decodedToken);
-    request.candidate = id ? await this.authentication.getActiveCandidate(id) : null;
-    if (!request.candidate)
+    const sessionPayload = this.sessions.verifyPayload(decodedToken);
+    if (!sessionPayload) {
       throw new UnauthorizedException({
         code: 'CANDIDATE_SESSION_INVALID',
         message: 'Candidate session is invalid or expired.',
       });
+    }
+    const candidate = await this.authentication.getActiveCandidate(sessionPayload.candidateId);
+    if (!candidate) {
+      throw new UnauthorizedException({
+        code: 'CANDIDATE_SESSION_INVALID',
+        message: 'Candidate session is invalid or expired.',
+      });
+    }
+    if (
+      candidate.tokenVersion !== undefined &&
+      sessionPayload.tokenVersion !== candidate.tokenVersion
+    ) {
+      throw new UnauthorizedException({
+        code: 'CANDIDATE_SESSION_INVALID',
+        message: 'Candidate session has been revoked. Please sign in again.',
+      });
+    }
+    request.candidate = candidate;
     return true;
   }
 }

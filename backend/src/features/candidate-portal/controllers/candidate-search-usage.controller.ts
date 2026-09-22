@@ -8,6 +8,7 @@ import { QuickSearchQuotaService } from '../../quick-search/services/quick-searc
 import { QuickSearchExecutionService } from '../../quick-search/services/quick-search-execution.service.js';
 import { AiMatchEnhancerService } from '../../matching/services/ai-match-enhancer.service.js';
 import { ExecuteQuickSearchDto } from '../dto/execute-quick-search.dto.js';
+import { RateLimit } from '@app/common';
 
 /** Exposes read-only usage allowance and on-demand Quick Search execution. */
 @Controller('candidate/quick-search')
@@ -36,6 +37,7 @@ export class CandidateSearchUsageController {
 
   /** Run on-demand Quick Search, checking shortlisted companies and updating vacancies. */
   @Post('execute')
+  @RateLimit({ windowMs: 60_000, max: 20, keyPrefix: 'quick_search_execute' })
   async execute(
     @Req()
     request: CandidateRequest,

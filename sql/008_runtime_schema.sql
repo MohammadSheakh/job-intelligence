@@ -20,12 +20,16 @@ CREATE TABLE IF NOT EXISTS candidate_auth (
   google_sub text UNIQUE,
   google_email text,
   must_change_password boolean NOT NULL DEFAULT false,
+  token_version integer NOT NULL DEFAULT 1,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 ALTER TABLE candidate_auth
   ADD COLUMN IF NOT EXISTS must_change_password boolean NOT NULL DEFAULT false;
+
+ALTER TABLE candidate_auth
+  ADD COLUMN IF NOT EXISTS token_version integer NOT NULL DEFAULT 1;
 
 ALTER TABLE jobs
   ADD COLUMN IF NOT EXISTS application_deadline timestamptz;

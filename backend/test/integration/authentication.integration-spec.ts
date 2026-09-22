@@ -53,6 +53,14 @@ describe('Candidate authentication primitives', () => {
     expect(sessions.verify('invalid')).toBeNull();
   });
 
+  it('supports versioned session tokens and returns payload metadata', () => {
+    const id = 12345n;
+    const { token } = sessions.create(id, 3);
+    const payload = sessions.verifyPayload(token);
+    expect(payload).toEqual({ candidateId: id, tokenVersion: 3 });
+    expect(sessions.verify(token)).toBe(id);
+  });
+
   it('rejects a session at its expiry boundary', () => {
     const { token, expiresAt } = sessions.create(1n);
     jest.spyOn(Date, 'now').mockReturnValue(expiresAt.getTime());

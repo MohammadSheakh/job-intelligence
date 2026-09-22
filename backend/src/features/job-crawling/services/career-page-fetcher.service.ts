@@ -4,6 +4,7 @@ import { request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { checkServerIdentity } from 'node:tls';
 import { isIP } from 'node:net';
+import { createUnzip, createBrotliDecompress } from 'node:zlib';
 import ipaddr from 'ipaddr.js';
 import type { CareerPage } from '../domain/types.js';
 
@@ -192,7 +193,7 @@ export class CareerPageFetcherService {
           headers: {
             host: url.host,
             accept: 'text/html,application/xhtml+xml',
-            'accept-encoding': 'identity',
+            'accept-encoding': 'gzip, deflate, br, identity',
             'user-agent': 'JobIntelligenceBot/0.4 (+daily-career-monitor)',
           },
         },
@@ -240,26 +241,53 @@ export class CareerPageFetcherService {
             );
             return;
           }
-          const encoding = response.headers['content-encoding'];
-          if (encoding && encoding.toLowerCase() !== 'identity') {
-            stop(
-              new CrawlTransportError(
-                'CONTENT_ENCODING',
-                'Compressed career responses are not supported.',
-                status,
-              ),
-            );
-            return;
+
+          const rawEncoding = response.headers['content-encoding'];
+          const encoding = rawEncoding?.trim().toLowerCase();
+          let stream: NodeJS.ReadableStream = response;
+
+          if (encoding && encoding !== 'identity') {
+            if (encoding === 'gzip' || encoding === 'deflate') {
+              const decompressor = createUnzip();
+              decompressor.once('error', (err) => {
+                stop(
+                  new CrawlTransportError(
+                    'DECOMPRESSION_FAILED',
+                    `Failed to decompress ${encoding} payload: ${(err as Error).message}`,
+                    status,
+                  ),
+                );
+              });
+              response.pipe(decompressor);
+              stream = decompressor;
+            } else if (encoding === 'br') {
+              const decompressor = createBrotliDecompress();
+              decompressor.once('error', (err) => {
+                stop(
+                  new CrawlTransportError(
+                    'DECOMPRESSION_FAILED',
+                    `Failed to decompress brotli payload: ${(err as Error).message}`,
+                    status,
+                  ),
+                );
+              });
+              response.pipe(decompressor);
+              stream = decompressor;
+            } else {
+              stop(
+                new CrawlTransportError(
+                  'CONTENT_ENCODING',
+                  `Unsupported career response encoding: ${encoding}`,
+                  status,
+                ),
+              );
+              return;
+            }
           }
-          if (Number(response.headers['content-length']) > MAX_BYTES) {
-            stop(
-              new CrawlTransportError('BODY_LIMIT', 'Career page exceeds the 2 MiB limit.', status),
-            );
-            return;
-          }
+
           const chunks: Buffer[] = [];
           let size = 0;
-          response.on('data', (chunk: Buffer) => {
+          stream.on('data', (chunk: Buffer) => {
             size += chunk.length;
             if (size > MAX_BYTES) {
               stop(
@@ -273,8 +301,8 @@ export class CareerPageFetcherService {
             }
             chunks.push(chunk);
           });
-          response.once('error', reject);
-          response.once('end', () =>
+          stream.once('error', reject);
+          stream.once('end', () =>
             resolve({ status, html: Buffer.concat(chunks).toString('utf8') }),
           );
         },

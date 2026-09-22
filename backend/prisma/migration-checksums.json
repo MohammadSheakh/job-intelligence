@@ -1,3 +1,4 @@
 {
-  "migrations/0_initial/migration.sql": "0c3fefd63646d6fff79ce1dba14880ce98f72e6ea7c6a7113b992b5b43d19ff3"
+  "migrations/0_initial/migration.sql": "0c3fefd63646d6fff79ce1dba14880ce98f72e6ea7c6a7113b992b5b43d19ff3",
+  "migrations/20260922231000_add_candidate_token_version/migration.sql": "1f4620b2f720b8a6ca0cdb2b06b14809df20f1875693dac7f4657e4ff1ab19b1"
 }
