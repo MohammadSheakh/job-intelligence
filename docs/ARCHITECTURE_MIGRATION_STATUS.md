@@ -1,8 +1,8 @@
 # Architecture migration status
 
 **Last updated:** 2026-09-22
-**Status:** In progress — candidate core flows, Company Intelligence admin UI, selected admin APIs, crawler foundations, daily execution CLI, candidate Standard & AI Quick Search, candidate email notifications, and Google OAuth candidate account binding are implemented.
-**Overall implementation progress: 70.83% complete / 29.17% remaining** — 17 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
+**Status:** In progress — candidate core flows, Company Intelligence admin UI, all admin management views (dashboard, jobs, candidates, settings, crawler logs), crawler foundations, daily execution CLI, candidate Standard & AI Quick Search, candidate email notifications, and Google OAuth candidate account binding are implemented.
+**Overall implementation progress: 75.00% complete / 25.00% remaining** — 18 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
 
 ## How to use this handoff
 
@@ -40,7 +40,7 @@ milestone 13. Update the table and numerator together as scope changes.
 | 15 | Optional AI provider integration, limits, and AI-assisted search | Implemented; runtime checks deferred |
 | 16 | Email digests, notifications, delivery deduplication integration | Implemented; runtime checks deferred |
 | 17 | Google OAuth and account binding | Implemented; runtime checks deferred |
-| 18 | Remaining admin dashboard/jobs/candidates/settings/logs views | Pending |
+| 18 | Remaining admin dashboard/jobs/candidates/settings/logs views | Implemented; runtime checks deferred |
 | 19 | gpt1 company creation, review completion, enrichment, table links | Pending |
 | 20 | gpt1 deadline persistence, freshness policy, job/company links | Pending |
 | 21 | gpt1 controlled experience levels/years and candidate page split | Pending |
@@ -488,5 +488,21 @@ product milestone credit.
   - Reads `error` query parameter and displays user-friendly error banners.
 - Verification: style/formatting (`pnpm check:style`), agent instruction integrity (`pnpm check:agents`), backend & frontend typechecks (`pnpm typecheck`), 55 unit tests across 6 test suites (`pnpm test`), and production builds (`nest build` and `next build`).
 - Milestone 17 is implemented: **17/24 = 70.83% complete, 29.17% remaining**.
+
+## Remaining admin dashboard, jobs, candidates, settings, and logs views
+
+- Implemented `AdminDashboardService` and `AdminDashboardController` in `backend/src/features/admin-operations`:
+  - `GET /api/v1/admin/dashboard` provides an aggregated operations overview: total companies, monitor-ready companies, total jobs, open jobs, active candidates, notifications sent, 24-hour crawler failure count, current operational settings, and recent crawl activity with company names and error diagnostics.
+- Expanded admin navigation in `frontend/lib/admin-api.tsx`:
+  - Provides full navigation header with active links to Dashboard (`/admin`), Companies (`/admin/companies`), Categories (`/admin/categories`), Jobs (`/admin/jobs`), Candidates (`/admin/candidates`), Crawler Logs (`/admin/crawl-logs`), and Settings (`/admin/settings`).
+- Built the Next.js admin frontend views in `frontend/app/admin/`:
+  - **Dashboard (`/admin`)**: Metric KPI cards, operational controls overview (AI and Email dispatch statuses), and recent crawler event table.
+  - **Jobs Catalog (`/admin/jobs`)**: Filterable job opening search (`search`, `status`), company category chips, first-seen timestamps, open/closed status badges, and external application links (`Apply ↗` with `rel="noopener noreferrer"`).
+  - **Candidates (`/admin/candidates`)**: Unified candidate administration screen with responsive Add/Edit candidate form, category preference/exclusion matrix dynamically loaded from `/admin/categories`, initial password setup / password reset, and candidate list table with auth method indicators and active toggles.
+  - **Crawler Logs (`/admin/crawl-logs`)**: Operational audit trail of career crawl attempts with company links, timestamps, job counts, diagnostic error strings, and pagination controls.
+  - **Settings (`/admin/settings`)**: Runtime configuration interface for AI engine switches, AI daily limits, match threshold percentage, email dispatch enablement, and candidate Quick Search quotas.
+- Verification: style/formatting (`pnpm check:style`), agent instruction integrity (`pnpm check:agents`), backend & frontend typechecks (`pnpm typecheck`), 59 unit tests across 7 test suites (`pnpm test`), and production builds (`nest build` and `next build` with 17 static routes).
+- Milestone 18 is implemented: **18/24 = 75.00% complete, 25.00% remaining**.
+
 
 

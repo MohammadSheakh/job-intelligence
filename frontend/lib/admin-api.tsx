@@ -84,8 +84,13 @@ export function AdminSession({ children }: { children: ReactNode }) {
         <header>
           <p className="eyebrow">Job Intelligence · Administration</p>
           <nav aria-label="Administration">
+            <Link href="/admin">Dashboard</Link>
             <Link href="/admin/companies">Companies</Link>
             <Link href="/admin/categories">Categories</Link>
+            <Link href="/admin/jobs">Jobs</Link>
+            <Link href="/admin/candidates">Candidates</Link>
+            <Link href="/admin/crawl-logs">Crawler</Link>
+            <Link href="/admin/settings">Settings</Link>
             <button
               className="secondary"
               onClick={() => {
