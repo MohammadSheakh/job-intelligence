@@ -17,6 +17,19 @@ services:
       timeout: 5s
       retries: 20
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - job_intelligence_redisdata:/data
+
   backend:
     build:
       context: .
@@ -27,6 +40,7 @@ services:
     environment:
       DATABASE_URL: postgresql://jobapp:${LOCAL_DB_PASSWORD:-jobapp_local}@db:5432/job_intelligence
       DATABASE_MODE: local
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       PORT: 4000
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-asdfasdf}
@@ -37,6 +51,8 @@ services:
       TZ: Asia/Dhaka
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - '${BACKEND_PORT:-4000}:4000'
@@ -105,3 +121,4 @@ services:
 
 volumes:
   job_intelligence_pgdata:
+  job_intelligence_redisdata:

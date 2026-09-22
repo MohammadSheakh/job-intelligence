@@ -139,6 +139,7 @@ export class CandidateAuthenticationController {
   /** Explicitly invalidate all active session tokens on the server for the current candidate. */
   @Post('revoke')
   @UseGuards(CandidateSessionGuard)
+  @RateLimit({ windowMs: 60_000, max: 10, keyPrefix: 'auth_revoke' })
   async revoke(
     @Req()
     request: CandidateRequest,
@@ -158,6 +159,7 @@ export class CandidateAuthenticationController {
    * to Google's consent screen.
    */
   @Get('google/start')
+  @RateLimit({ windowMs: 60_000, max: 20, keyPrefix: 'auth_google_start' })
   googleStart(
     @Res()
     response: Response,
@@ -184,6 +186,7 @@ export class CandidateAuthenticationController {
    * set session cookie, and redirect to the candidate portal.
    */
   @Get('google/callback')
+  @RateLimit({ windowMs: 60_000, max: 20, keyPrefix: 'auth_google_callback' })
   async googleCallback(
     @Req()
     request: Request,

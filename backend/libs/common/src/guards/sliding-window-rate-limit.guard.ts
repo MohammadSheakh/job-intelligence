@@ -14,8 +14,9 @@ import type { Request, Response } from 'express';
 import { REDIS_CLIENT } from '../constants/redis.constants.js';
 import { RATE_LIMIT_KEY, type RateLimitOptions } from '../decorators/rate-limit.decorator.js';
 
-interface RequestWithCandidate extends Request {
+interface RequestWithAuth extends Request {
   candidate?: { id: bigint | string };
+  user?: { id?: bigint | string | number; userId?: bigint | string | number };
 }
 
 /**
@@ -53,13 +54,24 @@ export class SlidingWindowRateLimitGuard implements CanActivate {
       return this.handleUnavailable(options, 'REDIS_UNAVAILABLE');
     }
 
-    const request = context.switchToHttp().getRequest<RequestWithCandidate>();
+    const request = context.switchToHttp().getRequest<RequestWithAuth>();
     const response = context.switchToHttp().getResponse<Response>();
 
-    // Generate unique identifier: candidateId if authenticated, or client IP
+    // Generate unique identifier: candidateId or userId if authenticated, or client IP
     const candidateId = request.candidate?.id;
-    const ip = request.ip || request.socket?.remoteAddress || 'unknown';
-    const identifier = candidateId ? `candidate:${candidateId}` : `ip:${ip}`;
+    const userId = request.user?.userId ?? request.user?.id;
+    const ip =
+      (typeof request.headers?.['x-forwarded-for'] === 'string'
+        ? (request.headers['x-forwarded-for'] as string).split(',')[0].trim()
+        : undefined) ||
+      request.ip ||
+      request.socket?.remoteAddress ||
+      'unknown';
+    const identifier = candidateId
+      ? `candidate:${candidateId}`
+      : userId
+        ? `user:${userId}`
+        : `ip:${ip}`;
 
     const keyPrefix = options.keyPrefix || 'default';
     const key = `ratelimit:${keyPrefix}:${identifier}`;
