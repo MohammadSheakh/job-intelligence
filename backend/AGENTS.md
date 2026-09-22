@@ -2,7 +2,7 @@
 
 Read [root instructions](../AGENTS.md) first. This file applies to `backend/`.
 
-## Context to load
+## Load only the affected concern
 
 - [Developer guide](../docs/BACKEND_DEVELOPER_GUIDE.md): read the affected request/job flow.
 - [API compatibility](../docs/BACKEND_API_CONTRACTS.md): route, auth, or response changes.
@@ -13,14 +13,14 @@ Read [root instructions](../AGENTS.md) first. This file applies to `backend/`.
 - [Database rules](../.agents/rules/backend-database.md): queries, repositories, schema.
 - [Transaction rules](../.agents/rules/backend-transactions.md): multi-write/worker changes.
 - [Prisma scope](prisma/AGENTS.md): any schema, generation, seed, or migration edit.
-
 - [Capacity rules](../.agents/rules/reliability-capacity.md): workers, external I/O, or scaling decisions.
 
-## Actual architecture
+## Local architecture and gotchas
 
-Nest feature modules use strict TypeScript, constructor injection, Prisma 7 with
-the PostgreSQL adapter, and `/api/v1`. DTO validation uses class-validator and
-class-transformer. There is no platform database, tenant context, Drizzle layer,
+Use strict TypeScript and constructor injection with the installed Nest/Prisma
+PostgreSQL adapter and class-validator/class-transformer boundaries. Preserve
+`/api/v1` and documented consumer contracts. There is no platform database, tenant
+context, Drizzle layer,
 Redis cache, global ErrorService, or required queue runtime. Do not introduce
 those implicitly from a generic skill.
 
@@ -36,7 +36,7 @@ than registering duplicate providers. Keep dependency direction explicit and
 avoid circular imports. Add only directories with a real responsibility. Existing
 regression suites live in `backend/test/`; do not move them to satisfy a template.
 
-## Validation
+## Verification
 
 From the repository root: `pnpm --dir backend typecheck`,
 `pnpm --dir backend build`, and `pnpm check:style`. When tests are authorized,

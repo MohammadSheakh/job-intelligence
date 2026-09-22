@@ -3,8 +3,13 @@
 Read [root](../../AGENTS.md) and [backend](../AGENTS.md) instructions first.
 Applies to schema fragments, generated schema, migrations, seeds, and Prisma tooling.
 
+## Load only the affected concern
+
 - For schema/tooling work, read [database architecture](../../docs/DATABASE_ARCHITECTURE.md).
   For queries and schema design, use [database rules](../../.agents/rules/backend-database.md).
+
+## Local tooling and gotchas
+
 - Edit `schema/` fragments; `schema.prisma` is generated. Use the package's
   `prisma:sync` to rebuild and generate; generation alone does not rebuild fragments.
 - Preserve V2 builder byte parity with the reference unless changing that requirement
@@ -14,5 +19,8 @@ Applies to schema fragments, generated schema, migrations, seeds, and Prisma too
 - Seeds deliberately refuse writes. Preserve that behavior until a specific dataset
   and target are authorized. Read [database switching](../../docs/DATABASE_SWITCHING.md)
   before any database connection; switching targets does not transfer data.
+
+## Verification
+
 - Schema validation/generation can use an inert URL without a database connection.
   Report runtime evidence separately; generation does not establish deployed parity.

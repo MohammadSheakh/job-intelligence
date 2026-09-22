@@ -29,6 +29,38 @@ Other bundled skills (research, specs, tickets, TDD, handoff, etc.) remain avail
 on demand. They are not an always-loaded checklist for every change. Do not load
 all skills recursively or create specs/tickets for routine small fixes.
 
+## Optional planning and historical context
+
+For domain decisions, read root `CONTEXT.md` and relevant `docs/adr/` entries when
+present. For durable multi-session planning use the existing docs; when the task
+actually needs tickets, use [issue tracking](issue-tracker.md). Load
+[triage](triage-labels.md) for triage and [domain guidance](domain.md) for domain work.
+Routine code changes do not require these workflows.
+
+`docs/brutal_*` and `docs/final_*` are historical/supporting reports. Accepted Figma
+refinements originated in `docs/gpt-conversation/gpt1.md` and are tracked by the
+current product/migration docs; do not reload the whole conversation for each task.
+
+## Refine from observed corrections
+
+When changing an `AGENTS.md`, retain local invariants that prevent real failures.
+Move optional depth behind a task-specific pointer instead of deleting it to reach
+a line target. Keep scope, relevant commands, consumer contracts, and operational
+gotchas discoverable. The four scoped files need not have identical length.
+
+Use a concrete mismatch between produced work and the intended result: identify
+its cause, change the narrowest responsible instruction, and review both a task
+that should trigger it and one that should not. One-off preferences do not become
+universal rules. Remove superseded copies and check links after moves. Preserve
+reasoning for an important decision in project docs rather than a growing preamble.
+
+Review third-party skill instructions and executable resources before installing
+or updating them; popularity is not evidence of safety. Preserve provenance/license
+information. Skill metadata and prose do not themselves enforce tool permissions.
+Use scripts for repeatable operations, not to turn subjective design judgment into
+an arbitrary numeric gate. Structural checks complement human review of actual
+outputs; they do not certify engineering quality.
+
 ## Audit findings resolved
 
 - The local Ferio V2 skill referred to the adjacent multi-tenant commerce product,
