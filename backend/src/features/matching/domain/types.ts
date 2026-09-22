@@ -3,6 +3,7 @@ export interface CandidateForMatch {
   expertise?: string | null;
   skills?: string | null;
   experienceLevel?: string | null;
+  experienceYears?: number | null;
   preferredLocations?: string | null;
   excludedLocations?: string | null;
   preferredWorkModes?: string | null;

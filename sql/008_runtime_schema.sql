@@ -30,6 +30,9 @@ ALTER TABLE candidate_auth
 ALTER TABLE jobs
   ADD COLUMN IF NOT EXISTS application_deadline timestamptz;
 
+ALTER TABLE candidates
+  ADD COLUMN IF NOT EXISTS experience_years integer;
+
 CREATE TABLE IF NOT EXISTS candidate_company_state (
   candidate_id bigint NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
   company_id text NOT NULL REFERENCES companies(id) ON DELETE CASCADE,

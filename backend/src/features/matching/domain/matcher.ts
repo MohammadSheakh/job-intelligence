@@ -163,21 +163,62 @@ function locationScore(
   return { score: preferredHit ? 100 : 35 };
 }
 
+const LEVEL_RANKS: { keys: string[]; rank: number }[] = [
+  { keys: ['intern', 'student'], rank: 0 },
+  { keys: ['fresher', 'entry'], rank: 1 },
+  { keys: ['junior'], rank: 2 },
+  { keys: ['mid', 'middle'], rank: 3 },
+  { keys: ['senior', 'sr'], rank: 4 },
+  { keys: ['lead', 'principal', 'staff', 'architect'], rank: 5 },
+  { keys: ['manager', 'director', 'head'], rank: 6 },
+];
+
+function resolveLevelRank(text: string): number | undefined {
+  const norm = normalizeText(text);
+  for (const group of LEVEL_RANKS) {
+    if (group.keys.some((k) => norm.includes(k))) return group.rank;
+  }
+  return undefined;
+}
+
+function parseJobYears(jobText: string): number | undefined {
+  const match = jobText.match(/\b(\d{1,2})\s*(?:\+|to|-|\s*-\s*\d{1,2})?\s*years?\b/i);
+  return match ? parseInt(match[1], 10) : undefined;
+}
+
 function experienceScore(candidate: CandidateForMatch, job: JobForMatch): number | undefined {
-  if (!candidate.experienceLevel) return undefined;
+  if (!candidate.experienceLevel && candidate.experienceYears == null) return undefined;
   const jobText = normalizeText(`${job.title} ${job.experience ?? ''} ${job.description ?? ''}`);
   if (!jobText) return undefined;
 
-  const levels = ['intern', 'junior', 'mid', 'senior', 'lead'];
-  const candidateLevel = levels.find((level) =>
-    normalizeText(candidate.experienceLevel).includes(level),
-  );
-  const jobLevel = levels.find((level) => jobText.includes(level));
-  if (!candidateLevel || !jobLevel) return undefined;
-  if (candidateLevel === jobLevel) return 100;
-  const c = levels.indexOf(candidateLevel);
-  const j = levels.indexOf(jobLevel);
-  return Math.abs(c - j) === 1 ? 65 : 20;
+  let levelScore: number | undefined;
+  if (candidate.experienceLevel) {
+    const candidateRank = resolveLevelRank(candidate.experienceLevel);
+    const jobRank = resolveLevelRank(jobText);
+    if (candidateRank !== undefined && jobRank !== undefined) {
+      const diff = Math.abs(candidateRank - jobRank);
+      levelScore = diff === 0 ? 100 : diff === 1 ? 65 : 20;
+    }
+  }
+
+  let yearScore: number | undefined;
+  if (candidate.experienceYears != null) {
+    const reqYears = parseJobYears(jobText);
+    if (reqYears !== undefined) {
+      if (candidate.experienceYears >= reqYears) {
+        yearScore = 100;
+      } else if (candidate.experienceYears + 1 >= reqYears) {
+        yearScore = 70;
+      } else {
+        yearScore = 30;
+      }
+    }
+  }
+
+  if (levelScore !== undefined && yearScore !== undefined) {
+    return Math.round(levelScore * 0.5 + yearScore * 0.5);
+  }
+  return levelScore ?? yearScore;
 }
 
 function workModeScore(

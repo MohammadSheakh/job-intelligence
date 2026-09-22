@@ -25,6 +25,12 @@ export class UpdateCandidateProfileDto {
   experienceLevel?: string;
 
   @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(70)
+  experienceYears?: number | null;
+
+  @IsOptional()
   @IsString()
   @MaxLength(1000)
   preferredLocations?: string;

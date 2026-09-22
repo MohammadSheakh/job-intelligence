@@ -11,6 +11,7 @@ type Profile = {
   expertise: string | null;
   skills: string | null;
   experience_level: string | null;
+  experience_years?: number | null;
   preferred_locations: string | null;
   excluded_locations: string | null;
   preferred_work_modes: string | null;
@@ -67,6 +68,10 @@ export default function CandidateProfilePage() {
           expertise: form.get('expertise'),
           skills: form.get('skills'),
           experienceLevel: form.get('experienceLevel'),
+          experienceYears:
+            form.get('experienceYears') && String(form.get('experienceYears')).trim() !== ''
+              ? Number(form.get('experienceYears'))
+              : null,
           preferredLocations: form.get('preferredLocations'),
           excludedLocations: form.get('excludedLocations'),
           preferredWorkModes: checked('workModes'),
@@ -127,14 +132,52 @@ export default function CandidateProfilePage() {
           Skills
           <textarea name="skills" defaultValue={profile.skills ?? ''} maxLength={1000} />
         </label>
-        <label>
-          Experience level
-          <input
-            name="experienceLevel"
-            defaultValue={profile.experience_level ?? ''}
-            maxLength={80}
-          />
-        </label>
+        <div className="grid gap-x-5 sm:grid-cols-2">
+          <label>
+            Experience level
+            <select name="experienceLevel" defaultValue={profile.experience_level ?? ''}>
+              <option value="">Select level…</option>
+              {[
+                'Student/Intern',
+                'Fresher/Entry',
+                'Junior',
+                'Mid',
+                'Senior',
+                'Lead/Principal',
+                'Manager',
+              ].map((lvl) => (
+                <option key={lvl} value={lvl}>
+                  {lvl}
+                </option>
+              ))}
+              {profile.experience_level &&
+                ![
+                  'Student/Intern',
+                  'Fresher/Entry',
+                  'Junior',
+                  'Mid',
+                  'Senior',
+                  'Lead/Principal',
+                  'Manager',
+                ].includes(profile.experience_level) && (
+                  <option value={profile.experience_level}>
+                    {profile.experience_level} (custom)
+                  </option>
+                )}
+            </select>
+          </label>
+          <label>
+            Years of experience
+            <input
+              name="experienceYears"
+              type="number"
+              min="0"
+              max="70"
+              defaultValue={profile.experience_years ?? ''}
+              placeholder="e.g. 3"
+            />
+          </label>
+        </div>
         <label>
           Preferred locations
           <input

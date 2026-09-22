@@ -545,3 +545,32 @@ product milestone credit.
   - Strict TypeScript typechecks passing for backend source, backend tests, and frontend (`pnpm --dir backend typecheck`, `pnpm --dir backend typecheck:test`, `pnpm --dir frontend typecheck`).
   - Production builds passing for both backend (`nest build`) and frontend (`next build` with 18 static routes).
 - Milestone 20 is implemented: **20/24 = 83.33% complete, 16.67% remaining**.
+
+## Controlled experience levels/years and candidate page split (gpt1)
+
+- **Database & Prisma**:
+  - Added `ALTER TABLE candidates ADD COLUMN IF NOT EXISTS experience_years integer;` to `sql/008_runtime_schema.sql`.
+  - Added `experience_years Int?` to model `Candidate` in `backend/prisma/schema/candidate-portal.module/candidate.prisma`.
+  - Rebuilt unified schema and generated Prisma client via `pnpm --dir backend prisma:sync`.
+- **Backend Architecture & Services**:
+  - Added `experienceYears?: number | null` to `SaveCandidateDto` and `UpdateCandidateProfileDto` with validation (`@IsOptional() @IsInt() @Min(0) @Max(70)`).
+  - Updated `AdminCandidatesService`: persists `experience_years`, projects `experienceYears` in `list()` and `get()`.
+  - Updated `CandidateProfileService`: includes `experience_years` in self-service profile queries and updates.
+  - Enhanced `matcher.ts`: maps controlled levels (`Student/Intern`, `Fresher/Entry`, `Junior`, `Mid`, `Senior`, `Lead/Principal`, `Manager`), extracts numeric year requirements from vacancy text, and blends rank difference with numeric year compatibility.
+  - Updated `CandidateRecommendationsService` and `DailyNotificationService`: queries and feeds `experienceYears` into candidate matching profile.
+- **Frontend Architecture & Split Routes**:
+  - Split candidate administration into dedicated, focused routes per Figma comments in `gpt1.md`:
+    - `/admin/candidates`: Candidate directory table with search, status filters, experience pills (`Mid · 3 yrs`), auth indicators, and direct links to `/admin/candidates/[id]` and `+ Add Candidate` action.
+    - `/admin/candidates/new`: Dedicated Add Candidate screen with back link, controlled experience level dropdown, experience years numeric input, category matrices from `/admin/categories`, and initial password assignment.
+    - `/admin/candidates/[id]`: Dedicated Candidate Detail & Edit screen with account status header, auth badges, controlled experience level dropdown, numeric years input, and password reset.
+    - `/candidate/profile`: Enhanced candidate self-service profile with controlled experience level select and numeric years input.
+  - Added shared definitions in `frontend/lib/candidate-admin.ts` (`CONTROLLED_EXPERIENCE_LEVELS`, `CandidateAdminRecord`, `SaveCandidatePayload`).
+- **Verification**:
+  - Unit test suite `backend/test/admin-candidates.spec.ts` covering candidate listing, creation, editing with controlled levels and experience years, candidate profile persistence, and matcher numeric year logic.
+  - 88 unit tests across 9 test suites passing (`pnpm --dir backend test`).
+  - Code style & formatting passing with 0 warnings (`pnpm check:style`).
+  - Agent instruction integrity passing (`pnpm check:agents`).
+  - Strict TypeScript typechecks passing (`pnpm --dir backend typecheck`, `pnpm --dir backend typecheck:test`, `pnpm --dir frontend typecheck`).
+  - Production builds passing for both backend (`nest build`) and frontend (`next build` with 19 static/dynamic routes).
+- Milestone 21 is implemented: **21/24 = 87.50% complete, 12.50% remaining**.
+

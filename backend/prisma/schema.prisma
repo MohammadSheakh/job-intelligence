@@ -19,6 +19,7 @@ model Candidate {
   expertise               String?
   skills                  String?
   experience_level        String?
+  experience_years        Int?
   preferred_locations     String?
   excluded_locations      String?
   preferred_work_modes    String?

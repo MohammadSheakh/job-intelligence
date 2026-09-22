@@ -102,6 +102,7 @@ export class AdminCandidatesService {
       expertise: clean(input.expertise),
       skills: clean(input.skills),
       experience_level: clean(input.experienceLevel),
+      experience_years: input.experienceYears ?? null,
       preferred_locations: clean(input.preferredLocations),
       excluded_locations: clean(input.excludedLocations),
       preferred_work_modes: [...new Set(input.preferredWorkModes ?? [])].join(', ') || null,
@@ -183,6 +184,7 @@ export class AdminCandidatesService {
     expertise: string | null;
     skills: string | null;
     experience_level: string | null;
+    experience_years?: number | null;
     preferred_locations: string | null;
     excluded_locations: string | null;
     preferred_work_modes: string | null;
@@ -199,6 +201,7 @@ export class AdminCandidatesService {
       expertise: candidate.expertise,
       skills: candidate.skills,
       experienceLevel: candidate.experience_level,
+      experienceYears: candidate.experience_years ?? null,
       preferredLocations: candidate.preferred_locations,
       excludedLocations: candidate.excluded_locations,
       preferredWorkModes: candidate.preferred_work_modes,
