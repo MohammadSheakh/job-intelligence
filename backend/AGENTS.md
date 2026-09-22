@@ -14,6 +14,8 @@ Read [root instructions](../AGENTS.md) first. This file applies to `backend/`.
 - [Transaction rules](../.agents/rules/backend-transactions.md): multi-write/worker changes.
 - [Prisma scope](prisma/AGENTS.md): any schema, generation, seed, or migration edit.
 
+- [Capacity rules](../.agents/rules/reliability-capacity.md): workers, external I/O, or scaling decisions.
+
 ## Actual architecture
 
 Nest feature modules use strict TypeScript, constructor injection, Prisma 7 with

@@ -8,9 +8,9 @@ It is **single-tenant**. The adjacent Ferio repository is a reference, not this
 application's runtime architecture. Preserve the legacy app until documented cutover.
 
 1. Read the user request and `git status --short`; preserve unrelated changes.
-2. Read [PRD](PRD.md) and [implementation checklist](IMPLEMENTATION_CHECKLIST.md)
-   for behavior changes. For migration work, read the
-   [handoff](docs/ARCHITECTURE_MIGRATION_STATUS.md); select an unfinished deliverable.
+2. For migration work, start with the [handoff](docs/ARCHITECTURE_MIGRATION_STATUS.md);
+   it owns migration progress and next steps. Read relevant [PRD](PRD.md) requirements
+   and [checklist](IMPLEMENTATION_CHECKLIST.md) acceptance items for the selected task.
 3. Read the scoped instructions for files you will edit:
    [backend](backend/AGENTS.md), [frontend](frontend/AGENTS.md),
    [Prisma](backend/prisma/AGENTS.md). Read only applicable rules/skills they route to.
@@ -51,12 +51,16 @@ Figma refinements are tracked from `docs/gpt-conversation/gpt1.md` in current do
 
 ## Verification and delivery
 
+For significant reliability/capacity decisions, read [capacity rules](.agents/rules/reliability-capacity.md)
+and [evidence expectations](docs/agents/engineering-evidence.md).
+
 Choose checks proportional to the change. Root `pnpm check:style` is the shared
 format/lint gate; package typecheck/build scripts live in each `package.json`.
 For behavioral changes, use relevant regression checks when authorized. If the
 user defers tests, respect that instruction and record the resulting evidence gap;
 a build does not prove runtime correctness. Documentation-only work needs link,
 command, scope, and contradiction review, not unrelated application test suites.
+Run `pnpm check:agents` when changing this instruction system.
 
 Report checks as passed, failed, or not run, with reasons. Keep pre-existing
 failures separate from new ones. Update PRD/checklist for changed behavior and the

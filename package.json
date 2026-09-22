@@ -30,7 +30,8 @@
     "format:check": "prettier --check .",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix --max-warnings 0",
-    "check:style": "pnpm format:check && pnpm lint"
+    "check:style": "pnpm format:check && pnpm lint",
+    "check:agents": "node .agents/scripts/check-instructions.mjs"
   },
   "dependencies": {
     "cheerio": "^1.1.2",

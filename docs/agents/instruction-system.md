@@ -74,6 +74,10 @@ instructions. Use repository-relative links and precise activation descriptions.
 Avoid mandatory tools, dependencies, architecture, or approval gates that do not
 exist in the project. Add a deeper AGENTS.md only for a meaningful scoped difference.
 
+Run `pnpm check:agents` for structural checks. For substantial changes use
+[engineering evidence](engineering-evidence.md) and
+[capacity rules](../../.agents/rules/reliability-capacity.md).
+
 For skill changes, validate frontmatter and reference paths, then review realistic
 requests below. For code changes, use the applicable package validation workflow.
 Do not run live database/crawler operations as an instruction smoke check.
@@ -89,6 +93,9 @@ Do not run live database/crawler operations as an instruction smoke check.
 | User asks to skip tests | Respect the request, run permitted static checks, report runtime gaps |
 | Small documentation correction | Fix relevant text/links; no new framework, ticket system, or application suite |
 | Agent starts in a package directory | Follow its parent link and load root plus scoped instructions |
+| User asks for one million users | Define workload and resource budget; no capacity claim without measurements |
+| Worker retries a timed-out operation | Bound retries and concurrency; inspect duplicate effects and durable outcome |
+| A template recommends another ORM or queue | Preserve installed boundaries unless the actual requirement justifies a change |
 | User asks for a commit/push | Use the existing skill within session authorization and review staged changes |
 
 These scenarios were reviewed against the written guidance, not executed as

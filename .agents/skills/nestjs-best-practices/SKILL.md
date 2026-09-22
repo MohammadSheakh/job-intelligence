@@ -9,7 +9,12 @@ metadata:
 
 # NestJS Best Practices
 
-Comprehensive best practices guide for NestJS applications. Contains 40 rules across 10 categories, prioritized by impact to guide automated refactoring and code generation.
+Use only the rules relevant to the change, after scoped repository instructions.
+Examples may use different ORMs or infrastructure; adapt to installed dependencies
+and documented boundaries. This skill does not require introducing repositories,
+caches, microservices, or tests contrary to the task scope.
+
+Reference guide for NestJS applications. Contains 40 rules across 10 categories, prioritized by impact to guide automated refactoring and code generation.
 
 ## When to Apply
 
