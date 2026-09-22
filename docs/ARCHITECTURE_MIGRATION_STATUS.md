@@ -1,8 +1,8 @@
 # Architecture migration status
 
 **Last updated:** 2026-09-22
-**Status:** In progress — candidate core flows, Company Intelligence admin UI, selected admin APIs, crawler foundations, daily execution CLI, candidate Standard & AI Quick Search, and optional AI enhancement are implemented.
-**Overall implementation progress: 62.50% complete / 37.50% remaining** — 15 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
+**Status:** In progress — candidate core flows, Company Intelligence admin UI, selected admin APIs, crawler foundations, daily execution CLI, candidate Standard & AI Quick Search, and candidate email notifications are implemented.
+**Overall implementation progress: 66.67% complete / 33.33% remaining** — 16 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
 
 ## How to use this handoff
 
@@ -38,7 +38,7 @@ milestone 13. Update the table and numerator together as scope changes.
 | 13 | Bounded HTTP crawler transport, daily execution, source orchestration | Implemented; runtime checks deferred |
 | 14 | Standard Quick Search execution, run finalization, execution UI | Implemented; runtime checks deferred |
 | 15 | Optional AI provider integration, limits, and AI-assisted search | Implemented; runtime checks deferred |
-| 16 | Email digests, notifications, delivery deduplication integration | Pending |
+| 16 | Email digests, notifications, delivery deduplication integration | Implemented; runtime checks deferred |
 | 17 | Google OAuth and account binding | Pending |
 | 18 | Remaining admin dashboard/jobs/candidates/settings/logs views | Pending |
 | 19 | gpt1 company creation, review completion, enrichment, table links | Pending |
@@ -457,4 +457,14 @@ product milestone credit.
 - Enhanced Next.js `SearchUsage` UI: displays both standard and AI remaining daily allowances, renders a dedicated "Run AI Quick Search" button (appropriately disabled when limits are reached or AI is unavailable), and shows an "AI Enhanced" status pill on matches where semantic scoring was applied.
 - Verification: style/formatting (`pnpm check:style`), agent instruction integrity (`pnpm check:agents`), backend & frontend typechecks (`pnpm typecheck`), 26 unit tests across 4 test suites (`pnpm test`), and production builds (`nest build` and `next build`).
 - Milestone 15 is implemented: **15/24 = 62.50% complete, 37.50% remaining**.
+ 
+## Email digests, notifications, and delivery deduplication
+
+- Implemented `EmailRenderService`: pure rendering producing plain text and responsive HTML candidate digests. Sanitizes untrusted URLs, escapes HTML characters, formats candidate match scores, skills, categories, reasons, and external application/company links.
+- Implemented `EmailTransportService`: configurable SMTP delivery using Nodemailer, validating required environment variables (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM`, `SMTP_PORT`, `SMTP_SECURE`) with test transporter override capability.
+- Implemented `NotificationDeduplicationService`: queries existing delivery history from PostgreSQL `notifications` table (`getNotifiedPairSet`) and records new deliveries atomically via Prisma `createMany` with `skipDuplicates: true`.
+- Implemented `DailyNotificationService`: orchestrates the complete daily notification pipeline. Respects `emailEnabled` setting (exits cleanly with zero deliveries when disabled), filters out blacklisted companies and already-notified candidate-job pairs, evaluates deterministic matching and optional AI enhancement, applies candidate thresholds, transmits digests via SMTP, and records deliveries in PostgreSQL only upon successful email transmission.
+- Created `NotifyWorkerModule` and `backend/src/commands/notify-daily.ts` CLI command with `--help` and signal handling (`pnpm notify:daily`), mirroring `crawl:daily`.
+- Verification: code style (`pnpm check:style`), agent instruction integrity (`pnpm check:agents`), backend & frontend typechecks (`pnpm typecheck`), 36 unit tests across 5 test suites (`pnpm test`), production builds (`nest build` and `next build`), and CLI help invocation (`node backend/dist/src/commands/notify-daily.js --help`).
+- Milestone 16 is implemented: **16/24 = 66.67% complete, 33.33% remaining**.
 

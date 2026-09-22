@@ -268,6 +268,15 @@ entries describe the legacy runtime.
 - [x] Optional AI match enhancer service, bounded API timeouts, deterministic blending, and AI Quick Search execution UI wired (milestone 15).
 - [x] Static formatting/lint, backend typecheck/build, frontend typecheck/build, and 26 unit tests verified.
 
+## Email digests, notifications, and delivery deduplication
+
+- [x] Pure email render service with HTML escaping, URL sanitization, and Ferio-style digest layout implemented (milestone 16).
+- [x] Configurable SMTP transport service with Nodemailer and credentials validation.
+- [x] Database deduplication service prevents duplicate emails to the same candidate via PostgreSQL `notifications` table.
+- [x] Daily notification orchestrator evaluates deterministic fit, filters blacklists/notified pairs, transmits via SMTP, and records deliveries on success.
+- [x] CLI command `pnpm notify:daily` with `--help` and signal handling wired for external schedulers.
+- [x] Static formatting/lint, backend & frontend typechecks, production builds, and 36 unit tests verified.
+
 ## Prisma tooling alignment
 
 - [x] Exact Ferio V2 builder, recursive schema assembly, and explicit script ESM boundary.

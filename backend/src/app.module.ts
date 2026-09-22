@@ -9,6 +9,7 @@ import { CompanyIntelligenceModule } from './features/company-intelligence/compa
 import { JobCrawlingModule } from './features/job-crawling/job-crawling.module.js';
 import { SettingsModule } from './features/settings/settings.module.js';
 import { AdminOperationsModule } from './features/admin-operations/admin-operations.module.js';
+import { NotificationsModule } from './features/notifications/notifications.module.js';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { AdminOperationsModule } from './features/admin-operations/admin-operati
     JobCrawlingModule,
     SettingsModule,
     AdminOperationsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
 })
