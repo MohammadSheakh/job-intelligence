@@ -31,3 +31,12 @@ for reusable policy and the [developer guide](BACKEND_DEVELOPER_GUIDE.md) for im
 - Review CSRF implications of cookie mutations, duplicate submissions, conflict
   handling, and resource ownership. External callbacks require verified authenticity
   before side effects. Preserve legacy contracts while documenting unresolved gaps.
+
+## Candidate company directory compatibility
+
+The directory retains its bounded array response when `page` is omitted. With
+`page`, it returns `{ rows, total, page, pageSize, totalPages }`. The candidate UI
+uses that paginated form with 25 rows. Location/category/tracking filters describe
+active-company research, independently of personalized recommendation eligibility.
+Crawl diagnostics are nullable for historical logs; `jobsUpdated` means refreshed
+existing jobs, and `actionTaken` represents suggested follow-up, not a workflow mutation.

@@ -310,3 +310,11 @@ entries describe the legacy runtime.
 - [x] Static formatting/lint, backend typecheck/build, and no-connection CLI help verified.
 - [ ] Deployed scheduler cutover, live source coverage, and runtime parity remain pending; no tests or database operations run for this milestone.
 - [x] Scorecard advanced to 14/24 implementation milestones (58.33%); 10 milestones (41.67%) remain.
+
+## Replacement directory and crawler diagnostics (milestone 22)
+
+- [~] Candidate directory API/UI pagination, category/location/status filters, stable ordering, and legacy array compatibility implemented.
+- [~] Crawl HTTP/timing/engine/count diagnostics connected through orchestration and ingestion to expandable admin details.
+- [~] Suggested actions preserve company workflow state; historical metrics remain nullable and refreshed counts are labeled accurately.
+- [ ] Review/apply `sql/009_crawl_log_diagnostics.sql` before deploying diagnostic consumers; database baseline remains separate work.
+- [ ] Runtime, browser, concurrency, and isolated migration checks deferred; existing test drafts retained without suite execution.

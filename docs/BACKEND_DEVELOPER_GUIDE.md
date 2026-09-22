@@ -133,8 +133,13 @@ not automatically closed. Transaction failures roll back all successful-page wri
 
 The orchestrator must call `recordFailure` with a sanitized diagnostic after
 fetch, parsing, or persistence errors. This separate path updates the check time
-and failure log without changing jobs. Rich log fields and persisted application
-deadlines from gpt1 still require schema work. No execution endpoint is exposed.
+and failure log without changing jobs or company workflow state. Logs now record
+nullable HTTP status, transport duration, engine, created/refreshed counts, and a
+suggested follow-up (`action_taken`, retained as the storage/API name). Old logs
+remain unknown, not zero. `CompanyCrawlService` forwards sanitized transport metadata;
+HTTP failures retain their actual status and local timeouts have no invented status.
+The separate forward SQL extension `sql/009_crawl_log_diagnostics.sql` is required
+before deploying this code; no migration was applied during implementation.
 
 ## HTTP crawler transport
 
@@ -204,3 +209,18 @@ guide explains current implementation flows. Simple direct-Prisma services remai
 valid migration code; focused repositories own substantial SQL, shared persistence,
 and connection lifecycles. Choose a boundary deliberately rather than introducing
 Drizzle, tenancy, Redis, or ambient transactions from an unrelated template.
+
+## Candidate directory pagination and diagnostics consumers
+
+`GET /candidate/companies` accepts optional `page`, `pageSize`, `q`, `category`,
+`location`, and `status` (ALL/UNTRACKED/PLANNING/APPLIED/EXCLUDED). With `page`, it
+returns `{ rows, total, page, pageSize, totalPages }`; otherwise it preserves the
+bounded legacy array and `limit`. Page size is at most 100, page at most 10000,
+with name/ID ordering. The UI requests 25 rows and refreshes after pipeline edits.
+The directory always filters active companies, not recommendation eligibility.
+
+`GET /admin/crawl-logs` accepts `search` (company name) and strict true/false
+`success` alongside pagination. Invalid boolean text is rejected. Current company
+URLs are projected with nullable diagnostics; old logs have no inferred engine or
+counts. `jobsUpdated` means an existing job was refreshed, not content equality.
+`actionTaken` is a suggestion; operators still own company research decisions.

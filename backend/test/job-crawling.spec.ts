@@ -2,7 +2,9 @@ import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@app/database';
 import { parseDeadlineFromText } from '../src/features/job-crawling/domain/career-page.parser';
+import { createJobHash } from '../src/features/job-crawling/domain/normalize';
 import { CrawlIngestionService } from '../src/features/job-crawling/services/crawl-ingestion.service';
+import { AdminCrawlLogService } from '../src/features/job-crawling/services/admin-crawl-log.service';
 import { AdminJobCatalogService } from '../src/features/job-crawling/services/admin-job-catalog.service';
 import { CandidateRecommendationsService } from '../src/features/matching/services/candidate-recommendations.service';
 
@@ -45,18 +47,20 @@ describe('Job crawling, deadline parsing, and freshness policy', () => {
     });
   });
 
-  describe('CrawlIngestionService freshness rules', () => {
+  describe('CrawlIngestionService freshness rules and diagnostics', () => {
     let module: TestingModule;
     let service: CrawlIngestionService;
     const transaction = {
       company: { updateMany: jest.fn() },
-      job: { upsert: jest.fn() },
+      job: { upsert: jest.fn(), findMany: jest.fn() },
       crawlLog: { create: jest.fn() },
     };
 
     beforeEach(async () => {
       jest.resetAllMocks();
       transaction.company.updateMany.mockResolvedValue({ count: 1 });
+      transaction.job.findMany.mockResolvedValue([]);
+      transaction.job.upsert.mockResolvedValue({});
       transaction.crawlLog.create.mockResolvedValue({ id: 1n });
 
       module = await Test.createTestingModule({
@@ -131,6 +135,122 @@ describe('Job crawling, deadline parsing, and freshness policy', () => {
           }),
         }),
       );
+    });
+
+    it('records job creation vs update deltas and full diagnostic metadata in crawl log', async () => {
+      const pageHtml = `
+        <html><body>
+          <h2>Frontend Specialist</h2>
+          <a href="/jobs/fe">Apply</a>
+          <h2>Backend Architect</h2>
+          <a href="/jobs/be">Apply</a>
+        </body></html>
+      `;
+
+      // Simulate one job existing already
+      const existingHash = createJobHash({
+        companyId: 'comp-1',
+        title: 'Frontend Specialist',
+        location: undefined,
+        applicationUrl: 'https://comp1.com/jobs/fe',
+      });
+      transaction.job.findMany.mockResolvedValue([{ jobHash: existingHash }]);
+
+      const result = await service.ingest('comp-1', {
+        requestedUrl: 'https://comp1.com/careers',
+        finalUrl: 'https://comp1.com/careers',
+        httpStatus: 200,
+        durationMs: 840,
+        crawlerType: 'Generic HTML',
+        html: pageHtml,
+      });
+
+      expect(result.jobsFound).toBe(2);
+      expect(result.durationMs).toBe(840);
+      expect(result.crawlerType).toBe('Generic HTML');
+
+      expect(transaction.crawlLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          company_id: 'comp-1',
+          success: true,
+          jobs_found: 2,
+          jobs_created: 1,
+          jobs_updated: 1,
+          http_status: 200,
+          duration_ms: 840,
+          crawler_type: 'Generic HTML',
+          action_taken: 'MONITOR_READY',
+        }),
+      });
+    });
+
+    it('recordFailure deduces CUSTOM_ADAPTER_REQUIRED on 403 / Cloudflare challenges', async () => {
+      await service.recordFailure('comp-2', 'Access denied: Cloudflare 403 Forbidden', {
+        httpStatus: 403,
+        durationMs: 320,
+        crawlerType: 'Generic HTML',
+      });
+
+      expect(transaction.company.updateMany).toHaveBeenCalledWith({
+        where: { id: 'comp-2' },
+        data: { last_checked_at: expect.any(Date) },
+      });
+
+      expect(transaction.crawlLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          company_id: 'comp-2',
+          success: false,
+          jobs_found: 0,
+          http_status: 403,
+          duration_ms: 320,
+          action_taken: 'CUSTOM_ADAPTER_REQUIRED',
+          error: 'Access denied: Cloudflare 403 Forbidden',
+        }),
+      });
+    });
+
+    it('recordFailure deduces FIND_CAREER_PAGE on 404 page not found', async () => {
+      await service.recordFailure('comp-3', 'HTTP 404 Not Found at /careers', {
+        httpStatus: 404,
+        durationMs: 190,
+      });
+
+      expect(transaction.company.updateMany).toHaveBeenCalledWith({
+        where: { id: 'comp-3' },
+        data: { last_checked_at: expect.any(Date) },
+      });
+
+      expect(transaction.crawlLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          company_id: 'comp-3',
+          success: false,
+          http_status: 404,
+          duration_ms: 190,
+          action_taken: 'FIND_CAREER_PAGE',
+        }),
+      });
+    });
+
+    it('recordFailure deduces RETRY_LATER on connection timeouts without updating recommended action', async () => {
+      await service.recordFailure('comp-4', 'ETIMEDOUT: Connection timed out after 10000ms', {
+        durationMs: 10050,
+      });
+
+      expect(transaction.company.updateMany).toHaveBeenCalledWith({
+        where: { id: 'comp-4' },
+        data: {
+          last_checked_at: expect.any(Date),
+        },
+      });
+
+      expect(transaction.crawlLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          company_id: 'comp-4',
+          success: false,
+          duration_ms: 10050,
+          action_taken: 'RETRY_LATER',
+        }),
+      });
     });
   });
 
@@ -276,6 +396,91 @@ describe('Job crawling, deadline parsing, and freshness policy', () => {
       expect(recommendations.length).toBe(1);
       expect(recommendations[0].applicationDeadline).toBe(deadline.toISOString());
       expect(recommendations[0].companyWebsiteUrl).toBe('https://nodecorp.com');
+    });
+  });
+
+  describe('AdminCrawlLogService diagnostics and query filters', () => {
+    let module: TestingModule;
+    let service: AdminCrawlLogService;
+    const prisma = {
+      crawlLog: { count: jest.fn(), findMany: jest.fn() },
+      $transaction: jest.fn(async (work) => Promise.all(work)),
+    };
+
+    beforeEach(async () => {
+      jest.resetAllMocks();
+      prisma.$transaction.mockImplementation(async (work) => Promise.all(work));
+      module = await Test.createTestingModule({
+        providers: [
+          AdminCrawlLogService,
+          {
+            provide: PrismaService,
+            useValue: prisma,
+          },
+        ],
+      }).compile();
+
+      service = module.get(AdminCrawlLogService);
+    });
+
+    afterEach(async () => module.close());
+
+    it('filters logs by search and success, projecting career url and diagnostics', async () => {
+      const checkedAt = new Date('2026-09-22T10:00:00.000Z');
+      prisma.crawlLog.count.mockResolvedValue(1);
+      prisma.crawlLog.findMany.mockResolvedValue([
+        {
+          id: 501n,
+          company_id: 'comp-abc',
+          checked_at: checkedAt,
+          success: true,
+          jobs_found: 8,
+          http_status: 200,
+          duration_ms: 1250,
+          crawler_type: 'Generic HTML',
+          jobs_created: 2,
+          jobs_updated: 6,
+          action_taken: 'MONITOR_READY',
+          error: null,
+          companies: {
+            name: 'Acme Corp',
+            careerUrl: 'https://acme.example/careers',
+            website_url: 'https://acme.example',
+            recommended_action: 'MONITOR_READY',
+          },
+        },
+      ]);
+
+      const result = await service.list({ page: 1, pageSize: 25, search: 'Acme', success: true });
+
+      expect(prisma.crawlLog.count).toHaveBeenCalledWith({
+        where: expect.objectContaining({
+          success: true,
+          companies: {
+            name: { contains: 'Acme', mode: 'insensitive' },
+          },
+        }),
+      });
+
+      expect(result.rows.length).toBe(1);
+      expect(result.rows[0]).toEqual({
+        id: '501',
+        companyId: 'comp-abc',
+        companyName: 'Acme Corp',
+        careerUrl: 'https://acme.example/careers',
+        websiteUrl: 'https://acme.example',
+        recommendedAction: 'MONITOR_READY',
+        checkedAt,
+        success: true,
+        jobsFound: 8,
+        httpStatus: 200,
+        durationMs: 1250,
+        crawlerType: 'Generic HTML',
+        jobsCreated: 2,
+        jobsUpdated: 6,
+        actionTaken: 'MONITOR_READY',
+        error: null,
+      });
     });
   });
 });

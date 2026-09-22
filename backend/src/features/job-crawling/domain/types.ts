@@ -22,6 +22,8 @@ export interface CrawlResult {
   pageHash: string;
   noOpeningsSignal: boolean;
   jobs: CrawledJob[];
+  durationMs?: number;
+  crawlerType?: string;
 }
 
 /** A transport supplies bounded HTML; parsing never makes network requests. */
@@ -30,4 +32,6 @@ export interface CareerPage {
   finalUrl: string;
   httpStatus: number;
   html: string;
+  durationMs?: number;
+  crawlerType?: string;
 }

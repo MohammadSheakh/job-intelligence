@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-09-22
 **Status:** In progress — candidate core flows, Company Intelligence admin UI, all admin management views (dashboard, jobs, candidates, settings, crawler logs), crawler foundations, daily execution CLI, candidate Standard & AI Quick Search, candidate email notifications, Google OAuth candidate account binding, and gpt1 company creation/review/enrichment/links are implemented.
-**Overall implementation progress: 79.17% complete / 20.83% remaining** — 19 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
+**Overall implementation progress: 91.67% complete / 8.33% remaining** — 22 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
 
 ## How to use this handoff
 
@@ -42,9 +42,9 @@ milestone 13. Update the table and numerator together as scope changes.
 | 17 | Google OAuth and account binding | Implemented; runtime checks deferred |
 | 18 | Remaining admin dashboard/jobs/candidates/settings/logs views | Implemented; runtime checks deferred |
 | 19 | gpt1 company creation, review completion, enrichment, table links | Implemented; runtime checks deferred |
-| 20 | gpt1 deadline persistence, freshness policy, job/company links | Pending |
-| 21 | gpt1 controlled experience levels/years and candidate page split | Pending |
-| 22 | gpt1 directory pagination/filters and richer crawler diagnostics | Pending |
+| 20 | gpt1 deadline persistence, freshness policy, job/company links | Implemented; runtime checks deferred |
+| 21 | gpt1 controlled experience levels/years and candidate page split | Implemented; runtime checks deferred |
+| 22 | gpt1 directory pagination/filters and richer crawler diagnostics | Implemented; runtime checks deferred |
 | 23 | Reviewed database baseline, Docker/scheduler/scripts/CI cutover | Pending |
 | 24 | Final runtime parity, external integration, deployment and rollback validation | Pending |
 
@@ -306,30 +306,19 @@ imply completed migration parity:
 
 ## In progress / next verification work
 
-1. Connect Standard Quick Search to the shared company-crawl service and quota
-   reservation, add run finalization, and build the execution UI. Daily execution
-   is implemented as a command; deployed scheduler cutover remains separate.
-2. Continue feature parity work below; Quick Search and Google OAuth
-   remain outside the migrated core API scope.
-3. Broaden candidate QA to visual/mobile/cross-browser behavior and production
-   deployment configuration; the core desktop Chromium flow is now covered.
+Milestones 1–22 have code deliverables; newer runtime evidence remains deferred.
+The prior commits for deadline/freshness and experience/page separation correspond
+to milestones 20 and 21; their detailed records below now agree with the scorecard.
 
 ## Remaining work (ordered)
 
-1. Complete candidate portal parity: Quick Search, the gpt1 company-directory
-   requirements, and runtime validation of recommendations.
-2. Extend admin browser coverage as the remaining views are implemented;
-   company/category management and Basic authorization have initial coverage.
-3. Port crawler execution, optional AI matching, Quick Search, notifications, email,
-   Google OAuth, and operational scripts without changing product rules.
-   Jobs catalog, crawler-log reads, persisted settings, and admin candidate
-   management APIs have local database regression coverage; exhaustive parity
-   and browser validation remain.
-4. Build the remaining Next.js admin views against those APIs.
-5. Add feature/unit/integration parity tests, then move Docker, scheduler,
-   launch scripts, and CI to the two-app architecture.
-6. Audit and remove only temporary root-level migration artifacts. Preserve the
-   legacy app until documented parity, cutover, and rollback checks are done.
+1. Milestone 23: review the existing database baseline and unapplied schema changes,
+   including `sql/009_crawl_log_diagnostics.sql`, then plan Docker, scheduler,
+   launcher, and CI cutover to the replacement applications.
+2. Milestone 24: when authorized, verify runtime parity, migrations on isolated data,
+   external integrations, browser behavior, deployment, and recovery/rollback.
+3. Preserve the legacy runtime until cutover and rollback requirements are met.
+   Implementation percentage is not production readiness or estimated remaining time.
 
 ## Current working condition / agent handoff
 
@@ -574,3 +563,35 @@ product milestone credit.
   - Production builds passing for both backend (`nest build`) and frontend (`next build` with 19 static/dynamic routes).
 - Milestone 21 is implemented: **21/24 = 87.50% complete, 12.50% remaining**.
 
+
+## Milestone 22 — company directory and crawl diagnostics
+
+- Candidate directory supports 25-row pages, search, category/location filters, and
+  personal tracking-state filters. Results include all active companies independently
+  of recommendation eligibility. Stable name/ID ordering and bounded pagination
+  preserve candidate ownership; omitted `page` retains the legacy array response.
+- UI applies filters server-side, ignores superseded reads, and reloads filtered
+  results after tracking changes. Company links accept only credential-free HTTP(S).
+- Crawl logs include transport status/duration, engine, created/existing-refreshed
+  counts, and suggested follow-up. HTTP failures retain status through orchestration;
+  local timeouts do not invent an HTTP 408 response. Diagnostics stay sanitized.
+- Success persistence counts within the company-serialized transaction. Existing
+  jobs are labeled refreshed, not unchanged. Failure suggestions do not silently
+  rewrite company workflow state or bypass access protections.
+- Admin logs support bounded company/outcome filters and expandable details.
+  Historical metrics remain unknown/null. Company URLs/settings are current values,
+  not historical snapshots; duration measures transport time, not the full ingestion.
+- Reviewed forward artifact: `sql/009_crawl_log_diagnostics.sql`; not executed.
+  The earlier shared `008_runtime_schema.sql` is unchanged by this milestone.
+  Apply the reviewed extension before deploying readers/writers of the new columns.
+  This artifact does not establish a Prisma Migrate baseline or automatic rollout.
+- Offset pagination/count queries remain data-size dependent; no high-volume query
+  plan or runtime capacity claim is made. Snapshot consistency across requests is
+  not guaranteed as the underlying directory/logs change.
+- Existing drafted tests were retained and aligned with the final contracts; no
+  application test suite, browser session, live crawl, or database mutation ran.
+
+Static verification for milestone 22: Prisma schema rebuild/client generation with
+an inert URL, backend typecheck/build, test-source typecheck, frontend typecheck/build,
+root formatting/lint, and instruction integrity checks passed. Runtime suites remain
+deferred. No seed, migration, or crawl was executed.

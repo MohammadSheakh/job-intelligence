@@ -12,6 +12,8 @@ export class CrawlTransportError extends Error {
   constructor(
     readonly code: string,
     message: string,
+    readonly status?: number,
+    readonly durationMs?: number,
   ) {
     super(message);
     this.name = 'CrawlTransportError';
@@ -35,6 +37,7 @@ export class CareerPageFetcherService {
   async fetch(careerUrl: string): Promise<CareerPage> {
     if (this.active >= 4) throw new CrawlTransportError('CAPACITY', 'Crawler transport is busy.');
     this.active += 1;
+    const started = performance.now();
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), DEADLINE_MS);
     try {
@@ -49,23 +52,46 @@ export class CareerPageFetcherService {
             throw new CrawlTransportError(
               'REDIRECT_LIMIT',
               'Career page exceeded the redirect limit.',
+              hop.status,
+              Math.round(performance.now() - started),
             );
           const next = this.parseUrl(hop.location, url);
           if (url.protocol === 'https:' && next.protocol !== 'https:')
             throw new CrawlTransportError(
               'REDIRECT_DOWNGRADE',
               'HTTPS downgrade redirects are not allowed.',
+              hop.status,
+              Math.round(performance.now() - started),
             );
           url = next;
           continue;
         }
-        return { requestedUrl, finalUrl: url.href, httpStatus: hop.status, html: hop.html };
+        return {
+          requestedUrl,
+          finalUrl: url.href,
+          httpStatus: hop.status,
+          html: hop.html,
+          durationMs: Math.round(performance.now() - started),
+          crawlerType: 'Generic HTML',
+        };
       }
     } catch (error) {
+      const durationMs = Math.round(performance.now() - started);
       if (controller.signal.aborted)
-        throw new CrawlTransportError('TIMEOUT', 'Career page request timed out.');
-      if (error instanceof CrawlTransportError) throw error;
-      throw new CrawlTransportError('NETWORK_FAILURE', 'Career page connection failed.');
+        throw new CrawlTransportError(
+          'TIMEOUT',
+          'Career page request timed out.',
+          undefined,
+          durationMs,
+        );
+      if (error instanceof CrawlTransportError)
+        throw new CrawlTransportError(error.code, error.message, error.status, durationMs);
+      throw new CrawlTransportError(
+        'NETWORK_FAILURE',
+        'Career page connection failed.',
+        undefined,
+        durationMs,
+      );
     } finally {
       clearTimeout(timer);
       controller.abort();
@@ -191,18 +217,27 @@ export class CareerPageFetcherService {
                 new CrawlTransportError(
                   'INVALID_REDIRECT',
                   'Career page redirect has no destination.',
+                  status,
                 ),
               );
             else resolve({ status, location, html: '' });
             return;
           }
           if (status < 200 || status >= 300) {
-            stop(new CrawlTransportError('HTTP_FAILURE', `Career page returned HTTP ${status}.`));
+            stop(
+              new CrawlTransportError(
+                'HTTP_FAILURE',
+                `Career page returned HTTP ${status}.`,
+                status,
+              ),
+            );
             return;
           }
           const type = response.headers['content-type']?.split(';')[0].trim().toLowerCase();
           if (!type || !['text/html', 'application/xhtml+xml'].includes(type)) {
-            stop(new CrawlTransportError('CONTENT_TYPE', 'Career page did not return HTML.'));
+            stop(
+              new CrawlTransportError('CONTENT_TYPE', 'Career page did not return HTML.', status),
+            );
             return;
           }
           const encoding = response.headers['content-encoding'];
@@ -211,12 +246,15 @@ export class CareerPageFetcherService {
               new CrawlTransportError(
                 'CONTENT_ENCODING',
                 'Compressed career responses are not supported.',
+                status,
               ),
             );
             return;
           }
           if (Number(response.headers['content-length']) > MAX_BYTES) {
-            stop(new CrawlTransportError('BODY_LIMIT', 'Career page exceeds the 2 MiB limit.'));
+            stop(
+              new CrawlTransportError('BODY_LIMIT', 'Career page exceeds the 2 MiB limit.', status),
+            );
             return;
           }
           const chunks: Buffer[] = [];
@@ -224,7 +262,13 @@ export class CareerPageFetcherService {
           response.on('data', (chunk: Buffer) => {
             size += chunk.length;
             if (size > MAX_BYTES) {
-              stop(new CrawlTransportError('BODY_LIMIT', 'Career page exceeds the 2 MiB limit.'));
+              stop(
+                new CrawlTransportError(
+                  'BODY_LIMIT',
+                  'Career page exceeds the 2 MiB limit.',
+                  status,
+                ),
+              );
               return;
             }
             chunks.push(chunk);

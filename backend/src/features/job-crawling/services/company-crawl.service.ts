@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { CompanyForCrawl } from '../domain/types.js';
+import type { CompanyForCrawl, CareerPage } from '../domain/types.js';
 import { resolveCareerUrl } from '../domain/source-overrides.js';
 import { CareerPageFetcherService, CrawlTransportError } from './career-page-fetcher.service.js';
 import { CrawlIngestionService } from './crawl-ingestion.service.js';
@@ -25,9 +25,18 @@ export class CompanyCrawlService {
     assertCanPersist: () => Promise<void> = async () => {},
   ): Promise<CompanyCrawlOutcome> {
     let stage = 'FETCH';
+    let page: CareerPage | undefined;
+    const started = performance.now();
     try {
-      const page = await this.fetcher.fetch(resolveCareerUrl(company.id, company.careerUrl));
+      page = await this.fetcher.fetch(resolveCareerUrl(company.id, company.careerUrl));
       await assertCanPersist();
+      if (page.httpStatus < 200 || page.httpStatus >= 300) {
+        throw new CrawlTransportError(
+          'HTTP_STATUS',
+          `Career page returned HTTP ${page.httpStatus}.`,
+          page.httpStatus,
+        );
+      }
       stage = 'INGEST';
       const result = await this.ingestion.ingest(company.id, page);
       return { companyId: company.id, success: true, jobsFound: result.jobsFound };
@@ -39,7 +48,17 @@ export class CompanyCrawlService {
         error instanceof CrawlTransportError
           ? error.message
           : 'Career page could not be processed.';
-      await this.ingestion.recordFailure(company.id, `${code}: ${message}`);
+      await this.ingestion.recordFailure(company.id, `${code}: ${message}`, {
+        httpStatus:
+          error instanceof CrawlTransportError
+            ? (error.status ?? page?.httpStatus)
+            : page?.httpStatus,
+        durationMs:
+          page?.durationMs ??
+          (error instanceof CrawlTransportError ? error.durationMs : undefined) ??
+          Math.round(performance.now() - started),
+        crawlerType: page?.crawlerType ?? 'Generic HTML',
+      });
       return { companyId: company.id, success: false, jobsFound: 0, errorCode: code };
     }
   }

@@ -26,6 +26,17 @@ export class CrawlIngestionService {
         });
         if (company.count !== 1)
           throw new NotFoundException('Company is not available for monitoring.');
+        const jobHashes = result.jobs.map((job) => createJobHash(job));
+        const existingJobRows = jobHashes.length
+          ? await transaction.job.findMany({
+              where: { jobHash: { in: jobHashes } },
+              select: { jobHash: true },
+            })
+          : [];
+        const existingSet = new Set(existingJobRows.map((r) => r.jobHash));
+        let jobsCreated = 0;
+        let jobsUpdated = 0;
+
         for (const job of result.jobs) {
           const isExpiredDeadline =
             job.deadline !== undefined &&
@@ -41,6 +52,13 @@ export class CrawlIngestionService {
             last_seen_at: checkedAt,
           };
           const jobHash = createJobHash(job);
+          if (existingSet.has(jobHash)) {
+            jobsUpdated += 1;
+          } else {
+            jobsCreated += 1;
+            existingSet.add(jobHash);
+          }
+
           await transaction.job.upsert({
             where: { jobHash },
             create: {
@@ -64,6 +82,12 @@ export class CrawlIngestionService {
             checked_at: checkedAt,
             success: true,
             jobs_found: result.jobs.length,
+            http_status: page.httpStatus,
+            duration_ms: page.durationMs ?? null,
+            crawler_type: page.crawlerType ?? 'Generic HTML',
+            jobs_created: jobsCreated,
+            jobs_updated: jobsUpdated,
+            action_taken: 'MONITOR_READY',
           },
         });
       },
@@ -77,16 +101,43 @@ export class CrawlIngestionService {
       httpStatus: result.httpStatus,
       pageHash: result.pageHash,
       noOpeningsSignal: result.noOpeningsSignal,
+      durationMs: page.durationMs,
+      crawlerType: page.crawlerType ?? 'Generic HTML',
     };
   }
 
-  /** Record a failed attempt without changing jobs; caller supplies a sanitized diagnostic. */
-  async recordFailure(companyId: string, message: string): Promise<void> {
+  /** Record sanitized diagnostics and suggested follow-up; company workflow state is not changed. */
+  async recordFailure(
+    companyId: string,
+    message: string,
+    options?: {
+      httpStatus?: number;
+      durationMs?: number;
+      crawlerType?: string;
+      actionTaken?: string;
+    },
+  ): Promise<void> {
     const checkedAt = new Date();
+    let actionTaken = options?.actionTaken;
+    if (!actionTaken) {
+      if (
+        options?.httpStatus === 403 ||
+        /challenge|captcha|cloudflare|waf|access denied/i.test(message)
+      ) {
+        actionTaken = 'CUSTOM_ADAPTER_REQUIRED';
+      } else if (options?.httpStatus === 404 || /404|not found/i.test(message)) {
+        actionTaken = 'FIND_CAREER_PAGE';
+      } else {
+        actionTaken = 'RETRY_LATER';
+      }
+    }
+
     await this.prisma.$transaction(async (transaction) => {
       const company = await transaction.company.updateMany({
         where: { id: companyId },
-        data: { last_checked_at: checkedAt },
+        data: {
+          last_checked_at: checkedAt,
+        },
       });
       if (company.count !== 1) throw new NotFoundException('Company was not found.');
       await transaction.crawlLog.create({
@@ -95,6 +146,12 @@ export class CrawlIngestionService {
           checked_at: checkedAt,
           success: false,
           jobs_found: 0,
+          http_status: options?.httpStatus ?? null,
+          duration_ms: options?.durationMs ?? null,
+          crawler_type: options?.crawlerType ?? 'Generic HTML',
+          jobs_created: 0,
+          jobs_updated: 0,
+          action_taken: actionTaken,
           error: message.trim().slice(0, 2000) || 'Career page could not be processed.',
         },
       });

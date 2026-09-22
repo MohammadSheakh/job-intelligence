@@ -222,3 +222,15 @@ any), and remaining baseline/deployment prerequisites. Update
 [Prisma ownership docs](../backend/prisma/_doc.md) and the
 [developer guide](./BACKEND_DEVELOPER_GUIDE.md) when their described flow
 changes. Documentation alone does not complete a product migration milestone.
+
+## Pending crawl-log diagnostics extension
+
+`sql/009_crawl_log_diagnostics.sql` adds six nullable columns matching the CrawlLog
+fragment. Existing metrics are unknown; new ingestion explicitly supplies counts.
+It is a standalone forward SQL artifact, not an applied Prisma migration. Review
+target, existing column types/defaults, locking, backup/recovery, and deployment
+order before execution. `IF NOT EXISTS` does not reconcile incompatible existing
+columns. Existing bootstrap scripts do not automatically apply this file.
+Deploy the schema before the new API/worker code; old readers ignore the columns.
+For application rollback retain the additive columns rather than dropping logs/data.
+No live database parity or baseline is claimed.
