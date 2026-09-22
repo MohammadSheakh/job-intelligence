@@ -1,8 +1,8 @@
 # Architecture migration status
 
 **Last updated:** 2026-09-22
-**Status:** In progress — candidate core flows, Company Intelligence admin UI, all admin management views (dashboard, jobs, candidates, settings, crawler logs), crawler foundations, daily execution CLI, candidate Standard & AI Quick Search, candidate email notifications, and Google OAuth candidate account binding are implemented.
-**Overall implementation progress: 75.00% complete / 25.00% remaining** — 18 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
+**Status:** In progress — candidate core flows, Company Intelligence admin UI, all admin management views (dashboard, jobs, candidates, settings, crawler logs), crawler foundations, daily execution CLI, candidate Standard & AI Quick Search, candidate email notifications, Google OAuth candidate account binding, and gpt1 company creation/review/enrichment/links are implemented.
+**Overall implementation progress: 79.17% complete / 20.83% remaining** — 19 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
 
 ## How to use this handoff
 
@@ -41,7 +41,7 @@ milestone 13. Update the table and numerator together as scope changes.
 | 16 | Email digests, notifications, delivery deduplication integration | Implemented; runtime checks deferred |
 | 17 | Google OAuth and account binding | Implemented; runtime checks deferred |
 | 18 | Remaining admin dashboard/jobs/candidates/settings/logs views | Implemented; runtime checks deferred |
-| 19 | gpt1 company creation, review completion, enrichment, table links | Pending |
+| 19 | gpt1 company creation, review completion, enrichment, table links | Implemented; runtime checks deferred |
 | 20 | gpt1 deadline persistence, freshness policy, job/company links | Pending |
 | 21 | gpt1 controlled experience levels/years and candidate page split | Pending |
 | 22 | gpt1 directory pagination/filters and richer crawler diagnostics | Pending |
@@ -504,5 +504,19 @@ product milestone credit.
 - Verification: style/formatting (`pnpm check:style`), agent instruction integrity (`pnpm check:agents`), backend & frontend typechecks (`pnpm typecheck`), 59 unit tests across 7 test suites (`pnpm test`), and production builds (`nest build` and `next build` with 17 static routes).
 - Milestone 18 is implemented: **18/24 = 75.00% complete, 25.00% remaining**.
 
+## Company creation, review completion, enrichment, and table links (gpt1)
 
-
+- Added `CreateCompanyDto` and `POST /api/v1/admin/companies`: validates input, generates unique slugified company IDs (`c_${slug}`), maps categories transactionally, and auto-detects initial research actions (`MONITOR_READY` > `FIND_CAREER_PAGE` > `ENRICH_FROM_LINKEDIN` > `NO_HIRING_PAGE_FOUND`).
+- Added manual review queue filter and `POST /api/v1/admin/companies/:id/complete-review`:
+  - `CompanyListQueryDto` supports `needsManualReview` boolean filter.
+  - Completing manual review clears `needs_manual_review: false`, resets `review_reasons: null`, and recalculates `recommended_action` (`MONITOR_READY` if `careerUrl` exists, else `FIND_CAREER_PAGE` if `website_url` exists, else `NO_HIRING_PAGE_FOUND`).
+- Added controlled enrichment workflow via `POST /api/v1/admin/companies/:id/enrich`:
+  - Accepts optional website URL override.
+  - Safely inspects official homepage HTML via `CareerPageFetcherService` for career anchor patterns (`/careers?`, `/jobs?`, `/openings?`, `join our team`, etc.) without bypassing LinkedIn anti-bot controls.
+  - Transitions company action to `MONITOR_READY` if career page found, else `FIND_CAREER_PAGE` or `ENRICH_FROM_LINKEDIN`, clearing `needs_enrichment`.
+- Upgraded Admin Companies UI:
+  - **Company table (`/admin/companies`)**: renders clickable external links (`Website ↗`, `Career page ↗`, `LinkedIn ↗` with `target="_blank"`, `rel="noopener noreferrer"`), adds manual review queue filter (`needsManualReview`), and displays review reasons in the research column.
+  - **Add Company view (`/admin/companies/new`)**: complete form with categories selection from `/admin/categories` and immediate redirection to the created company.
+  - **Company detail view (`/admin/companies/[id]`)**: adds manual review callout with "Complete Review" button, enrichment callout with "Enrich Company" site inspection action, and companion external links next to URL inputs.
+- Verification: style/formatting (`pnpm check:style`), agent instruction integrity (`pnpm check:agents`), backend & frontend typechecks (`pnpm typecheck`), 71 unit tests across 7 test suites (`pnpm test`), and production builds (`nest build` and `next build` with 18 static routes).
+- Milestone 19 is implemented: **19/24 = 79.17% complete, 20.83% remaining**.

@@ -1,5 +1,5 @@
-import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 const actions = [
   'MONITOR_READY',
@@ -24,6 +24,15 @@ export class CompanyListQueryDto {
   @IsString()
   @MaxLength(120)
   category?: string;
+
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  })
+  @IsBoolean()
+  needsManualReview?: boolean;
 
   @Type(() => Number)
   @IsInt()

@@ -12,6 +12,7 @@ export interface Category {
   type: 'technology' | 'domain' | 'sector' | 'other';
   companyCount: number;
 }
+
 export interface Company {
   id: string;
   name: string;
@@ -24,13 +25,21 @@ export interface Company {
   active: boolean;
   recommendedAction: string | null;
   needsManualReview: boolean;
+  reviewReasons?: string | null;
   lastCheckedAt: string | null;
   categories: string[];
 }
+
 export interface CompanyDetail extends Company {
   notes: string | null;
   statusResearchHint: string | null;
+  reviewReasons: string | null;
+  needsEnrichment: boolean;
+  enrichmentReasons: string | null;
+  sourceRows: string | null;
+  nameSource: string | null;
 }
+
 export interface CompanyPage {
   rows: Company[];
   total: number;

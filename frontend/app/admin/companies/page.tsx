@@ -7,7 +7,13 @@ import { companyActions, type Category, type CompanyPage } from '../../../lib/co
 
 export default function AdminCompaniesPage() {
   const api = useAdminApi();
-  const [filters, setFilters] = useState({ search: '', category: '', action: '', page: 1 });
+  const [filters, setFilters] = useState({
+    search: '',
+    category: '',
+    action: '',
+    needsManualReview: '',
+    page: 1,
+  });
   const [result, setResult] = useState<CompanyPage | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState('');
@@ -19,7 +25,7 @@ export default function AdminCompaniesPage() {
     setLoading(true);
     setError('');
     const query = new URLSearchParams({ ...filters, page: String(filters.page), pageSize: '25' });
-    for (const key of ['search', 'category', 'action']) {
+    for (const key of ['search', 'category', 'action', 'needsManualReview']) {
       if (!query.get(key)) query.delete(key);
     }
     Promise.all([
@@ -47,22 +53,57 @@ export default function AdminCompaniesPage() {
       search: String(form.get('search') ?? '').trim(),
       category: String(form.get('category') ?? ''),
       action: String(form.get('action') ?? ''),
+      needsManualReview: String(form.get('needsManualReview') ?? ''),
       page: 1,
     });
   }
 
   return (
     <>
-      <h1>Companies</h1>
-      <p>Review company research, hiring pages, and category assignments.</p>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: '1rem',
+          marginBottom: '1rem',
+        }}
+      >
+        <div>
+          <h1>Companies</h1>
+          <p>Review company research, hiring pages, and category assignments.</p>
+        </div>
+        <Link
+          href="/admin/companies/new"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: '0.5rem 1.25rem',
+            borderRadius: '9999px',
+            backgroundColor: '#111114',
+            color: '#ffffff',
+            fontWeight: 500,
+            textDecoration: 'none',
+            fontSize: '0.875rem',
+          }}
+        >
+          + Add Company
+        </Link>
+      </div>
       <form className="admin-filters" onSubmit={search}>
         <label>
           Search companies
-          <input name="search" placeholder="Name, website, or location" maxLength={200} />
+          <input
+            name="search"
+            defaultValue={filters.search}
+            placeholder="Name, website, or location"
+            maxLength={200}
+          />
         </label>
         <label>
           Category
-          <select name="category" aria-label="Category">
+          <select name="category" defaultValue={filters.category} aria-label="Category">
             <option value="">All categories</option>
             {categories.map((category) => (
               <option key={category.id} value={category.name}>
@@ -73,13 +114,25 @@ export default function AdminCompaniesPage() {
         </label>
         <label>
           Research action
-          <select name="action" aria-label="Research action">
+          <select name="action" defaultValue={filters.action} aria-label="Research action">
             <option value="">All actions</option>
             {companyActions.map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>
             ))}
+          </select>
+        </label>
+        <label>
+          Review queue
+          <select
+            name="needsManualReview"
+            defaultValue={filters.needsManualReview}
+            aria-label="Review queue"
+          >
+            <option value="">All review states</option>
+            <option value="true">Needs manual review</option>
+            <option value="false">Review not required</option>
           </select>
         </label>
         <button disabled={loading}>Search</button>
@@ -106,6 +159,7 @@ export default function AdminCompaniesPage() {
                 <thead>
                   <tr>
                     <th scope="col">Company</th>
+                    <th scope="col">Links</th>
                     <th scope="col">Categories</th>
                     <th scope="col">Research</th>
                     <th scope="col">Status</th>
@@ -116,18 +170,91 @@ export default function AdminCompaniesPage() {
                     <tr key={company.id}>
                       <td>
                         <Link href={`/admin/companies/${encodeURIComponent(company.id)}`}>
-                          {company.name}
+                          <strong>{company.name}</strong>
                         </Link>
                         <p>{company.location || 'Location not set'}</p>
                       </td>
+                      <td>
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.25rem',
+                            fontSize: '0.8125rem',
+                          }}
+                        >
+                          {company.websiteUrl ? (
+                            <a
+                              href={company.websiteUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: '#111114', textDecoration: 'underline' }}
+                            >
+                              Website ↗
+                            </a>
+                          ) : null}
+                          {company.careerUrl ? (
+                            <a
+                              href={company.careerUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: '#111114', textDecoration: 'underline' }}
+                            >
+                              Career page ↗
+                            </a>
+                          ) : null}
+                          {company.linkedinUrl ? (
+                            <a
+                              href={company.linkedinUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: '#6e6e73', textDecoration: 'underline' }}
+                            >
+                              LinkedIn ↗
+                            </a>
+                          ) : null}
+                          {!company.websiteUrl && !company.careerUrl && !company.linkedinUrl && (
+                            <span style={{ color: '#8e8e93' }}>—</span>
+                          )}
+                        </div>
+                      </td>
                       <td>{company.categories.join(', ') || 'Uncategorized'}</td>
                       <td>
-                        {companyActions.find(
-                          ([value]) => value === company.recommendedAction,
-                        )?.[1] ??
-                          company.recommendedAction ??
-                          'Not set'}
-                        {company.needsManualReview && <p>Needs manual review</p>}
+                        <div>
+                          {companyActions.find(
+                            ([value]) => value === company.recommendedAction,
+                          )?.[1] ??
+                            company.recommendedAction ??
+                            'Not set'}
+                        </div>
+                        {company.needsManualReview && (
+                          <div style={{ marginTop: '0.25rem' }}>
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                padding: '0.125rem 0.5rem',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem',
+                                fontWeight: 500,
+                                backgroundColor: '#fef3c7',
+                                color: '#92400e',
+                              }}
+                            >
+                              Needs manual review
+                            </span>
+                            {company.reviewReasons && (
+                              <p
+                                style={{
+                                  marginTop: '0.25rem',
+                                  color: '#6e6e73',
+                                  fontSize: '0.75rem',
+                                }}
+                              >
+                                {company.reviewReasons}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </td>
                       <td>{company.active ? 'Active' : 'Inactive'}</td>
                     </tr>
