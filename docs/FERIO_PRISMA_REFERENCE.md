@@ -72,4 +72,3 @@ must not run automatically during requests, migrations, or tenant discovery.
 Config-relative schema/migration paths and explicit `--config` selection are
 specified by [Prisma config documentation](https://docs.prisma.io/docs/orm/reference/prisma-config-reference).
 Inspect the installed Prisma version rather than assuming newer CLI behavior.
-
