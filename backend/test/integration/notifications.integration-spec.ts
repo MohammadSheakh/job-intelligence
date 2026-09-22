@@ -1,12 +1,12 @@
 import 'reflect-metadata';
-import { EmailRenderService } from '../src/features/notifications/services/email-render.service.js';
-import { EmailTransportService } from '../src/features/notifications/services/email-transport.service.js';
-import { NotificationDeduplicationService } from '../src/features/notifications/services/notification-deduplication.service.js';
-import { DailyNotificationService } from '../src/features/notifications/services/daily-notification.service.js';
+import { EmailRenderService } from '../../src/features/notifications/services/email-render.service.js';
+import { EmailTransportService } from '../../src/features/notifications/services/email-transport.service.js';
+import { NotificationDeduplicationService } from '../../src/features/notifications/services/notification-deduplication.service.js';
+import { DailyNotificationService } from '../../src/features/notifications/services/daily-notification.service.js';
 import type { PrismaService } from '@app/database';
-import type { SettingsService } from '../src/features/settings/services/settings.service.js';
-import type { AiMatchEnhancerService } from '../src/features/matching/services/ai-match-enhancer.service.js';
-import type { DigestMatch } from '../src/features/notifications/domain/types.js';
+import type { SettingsService } from '../../src/features/settings/services/settings.service.js';
+import type { AiMatchEnhancerService } from '../../src/features/matching/services/ai-match-enhancer.service.js';
+import type { DigestMatch } from '../../src/features/notifications/domain/types.js';
 
 describe('Notifications subsystem', () => {
   describe('EmailRenderService', () => {

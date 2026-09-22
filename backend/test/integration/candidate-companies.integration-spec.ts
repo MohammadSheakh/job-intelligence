@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@app/database';
-import { CandidateCompanyService } from '../src/features/candidate-portal/services/candidate-company.service';
-import { CandidateTrackingFilter } from '../src/features/candidate-portal/dto/candidate-company-query.dto';
+import { CandidateCompanyService } from '../../src/features/candidate-portal/services/candidate-company.service';
+import { CandidateTrackingFilter } from '../../src/features/candidate-portal/dto/candidate-company-query.dto';
 
 describe('CandidateCompanyService', () => {
   let module: TestingModule;

@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@app/database';
-import { CareerPageFetcherService } from '../src/features/job-crawling/services/career-page-fetcher.service';
-import { CompanyIntelligenceService } from '../src/features/company-intelligence/services/company-intelligence.service';
+import { CareerPageFetcherService } from '../../src/features/job-crawling/services/career-page-fetcher.service';
+import { CompanyIntelligenceService } from '../../src/features/company-intelligence/services/company-intelligence.service';
 
 describe('CompanyIntelligenceService', () => {
   let module: TestingModule;

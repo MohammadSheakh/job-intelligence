@@ -3,14 +3,14 @@ import { Global, Module, ValidationPipe, type INestApplication } from '@nestjs/c
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { PrismaService } from '@app/database';
-import { AppConfigService } from '../src/config/config.service';
-import { AuthenticationModule } from '../src/features/authentication/authentication.module';
-import { CandidatePortalModule } from '../src/features/candidate-portal/candidate-portal.module';
-import { CompanyIntelligenceModule } from '../src/features/company-intelligence/company-intelligence.module';
+import { AppConfigService } from '../../src/config/config.service';
+import { AuthenticationModule } from '../../src/features/authentication/authentication.module';
+import { CandidatePortalModule } from '../../src/features/candidate-portal/candidate-portal.module';
+import { CompanyIntelligenceModule } from '../../src/features/company-intelligence/company-intelligence.module';
 import {
   hashLegacyScrypt,
   verifyLegacyScrypt,
-} from '../src/features/authentication/services/password.service';
+} from '../../src/features/authentication/services/password.service';
 
 const prisma = {
   candidate: { findFirst: jest.fn(), updateMany: jest.fn() },

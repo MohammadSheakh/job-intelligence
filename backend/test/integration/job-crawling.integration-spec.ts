@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@app/database';
-import { parseDeadlineFromText } from '../src/features/job-crawling/domain/career-page.parser';
-import { createJobHash } from '../src/features/job-crawling/domain/normalize';
-import { CrawlIngestionService } from '../src/features/job-crawling/services/crawl-ingestion.service';
-import { AdminCrawlLogService } from '../src/features/job-crawling/services/admin-crawl-log.service';
-import { AdminJobCatalogService } from '../src/features/job-crawling/services/admin-job-catalog.service';
-import { CandidateRecommendationsService } from '../src/features/matching/services/candidate-recommendations.service';
+import { parseDeadlineFromText } from '../../src/features/job-crawling/domain/career-page.parser';
+import { createJobHash } from '../../src/features/job-crawling/domain/normalize';
+import { CrawlIngestionService } from '../../src/features/job-crawling/services/crawl-ingestion.service';
+import { AdminCrawlLogService } from '../../src/features/job-crawling/services/admin-crawl-log.service';
+import { AdminJobCatalogService } from '../../src/features/job-crawling/services/admin-job-catalog.service';
+import { CandidateRecommendationsService } from '../../src/features/matching/services/candidate-recommendations.service';
 
 describe('Job crawling, deadline parsing, and freshness policy', () => {
   describe('parseDeadlineFromText', () => {

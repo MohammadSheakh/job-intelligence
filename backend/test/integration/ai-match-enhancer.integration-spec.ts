@@ -1,11 +1,11 @@
 import 'reflect-metadata';
-import { AiMatchEnhancerService } from '../src/features/matching/services/ai-match-enhancer.service.js';
-import type { SettingsService } from '../src/features/settings/services/settings.service.js';
+import { AiMatchEnhancerService } from '../../src/features/matching/services/ai-match-enhancer.service.js';
+import type { SettingsService } from '../../src/features/settings/services/settings.service.js';
 import type {
   CandidateForMatch,
   JobForMatch,
   MatchResult,
-} from '../src/features/matching/domain/types.js';
+} from '../../src/features/matching/domain/types.js';
 
 describe('AiMatchEnhancerService', () => {
   let service: AiMatchEnhancerService;

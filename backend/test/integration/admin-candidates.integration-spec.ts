@@ -1,11 +1,11 @@
 import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@app/database';
-import { AppConfigService } from '../src/config/config.service';
-import { AdminCandidatesService } from '../src/features/admin-operations/services/admin-candidates.service';
-import { CandidateAuthenticationService } from '../src/features/authentication/services/candidate-authentication.service';
-import { CandidateProfileService } from '../src/features/candidate-portal/services/candidate-profile.service';
-import { deterministicMatch } from '../src/features/matching/domain/matcher';
+import { AppConfigService } from '../../src/config/config.service';
+import { AdminCandidatesService } from '../../src/features/admin-operations/services/admin-candidates.service';
+import { CandidateAuthenticationService } from '../../src/features/authentication/services/candidate-authentication.service';
+import { CandidateProfileService } from '../../src/features/candidate-portal/services/candidate-profile.service';
+import { deterministicMatch } from '../../src/features/matching/domain/matcher';
 
 describe('Admin Candidates, Experience Levels/Years, and Candidate Profile', () => {
   describe('AdminCandidatesService with controlled levels and numeric experience years', () => {

@@ -3,11 +3,11 @@ import { Global, Module, ValidationPipe, type INestApplication } from '@nestjs/c
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { PrismaService } from '@app/database';
-import { AppConfigService } from '../src/config/config.service';
-import { AuthenticationModule } from '../src/features/authentication/authentication.module';
-import { AdminOperationsModule } from '../src/features/admin-operations/admin-operations.module';
-import { SettingsModule } from '../src/features/settings/settings.module';
-import { AdminDashboardService } from '../src/features/admin-operations/services/admin-dashboard.service';
+import { AppConfigService } from '../../src/config/config.service';
+import { AuthenticationModule } from '../../src/features/authentication/authentication.module';
+import { AdminOperationsModule } from '../../src/features/admin-operations/admin-operations.module';
+import { SettingsModule } from '../../src/features/settings/settings.module';
+import { AdminDashboardService } from '../../src/features/admin-operations/services/admin-dashboard.service';
 
 const prisma = {
   company: { count: jest.fn() },

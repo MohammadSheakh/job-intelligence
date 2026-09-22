@@ -82,18 +82,19 @@ try {
   }
   const port = docker(['port', name, '5432/tcp']).trim().split(':').at(-1);
   if (!/^\d+$/.test(port)) throw new Error('Could not determine local PostgreSQL port.');
-  console.log(
-    `Running ${process.argv.includes('--browser') ? 'browser' : 'API'} tests against disposable local PostgreSQL 16.`,
-  );
+  const isBrowser = process.argv.includes('--browser');
+  const isE2e = process.argv.includes('--e2e');
+  const config = isBrowser
+    ? 'jest.browser.config.cjs'
+    : isE2e
+      ? 'jest.e2e.config.cjs'
+      : 'jest.database.config.cjs';
+  const label = isBrowser ? 'browser' : isE2e ? 'HTTP application E2E' : 'database integration';
+  console.log(`Running ${label} tests against disposable local PostgreSQL 16.`);
   const status = await new Promise((resolve, reject) => {
     child = spawn(
       process.execPath,
-      [
-        'node_modules/jest/bin/jest.js',
-        '--config',
-        process.argv.includes('--browser') ? 'jest.browser.config.cjs' : 'jest.database.config.cjs',
-        '--runInBand',
-      ],
+      ['node_modules/jest/bin/jest.js', '--config', config, '--runInBand'],
       {
         cwd: backend,
         stdio: 'inherit',

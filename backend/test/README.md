@@ -1,76 +1,73 @@
-# Backend regression tests
+# Backend Test Architecture & Organization
+
+The backend test suite is organized into five explicit, complementary layers:
+
+```text
+backend/
+├── src/**/*.spec.ts                  Layer 1: Co-located pure domain & unit tests (Fast, no DB/network)
+├── test/integration/*.integration-spec.ts Layer 2: Nest component integration (Mocked Prisma & external APIs)
+├── test/database/*.database-spec.ts  Layer 3: Real PostgreSQL integration (Constraints, transactions, advisory locks)
+├── test/e2e/*.e2e-spec.ts            Layer 4: Full AppModule HTTP E2E tests (Supertest + real disposable PostgreSQL)
+└── test/browser/*.browser-spec.ts    Layer 5: Real browser E2E (Playwright Chromium + Next.js + NestJS)
+```
+
+---
+
+## Commands
 
 From the repository root:
 
 ```bash
-pnpm --dir backend test
-pnpm --dir backend test:database
-pnpm --dir backend typecheck:test
+# 1. Fast tests (no Docker, no DB required, runs in ~5 seconds)
+pnpm --dir backend test:unit         # Pure domain tests only (matcher, parser, template, crypto)
+pnpm --dir backend test:integration  # Nest component integration tests only
+pnpm --dir backend test              # Runs both unit and integration tests
+
+# 2. Database & E2E tests (requires local Docker daemon running)
+pnpm --dir backend test:database     # Disposable PostgreSQL constraints, transactions, and concurrency
+pnpm --dir backend test:e2e          # Full AppModule + Supertest against disposable PostgreSQL
+
+# 3. Browser E2E tests (requires Docker + Playwright Chromium)
+pnpm --dir backend test:browser      # Real Chromium against running Next.js + NestJS app
+
+# 4. Typecheck
+pnpm --dir backend typecheck:test    # Validates all test files against tsconfig.test.json
 ```
 
-The default suite runs 20 Jest/Nest TestingModule/Supertest tests with mocked
-Prisma. It covers authentication primitives and HTTP flows, profile validation,
-admin authorization, and company category replacement orchestration.
+---
 
-The separate database suite runs 45 HTTP tests (21 candidate and 24 admin) with the real Prisma service and
-PostgreSQL 16. Docker must be running; the runner uses `postgres:16` (Docker pulls
-it if absent). It creates a unique container with temporary storage, random test
-credentials, and a dynamically assigned loopback port. It applies the repository's
-`sql/001_init.sql` and `sql/008_runtime_schema.sql` to that empty database and
-creates synthetic fixtures. It removes only its own container on completion,
-failure, SIGINT, or SIGTERM. A forced process kill may require manual cleanup of
-the uniquely named `job-intelligence-test-*` container.
+## Layer Definitions & Guidelines
 
-The runner never loads `.env`, accepts no external database URL, and overrides
-inherited database/session variables. It does not run the existing Compose stacks
-or copy Neon data. The suite rejects direct execution without the disposable
-runner's local database configuration.
+### Layer 1: Pure Domain Unit Tests (`src/**/*.spec.ts`)
+- **Location**: Co-located right next to source files in `src/features/**/domain/` or `src/features/**/services/`.
+- **Scope**: Pure logic with zero dependencies on Nest DI, Prisma, databases, or HTTP servers.
+- **Examples**:
+  - `matcher.spec.ts`: Scoring weights, exclusions, rank calculations, numeric year parsing, deterministic tie-breaking.
+  - `career-page.parser.spec.ts`: DOM traversal, anchor/table/job extraction, deadline parsing, content hash generation.
+  - `email-render.service.spec.ts`: HTML escaping, URL sanitization, score-based sorting.
+  - `password.service.spec.ts`: Pure cryptographic scrypt hashing, salt generation, and verification.
 
-Database tests cover profile persistence, two-account isolation, company browse,
-category catalog, pipeline mutations, mandatory password-change enforcement,
-password replacement, and invalid input. Admin tests cover all six implemented
-API groups: candidate management, companies, categories, jobs, settings, and
-crawler logs. Temporary check constraints force real database write failures and
-verify rollback of candidate profile/password changes, company/category updates,
-and settings transactions. These constraints are installed only after the suite
-checks the disposable runner configuration and are removed in `finally` blocks.
-Shared reference-category fixtures tolerate either suite execution order.
+### Layer 2: Component Integration Tests (`test/integration/*.integration-spec.ts`)
+- **Location**: `test/integration/`.
+- **Scope**: Multi-component NestJS feature modules instantiated with `@nestjs/testing` and mocked database/external providers.
+- **Coverage**: Service use cases, guard boundaries, failure propagation, and transaction rollback calls with mock Prisma.
 
-Both suites import real feature modules with the application's validation options
-and API prefix, but not AppModule. They do not test browser behavior, the production
-bootstrap/CORS configuration, concurrency under load, or exhaustive feature parity.
+### Layer 3: Database Integration Tests (`test/database/*.database-spec.ts`)
+- **Location**: `test/database/`.
+- **Scope**: Executed against an ephemeral Docker PostgreSQL 16 container (`postgres:16-alpine`) on dynamic loopback ports.
+- **Coverage**:
+  - `quick-search-concurrency.database-spec.ts`: Proves that `pg_advisory_xact_lock` correctly serializes parallel requests and prevents race conditions or quota leaks under concurrent load.
+  - `candidate-portal.database-spec.ts`: Multi-account isolation, profile/pipeline mutations, rollback with real CHECK constraints.
+  - `admin-api.database-spec.ts`: All admin management APIs, transaction rollbacks, and catalog constraints.
 
-Tests are excluded from the production TypeScript build and checked separately
-with `typecheck:test`. The database suite is deliberately excluded from `test`
-so the fast suite needs no Docker or database.
+### Layer 4: HTTP Application E2E Tests (`test/e2e/*.e2e-spec.ts`)
+- **Location**: `test/e2e/`.
+- **Scope**: Boots the full `AppModule` with Supertest against disposable PostgreSQL.
+- **Coverage**:
+  - `candidate.e2e-spec.ts`: Authentication, session cookies, `PASSWORD_CHANGE_REQUIRED` 403 guard, DTO rejection (`forbidNonWhitelisted`), identity tampering prevention (session-derived candidate identity), and BigInt serialization.
+  - `admin.e2e-spec.ts`: Basic Auth verification, strict candidate/admin separation (candidate cookies rejected on admin endpoints), and admin DTO validation.
 
-## Browser verification
-
-Install backend and frontend dependencies and the Chromium binary first:
-
-```bash
-pnpm --dir backend exec playwright install chromium
-pnpm --dir backend test:browser
-```
-
-The browser command reuses the disposable PostgreSQL runner. Sixteen Jest/Playwright
-checks run real Chromium against Nest feature modules and Next development mode:
-unsigned direct navigation, mandatory password-change navigation, invalid login,
-password replacement, profile persistence, company tracking/pipeline edits and
-removal, and logout. Eight admin checks cover Basic sign-in and credential
-lifecycle, candidate/admin isolation, filters/pagination, company/category edits,
-empty/missing/error states, retry, and narrow company-list overflow. Nest listens on loopback with credentialed CORS for the test
-frontend. No cloud database, user account, or live credentials are used.
-
-The fixture copies frontend source/configuration into a temporary directory and
-links its installed dependencies. Next writes its generated configuration and
-build output there, not in the developer's frontend directory. Browser contexts,
-the Next subprocess, temporary source copy, Nest, and the disposable database are
-closed/removed after the run. Tests require Docker, installed frontend dependencies,
-and Playwright Chromium with its system libraries; on a fresh Linux machine use
-`pnpm --dir backend exec playwright install --with-deps chromium` if needed.
-
-These are Chromium functional checks, including one 390-pixel company-list
-viewport check and screenshots in `/tmp/job-admin-companies*.png`. They do not
-establish comprehensive visual/mobile or cross-browser coverage, production
-bootstrap verification, or full recommendation/Quick Search parity. Browser checks are separate from the fast and database-only suites.
+### Layer 5: Real Browser Verification (`test/browser/*.browser-spec.ts`)
+- **Location**: `test/browser/`.
+- **Scope**: Real Playwright Chromium browser driving Next.js 15 dev frontend connected to NestJS 11 backend and disposable PostgreSQL.
+- **Coverage**: Candidate authentication, mandatory password redirects, profile persistence, tracking/pipeline edits, admin sign-in, filters, category creation, and responsive 390px mobile viewports.

@@ -1,11 +1,11 @@
 import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
 import { scryptSync } from 'node:crypto';
-import { CandidateSessionService } from '../src/features/authentication/services/candidate-session.service';
+import { CandidateSessionService } from '../../src/features/authentication/services/candidate-session.service';
 import {
   hashLegacyScrypt,
   verifyLegacyScrypt,
-} from '../src/features/authentication/services/password.service';
+} from '../../src/features/authentication/services/password.service';
 
 describe('Candidate authentication primitives', () => {
   let module: TestingModule;

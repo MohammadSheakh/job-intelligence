@@ -3,10 +3,10 @@ import { Global, Module, ValidationPipe, type INestApplication } from '@nestjs/c
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { PrismaService } from '@app/database';
-import { AppConfigService } from '../src/config/config.service';
-import { AuthenticationModule } from '../src/features/authentication/authentication.module';
-import { GoogleOAuthService } from '../src/features/authentication/services/google-oauth.service';
-import { CandidateAuthenticationService } from '../src/features/authentication/services/candidate-authentication.service';
+import { AppConfigService } from '../../src/config/config.service';
+import { AuthenticationModule } from '../../src/features/authentication/authentication.module';
+import { GoogleOAuthService } from '../../src/features/authentication/services/google-oauth.service';
+import { CandidateAuthenticationService } from '../../src/features/authentication/services/candidate-authentication.service';
 
 const prisma = {
   candidate: { findFirst: jest.fn(), updateMany: jest.fn() },
