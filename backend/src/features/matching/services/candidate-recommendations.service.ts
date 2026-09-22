@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@app/database';
 import { deterministicMatch } from '../domain/matcher.js';
+import type { CandidateForMatch, JobForMatch, MatchResult } from '../domain/types.js';
 
 export interface CandidateRecommendation {
   jobId: string;
@@ -15,9 +16,10 @@ export interface CandidateRecommendation {
   reasons: string[];
   categories: string[];
   trackingStatus: string | null;
+  aiUsed?: boolean;
 }
 
-/** Rank existing OPEN jobs without crawler, AI, or notification side effects. */
+/** Rank existing OPEN jobs with deterministic scoring and optional AI match enhancement. */
 @Injectable()
 export class CandidateRecommendationsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -27,7 +29,15 @@ export class CandidateRecommendationsService {
    * Newer inserts cannot extend a scan already in progress. This is a live read,
    * not a database snapshot: concurrent profile/job edits appear on the next refresh.
    */
-  async list(candidateId: bigint, limit: number): Promise<CandidateRecommendation[]> {
+  async list(
+    candidateId: bigint,
+    limit: number,
+    enhancer?: (
+      candidate: CandidateForMatch,
+      job: JobForMatch,
+      base: MatchResult,
+    ) => Promise<MatchResult>,
+  ): Promise<CandidateRecommendation[]> {
     const candidate = await this.prisma.candidate.findFirst({
       where: { id: candidateId, active: true },
       select: {
@@ -43,7 +53,7 @@ export class CandidateRecommendationsService {
       },
     });
     if (!candidate) throw new NotFoundException('Candidate profile was not found.');
-    const profile = {
+    const profile: CandidateForMatch = {
       expertise: candidate.expertise,
       skills: candidate.skills,
       experienceLevel: candidate.experience_level,
@@ -106,7 +116,7 @@ export class CandidateRecommendationsService {
         if (trackingStatus === 'EXCLUDED') continue;
         const categories = company.categories.map(({ category }) => category);
         const names = categories.filter(({ name }) => name !== 'Other').map(({ name }) => name);
-        const result = deterministicMatch(profile, {
+        const jobForMatch: JobForMatch = {
           companyLocation: company.location,
           companyTechStack: company.tech_stack,
           companyCategories: names,
@@ -119,7 +129,11 @@ export class CandidateRecommendationsService {
           workMode: job.work_mode,
           skills: job.skills,
           experience: job.experience,
-        });
+        };
+        let result = deterministicMatch(profile, jobForMatch);
+        if (enhancer && result.eligible) {
+          result = await enhancer(profile, jobForMatch, result);
+        }
         if (!result.eligible || result.finalScore < candidate.minimum_match_score) continue;
         best.push({
           jobId: job.id.toString(),
@@ -134,6 +148,7 @@ export class CandidateRecommendationsService {
           reasons: result.reasons.slice(0, 3),
           categories: names.slice(0, 5),
           trackingStatus,
+          aiUsed: result.aiUsed,
         });
         // The requested list is at most 20; keeping it sorted avoids retaining all matches.
         best.sort((a, b) => b.score - a.score || (BigInt(a.jobId) > BigInt(b.jobId) ? -1 : 1));

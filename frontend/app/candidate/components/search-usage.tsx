@@ -8,6 +8,10 @@ interface SearchUsage {
   used: number;
   dailyLimit: number;
   remaining: number;
+  aiUsed: number;
+  aiDailyLimit: number;
+  aiRemaining: number;
+  aiAvailable: boolean;
   resetsAt: string;
 }
 
@@ -24,10 +28,11 @@ interface QuickSearchMatch {
   reasons: string[];
   categories: string[];
   trackingStatus: string | null;
+  aiUsed?: boolean;
 }
 
 interface QuickSearchResult {
-  mode: 'STANDARD';
+  mode: 'STANDARD' | 'AI';
   companiesChecked: number;
   crawlFailures: number;
   jobsFound: number;
@@ -78,19 +83,20 @@ export function SearchUsage() {
     return () => controller.abort();
   }, [revision, router]);
 
-  async function runQuickSearch() {
+  async function runQuickSearch(mode: 'STANDARD' | 'AI' = 'STANDARD') {
     setRunning(true);
     setError('');
     setRunOutcome(null);
     try {
       const result = await api<QuickSearchResult>('/candidate/quick-search/execute', {
         method: 'POST',
-        body: JSON.stringify({ mode: 'STANDARD' }),
+        body: JSON.stringify({ mode }),
       });
       setUsage(result.usage);
       const failureNote =
         result.crawlFailures > 0 ? ` (${result.crawlFailures} checks had issues)` : '';
-      const summary = `Checked ${result.companiesChecked} companies${failureNote}; found ${result.jobsFound} vacancies.`;
+      const modeLabel = result.mode === 'AI' ? 'AI Quick Search' : 'Quick Search';
+      const summary = `${modeLabel}: checked ${result.companiesChecked} companies${failureNote}; found ${result.jobsFound} vacancies.`;
       setRunOutcome({
         summary,
         matches: result.matches,
@@ -142,27 +148,55 @@ export function SearchUsage() {
         vacancies without waiting for the daily crawl.
       </p>
       {usage && (
-        <p>
-          <strong>{usage.remaining}</strong> of {usage.dailyLimit} daily searches remaining. Resets
-          at{' '}
-          <time dateTime={usage.resetsAt}>
-            {new Date(usage.resetsAt).toLocaleString('en-GB', {
-              timeZone: 'Asia/Dhaka',
-              hour: '2-digit',
-              minute: '2-digit',
-              day: 'numeric',
-              month: 'short',
-            })}
-          </time>{' '}
-          (Dhaka).
-        </p>
+        <>
+          <p>
+            <strong>{usage.remaining}</strong> of {usage.dailyLimit} standard searches remaining
+            {usage.aiAvailable ? (
+              <>
+                {' '}
+                · <strong>{usage.aiRemaining}</strong> of {usage.aiDailyLimit} AI-assisted searches
+                remaining
+              </>
+            ) : null}
+            . Resets at{' '}
+            <time dateTime={usage.resetsAt}>
+              {new Date(usage.resetsAt).toLocaleString('en-GB', {
+                timeZone: 'Asia/Dhaka',
+                hour: '2-digit',
+                minute: '2-digit',
+                day: 'numeric',
+                month: 'short',
+              })}
+            </time>{' '}
+            (Dhaka).
+          </p>
+          {!usage.aiAvailable && (
+            <p className="muted text-xs">
+              AI-assisted search is currently disabled by administrator settings.
+            </p>
+          )}
+        </>
       )}
       {!usage && !error && <p role="status">Loading search allowance…</p>}
 
       {usage && (
-        <button disabled={running || usage.remaining === 0} onClick={() => void runQuickSearch()}>
-          {running ? 'Running Quick Search…' : 'Run Quick Search'}
-        </button>
+        <div>
+          <button
+            disabled={running || usage.remaining === 0}
+            onClick={() => void runQuickSearch('STANDARD')}
+          >
+            {running ? 'Running Quick Search…' : 'Run Quick Search'}
+          </button>
+          <button
+            className="secondary"
+            disabled={
+              running || usage.remaining === 0 || usage.aiRemaining === 0 || !usage.aiAvailable
+            }
+            onClick={() => void runQuickSearch('AI')}
+          >
+            Run AI Quick Search
+          </button>
+        </div>
       )}
 
       {running && (
@@ -207,6 +241,7 @@ export function SearchUsage() {
                   <p>
                     {match.location ?? 'Location not listed'}
                     {match.workMode ? ` · ${match.workMode}` : ''} · Match score: {match.score}/100
+                    {match.aiUsed && <span className="status ml-2">AI Enhanced</span>}
                   </p>
                   <p className="tags">{match.categories.join(' · ')}</p>
                   {match.reasons.length > 0 && (

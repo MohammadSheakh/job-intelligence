@@ -1,8 +1,8 @@
 # Architecture migration status
 
 **Last updated:** 2026-09-22
-**Status:** In progress — candidate core flows, Company Intelligence admin UI, selected admin APIs, crawler foundations, daily execution CLI, and candidate Standard Quick Search are implemented.
-**Overall implementation progress: 58.33% complete / 41.67% remaining** — 14 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
+**Status:** In progress — candidate core flows, Company Intelligence admin UI, selected admin APIs, crawler foundations, daily execution CLI, candidate Standard & AI Quick Search, and optional AI enhancement are implemented.
+**Overall implementation progress: 62.50% complete / 37.50% remaining** — 15 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
 
 ## How to use this handoff
 
@@ -37,7 +37,7 @@ milestone 13. Update the table and numerator together as scope changes.
 | 12 | Crawler HTML extraction and atomic job/log ingestion service | Implemented; runtime checks deferred |
 | 13 | Bounded HTTP crawler transport, daily execution, source orchestration | Implemented; runtime checks deferred |
 | 14 | Standard Quick Search execution, run finalization, execution UI | Implemented; runtime checks deferred |
-| 15 | Optional AI provider integration, limits, and AI-assisted search | Pending |
+| 15 | Optional AI provider integration, limits, and AI-assisted search | Implemented; runtime checks deferred |
 | 16 | Email digests, notifications, delivery deduplication integration | Pending |
 | 17 | Google OAuth and account binding | Pending |
 | 18 | Remaining admin dashboard/jobs/candidates/settings/logs views | Pending |
@@ -446,4 +446,15 @@ product milestone credit.
 - Upgraded the Next.js candidate `SearchUsage` component with an execution button, in-flight status indicators, outcome summary banner, and candidate match cards with Ferio workflow actions (`Apply ↗`, `Plan`, `Applied`, `Blacklist`) and clickable external links (`target="_blank"` with `rel="noopener noreferrer"`).
 - Verification: formatting/lint (`pnpm check:style`), backend and frontend typechecks (`pnpm typecheck`), backend build (`nest build`), frontend production build (`next build`), 20 isolated unit tests (`pnpm test`), and agent instruction integrity (`pnpm check:agents`).
 - Milestone 14 is implemented: **14/24 = 58.33% complete, 41.67% remaining**.
+ 
+## Optional AI provider integration and AI-assisted search
+
+- Implemented `AiMatchEnhancerService`: validates configuration against runtime `SystemSettings` (`aiEnabled`, `aiMatchingEnabled`, `aiDailyLimit`) and environment variables (`AI_BASE_URL`, `AI_MODEL`, `AI_API_KEY`).
+- Semantic enhancement strictly respects deterministic exclusions: only deterministically eligible jobs are processed. Never overrides location, work mode, or sector hard filters.
+- Enforces a 15-second abort timeout per API call, limits AI enhancements to 15 calls per execution budget, blends scores cleanly (`round(deterministicScore * 0.8 + semanticScore * 0.2)`), appends the semantic explanation to `reasons`, and gracefully falls back to deterministic score if the provider times out, fails, or returns malformed JSON.
+- Wired `CandidateRecommendationsService` with optional enhancer callback, enabling AI scoring during Quick Search.
+- Updated `QuickSearchExecutionService` and `CandidateSearchUsageController` to support `mode: 'AI'`, checking provider availability before reservation, consuming candidate AI search quota, and exposing `aiAvailable` in the usage status endpoint.
+- Enhanced Next.js `SearchUsage` UI: displays both standard and AI remaining daily allowances, renders a dedicated "Run AI Quick Search" button (appropriately disabled when limits are reached or AI is unavailable), and shows an "AI Enhanced" status pill on matches where semantic scoring was applied.
+- Verification: style/formatting (`pnpm check:style`), agent instruction integrity (`pnpm check:agents`), backend & frontend typechecks (`pnpm typecheck`), 26 unit tests across 4 test suites (`pnpm test`), and production builds (`nest build` and `next build`).
+- Milestone 15 is implemented: **15/24 = 62.50% complete, 37.50% remaining**.
 

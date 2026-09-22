@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { setTimeout as delay } from 'node:timers/promises';
 import { PrismaService } from '@app/database';
 import { CompanyCrawlService } from '../../job-crawling/services/company-crawl.service.js';
@@ -6,11 +6,12 @@ import {
   CandidateRecommendationsService,
   type CandidateRecommendation,
 } from '../../matching/services/candidate-recommendations.service.js';
+import { AiMatchEnhancerService } from '../../matching/services/ai-match-enhancer.service.js';
 import { QuickSearchQuotaService, type QuickSearchUsage } from './quick-search-quota.service.js';
 import { QuickSearchCompanySelectorService } from './quick-search-company-selector.service.js';
 
 export interface QuickSearchExecutionResult {
-  mode: 'STANDARD';
+  mode: 'STANDARD' | 'AI';
   companiesChecked: number;
   crawlFailures: number;
   jobsFound: number;
@@ -21,7 +22,7 @@ export interface QuickSearchExecutionResult {
 
 /**
  * Orchestrates candidate on-demand search by reserving quota, checking shortlisted companies,
- * computing fresh matches, and persisting run finalization.
+ * computing fresh matches (with optional AI semantic enhancement), and persisting run finalization.
  */
 @Injectable()
 export class QuickSearchExecutionService {
@@ -33,13 +34,24 @@ export class QuickSearchExecutionService {
     private readonly selector: QuickSearchCompanySelectorService,
     private readonly crawler: CompanyCrawlService,
     private readonly recommendations: CandidateRecommendationsService,
+    private readonly aiEnhancer: AiMatchEnhancerService,
   ) {}
 
   /**
-   * Execute Standard Quick Search for an authenticated active candidate.
+   * Execute Standard or AI-Assisted Quick Search for an authenticated active candidate.
    * Reservations use a transaction-scoped advisory lock so quota is consumed even if crawling fails.
    */
-  async execute(candidateId: bigint, mode: 'STANDARD'): Promise<QuickSearchExecutionResult> {
+  async execute(candidateId: bigint, mode: 'STANDARD' | 'AI'): Promise<QuickSearchExecutionResult> {
+    if (mode === 'AI') {
+      const available = await this.aiEnhancer.isAvailable();
+      if (!available) {
+        throw new BadRequestException({
+          code: 'AI_SEARCH_UNAVAILABLE',
+          message: 'AI-assisted search is not available. Ensure AI is enabled and configured.',
+        });
+      }
+    }
+
     const reservation = await this.quota.reserve(candidateId, mode);
     const runId = reservation.runId;
     let companiesChecked = 0;
@@ -70,7 +82,14 @@ export class QuickSearchExecutionService {
         }
       }
 
-      const matches = await this.recommendations.list(candidateId, 25);
+      const aiLimitState = { callsMade: 0 };
+      const matches = await this.recommendations.list(
+        candidateId,
+        25,
+        mode === 'AI'
+          ? (candidate, job, base) => this.aiEnhancer.enhance(candidate, job, base, aiLimitState)
+          : undefined,
+      );
 
       await this.prisma.candidate_search_runs.update({
         where: { id: runId },
