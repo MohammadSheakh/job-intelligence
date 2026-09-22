@@ -338,3 +338,20 @@ entries describe the legacy runtime.
 - [x] Local `compose.yaml` and Neon `compose.neon.yaml` cut over to NestJS backend, Next.js frontend, and scheduler service.
 - [x] GitHub Actions `.github/workflows/daily-crawl.yml` cut over to pnpm 9 and Nest CLI commands.
 - [x] Disposable database (45 tests) and Playwright browser (16 tests) test suites executed and passing.
+
+## Industrial-grade hardening, Redis rate limiting, session revocation, and production cutover (milestone 24)
+
+- [x] Global `BigIntSerializerInterceptor` and `(BigInt.prototype).toJSON` polyfill eliminate unhandled BigInt serialization crashes across all API routes.
+- [x] Global `GlobalHttpExceptionFilter` standardizes error responses to `{ code, message, timestamp, path }` and sanitizes unhandled 500 database/server errors.
+- [x] Dynamic PostgreSQL connection pool (`DATABASE_POOL_MAX`, `DATABASE_IDLE_TIMEOUT_MS`, `DATABASE_CONN_TIMEOUT_MS`) and idle client connection error handling.
+- [x] Application graceful shutdown hooks (`app.enableShutdownHooks()`) for clean pool draining and socket teardown.
+- [x] Database-backed candidate session revocation and versioning (`token_version` column on Neon, `POST /api/v1/candidate-auth/revoke`, and `?revoke=true` on logout).
+- [x] Redis sliding-window rate limiting (`ferio-nest-prisma` architecture) using Redis Sorted Sets atomic pipelines, standard `X-RateLimit-*` headers, and computed `Retry-After`.
+- [x] Route-level `@RateLimit()` presets protecting login, password change, revocation, Google OAuth, quick search, and admin operations.
+- [x] Redis lifecycle hook (`RedisClientsLifecycle` with `OnModuleDestroy`) ensuring clean client disconnection on application teardown.
+- [x] Crawler streaming decompression (`node:zlib` `createUnzip()` and `createBrotliDecompress()`) supporting gzip, deflate, and brotli with strict 2 MiB boundary safety.
+- [x] Job matching scan bounded to `MAX_MATCH_SCAN_JOBS = 1000` to prevent event-loop and pool starvation under high vacancy volume.
+- [x] Production-grade dual-portal root landing page (`frontend/app/page.tsx`) with system telemetry badges and direct gateway navigation.
+- [x] Out-of-the-box `redis:7-alpine` container configuration with volume persistence and healthchecks in both `compose.neon.yaml` and `compose.yaml`.
+- [x] All 5 automated testing layers passing: 125 unit/integration, 46 database integration, 11 e2e, 16 browser (198/198 passing, 100% pass rate).
+
