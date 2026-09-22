@@ -15,7 +15,7 @@ is loaded through these links, not through an assumed editor-specific trigger.
 | `backend/prisma/AGENTS.md` | Generated schema, exact builder, migration/seed safety | Prisma files or database operations |
 | `.agents/rules/backend-*.md` | API, database, transaction constraints | Corresponding backend concerns |
 | `.agents/rules/frontend-*.md` | Component/data flow and security constraints | Corresponding UI concerns |
-| Local Ferio backend skill | Discover/implement/review/handoff workflow | Backend feature or architecture work |
+| Job Intelligence backend skill | Discover/implement/review/handoff workflow | Backend feature or architecture work |
 | Backend coding standards skill | Focused code-review checklist | Backend review |
 | Ferio frontend design skill | Product composition, visual language, accessibility | Screen/component design or review |
 | PRD / checklist / migration handoff | Product behavior / evidence / next work | Relevant product or migration task |
@@ -32,7 +32,7 @@ all skills recursively or create specs/tickets for routine small fixes.
 ## Audit findings resolved
 
 - The local Ferio V2 skill referred to the adjacent multi-tenant commerce product,
-  including absent platform/tenant services and tracking paths. It now targets
+  including absent platform/tenant services and tracking paths. Its replacement, `job-intelligence-backend`, now targets
   this repository while preserving useful boundary/capacity principles.
 - Backend rules and a duplicate skill required Drizzle, Redis, soft deletion on
   every model, an absent ErrorService, and universal transaction infrastructure.
@@ -48,6 +48,22 @@ all skills recursively or create specs/tickets for routine small fixes.
 
 This is an instruction-only change. It does not refactor existing services,
 standardize all historical endpoints, validate security, or finish migration milestones.
+
+## Separation of policy and project facts
+
+Keep scoped `AGENTS.md` files small: routes to context and local invariants that
+change decisions. Reusable rules carry policy; docs carry current architecture,
+commands, contracts, and migration state. Skills coordinate relevant workflows
+and link deeper references by need. A repository-local rule can be portable.
+
+- Database/tooling facts: [database architecture](../DATABASE_ARCHITECTURE.md).
+- API compatibility facts: [API contracts](../BACKEND_API_CONTRACTS.md).
+- Sibling tooling comparison: [Ferio reference](../FERIO_PRISMA_REFERENCE.md).
+- Security examples: topic references under the security skill, loaded selectively.
+
+When a skill is renamed, update callers and its UI default prompt. When moving a
+document, resolve links relative to the new directory. Keep a single scoped entrypoint;
+replace superseded instructions rather than appending a second version.
 
 ## Maintenance
 

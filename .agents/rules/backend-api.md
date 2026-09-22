@@ -1,31 +1,21 @@
-# Backend API contracts
+# API contract rules
 
-Applies to Nest routes and their consumers. Read [backend scope](../../backend/AGENTS.md).
+Applies when adding or changing API routes, authorization, validation, serialization,
+or consumers. Read the consuming project's documented contracts before editing.
 
-- Keep `/api/v1`, existing routes, verbs, status codes, and response shapes stable
-  unless an explicit coordinated contract change is part of the task.
-- Validate input with the installed class-validator/class-transformer setup;
-  reject unknown properties and bound strings, arrays, pagination, and numeric values.
-- Candidate routes use session then password-change guards, except auth steps
-  intentionally needed before the initial change. Derive candidate IDs from the
-  trusted principal; scope every candidate-owned read/write to that ID.
-- Admin Basic auth is independent of candidate cookies. Authorization in a UI
-  is not backend access control. Shared services must enforce ownership invariants.
-- Return explicit, serializable projections: bigint IDs as decimal strings,
-  no password hashes/tokens/provider credentials, no raw Prisma entities by default.
-- Preserve the existing top-level `message`/`code` error consumers. Map domain
-  failures to suitable HTTP statuses and safe messages; do not introduce a nested
-  error envelope or claim RFC problem-details compliance without a contract migration.
-- Existing endpoints include arrays and `{ rows, total, page, pageSize }` catalogs.
-  New paginated catalogs should use that catalog shape, integer bounds, deterministic
-  ordering, and a stable tie-breaker. Use keysets for large sequential scans.
-  Do not silently change array consumers or rename `pageSize` to `limit` globally.
-- For a new 204 response, return no body and update clients to avoid JSON parsing.
-  Existing void mutations need coordinated cleanup, not an isolated status change.
-- Align DTO types, controller return types, and consumers. Add Swagger decorators
-  only when OpenAPI tooling is actually installed and configured for the task.
-- Protected responses use private/no-store caching where applicable. CORS must
-  explicitly permit any new verb/origin; CORS is not authorization or a CSRF defense.
-- Review CSRF implications of cookie mutations, duplicate submissions, conflict
-  handling, and resource ownership. External callbacks require verified authenticity
-  before side effects. Preserve legacy contracts while documenting unresolved gaps.
+- Treat routes, verbs, status codes, pagination, and error shapes as compatibility
+  boundaries. Coordinate intentional changes across producers and consumers.
+- Derive identity from authenticated context; scope resource access to that identity.
+  Review guard ordering and intentional authentication exceptions. UI restrictions
+  do not enforce backend authorization.
+- Bound and validate input using installed tooling. Return explicit projections;
+  preserve identifier precision and exclude credentials/internal database fields.
+- Translate expected domain failures into safe responses. Match existing error
+  consumers; do not introduce a new envelope as incidental cleanup.
+- Paginated collections need stable ordering and bounded inputs. Preserve the
+  documented contract rather than imposing a template's field names.
+- A 204 response has no body; update consumers that otherwise parse JSON.
+- Keep DTOs, return types, and consumers aligned. API documentation tooling must
+  match installed infrastructure; decorators alone do not establish a contract.
+- Review private caching, cookie/CSRF behavior, duplicate mutations, and callback
+  authenticity. CORS is neither authorization nor a CSRF defense.

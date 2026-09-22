@@ -6,7 +6,7 @@ description: Review Job Intelligence backend code for API contracts, authorizati
 # Backend coding review
 
 Use [backend instructions](../../../backend/AGENTS.md) as the project context.
-For an implementation workflow use the local Ferio backend skill; this skill is
+For an implementation workflow use the [project backend workflow](../job-intelligence-backend/SKILL.md); this skill is
 the focused review checklist, not another architecture source.
 
 1. Trace callers and API consumers before proposing a contract change.

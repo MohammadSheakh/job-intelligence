@@ -4,8 +4,10 @@ Read [root instructions](../AGENTS.md) first. This file applies to `backend/`.
 
 ## Context to load
 
-- [Developer guide](../docs/BACKEND_DEVELOPER_GUIDE.md): current request/job flows.
-- [Ferio backend workflow](../.agents/skills/ferio-backend-architecture-v2-current/SKILL.md):
+- [Developer guide](../docs/BACKEND_DEVELOPER_GUIDE.md): read the affected request/job flow.
+- [API compatibility](../docs/BACKEND_API_CONTRACTS.md): route, auth, or response changes.
+- [Database architecture](../docs/DATABASE_ARCHITECTURE.md): Prisma tooling or schema work.
+- [Project backend workflow](../.agents/skills/job-intelligence-backend/SKILL.md):
   implementation or architectural review.
 - [API rules](../.agents/rules/backend-api.md): routes, guards, DTOs, consumers.
 - [Database rules](../.agents/rules/backend-database.md): queries, repositories, schema.
