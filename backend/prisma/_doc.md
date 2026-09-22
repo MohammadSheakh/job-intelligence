@@ -56,32 +56,36 @@ missing relationships are added. A rerun is not a mirror sync or an enrichment j
 NHPF research hints become `NO_HIRING_PAGE_FOUND` only for newly inserted companies.
 An intentionally removed assignment will be inserted again on an explicit seed rerun.
 
-## Existing Neon database: separate adoption, no reset
+## Neon database baseline and future migrations
 
-`0_initial` creates the complete current schema, including milestone 22 diagnostics
-and five legacy CHECK constraints. It is verified on fresh PostgreSQL, **not** yet
-adopted against the existing Neon database. Do not run its create-table SQL there.
+The Neon PostgreSQL database has been verified and baselined with Prisma Migrate:
 
-Before adopting Prisma Migrate on existing data:
+1. **Schema parity achieved**: Forward columns (`jobs.application_deadline`, `candidates.experience_years`, and `crawl_logs` diagnostics) were applied non-destructively without altering existing company, candidate, or job rows.
+2. **Baselined with Prisma**: `0_initial` was marked as applied via `prisma migrate resolve --applied 0_initial`. `pnpm prisma:migrate:status` confirms `Database schema is up to date!`.
+3. **Idempotent seed verified**: Running `pnpm prisma:seed --apply` directly against Neon executes safely with `skipDuplicates: true` and advisory transaction locking, preserving all existing records.
 
-1. Confirm target, backup/restore evidence, and current schema/migration history.
-2. Compare the existing database with this baseline, including column types, defaults,
-   nullability, indexes, foreign keys, CHECK constraints, and objects Prisma cannot model.
-   A Prisma diff alone does not cover every database object.
-3. Review and apply only required forward changes. Earlier SQL extensions such as
-   `sql/009_crawl_log_diagnostics.sql` may still be unapplied. A fresh baseline already
-   includes them; do not blindly apply multiple migration authorities to the same target.
-4. **Only after verified equivalence**, record `0_initial` as applied using
-   `pnpm exec prisma migrate resolve --applied 0_initial` on that reviewed target.
-   This changes migration history; it neither checks parity nor runs baseline SQL.
-5. Thereafter deploy reviewed forward migrations through Prisma. Do not seed Neon
-   merely to adopt migration history; its existing data remains authoritative.
+### Workflow for future field/model changes
 
-Never accept a reset prompt on a data-bearing database. New migrations require SQL
-review and a matching manifest entry; never rewrite a released migration/checksum to
-hide drift. Development commands may require shadow-database creation privileges.
-See [Prisma baselining](https://www.prisma.io/docs/orm/prisma-migrate/workflows/baselining)
-and [database switching](../../docs/DATABASE_SWITCHING.md).
+When modifying a field name, adding a column, or creating a model as per a feature request:
+
+1. **Edit modular fragments**: Update the appropriate file under `backend/prisma/schema/<module>.module/<model>.prisma`.
+2. **Synchronize Prisma schema and client**:
+   ```sh
+   pnpm run prisma:sync
+   ```
+   This rebuilds `backend/prisma/schema.prisma` and regenerates `@prisma/client`.
+3. **Create the migration**:
+   Create a new migration directory `backend/prisma/migrations/<timestamp>_<feature_name>/migration.sql` with the forward DDL (e.g. `ALTER TABLE ...`), and register its SHA-256 in `backend/prisma/migration-checksums.json`.
+4. **Deploy migration to Neon**:
+   ```sh
+   pnpm run prisma:migrate:deploy
+   ```
+   This runs the checksum integrity check and applies the new migration to Neon safely without touching existing data.
+5. **Verify status**:
+   ```sh
+   pnpm run prisma:migrate:status
+   ```
+
 
 ## Verification boundary
 

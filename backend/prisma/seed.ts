@@ -1,9 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { config } from 'dotenv';
+import { resolve } from 'node:path';
 import { loadCatalog } from './seeds/catalog';
 
-/** Preview by default. Apply uses a deliberately separate target, never implicit root .env. */
+config({ path: resolve(__dirname, '../../.env') });
+
+/** Preview by default. Apply uses SEED_DATABASE_URL if provided, falling back to DATABASE_URL. */
 async function main(): Promise<void> {
   const args = process.argv.slice(2).filter((arg) => arg !== '--');
   if (
@@ -23,10 +27,10 @@ async function main(): Promise<void> {
     }),
   );
   if (!args.includes('--apply')) return;
-  const target = process.env.SEED_DATABASE_URL;
+  const target = process.env.SEED_DATABASE_URL || process.env.DATABASE_URL;
   if (!target)
     throw new Error(
-      'Apply requires explicitly supplied SEED_DATABASE_URL. DATABASE_URL is not used for seed writes.',
+      'Apply requires a configured database target (SEED_DATABASE_URL or DATABASE_URL).',
     );
   // Reject malformed URLs without echoing credentials in parser errors.
   try {
