@@ -19,7 +19,7 @@
     "test:browser": "node test/scripts/run-database-tests.mjs --browser",
     "prisma:sync": "pnpm run prisma:schema:build && pnpm run prisma:generate",
     "prisma:seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
-    "prisma:migrate:dev": "pnpm run prisma:schema:build && pnpm prisma migrate dev --schema prisma/schema.prisma",
+    "prisma:migrate:dev": "node prisma/scripts/migrate-dev.mjs",
     "prisma:migrate:status": "pnpm prisma migrate status --schema prisma/schema.prisma",
     "prisma:migrate:deploy": "pnpm run prisma:migrations:check && pnpm prisma migrate deploy --schema prisma/schema.prisma",
     "crawl:daily": "node dist/src/commands/crawl-daily.js",
