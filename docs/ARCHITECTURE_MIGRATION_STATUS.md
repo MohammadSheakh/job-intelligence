@@ -1,8 +1,8 @@
 # Architecture migration status
 
-**Last updated:** 2026-09-21
-**Status:** In progress — candidate core flows, Company Intelligence admin UI, and selected admin APIs are implemented with local regression coverage.
-**Overall implementation progress: 54.17% complete / 45.83% remaining** — 13 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
+**Last updated:** 2026-09-22
+**Status:** In progress — candidate core flows, Company Intelligence admin UI, selected admin APIs, crawler foundations, daily execution CLI, and candidate Standard Quick Search are implemented.
+**Overall implementation progress: 58.33% complete / 41.67% remaining** — 14 of the 24 equally weighted milestones below are implemented. This is a scope estimate, not a measure of elapsed effort, test coverage, or production readiness.
 
 ## How to use this handoff
 
@@ -36,7 +36,7 @@ milestone 13. Update the table and numerator together as scope changes.
 | 11 | Shared formatting/lint tooling and backend developer documentation | Implemented |
 | 12 | Crawler HTML extraction and atomic job/log ingestion service | Implemented; runtime checks deferred |
 | 13 | Bounded HTTP crawler transport, daily execution, source orchestration | Implemented; runtime checks deferred |
-| 14 | Standard Quick Search execution, run finalization, execution UI | Pending |
+| 14 | Standard Quick Search execution, run finalization, execution UI | Implemented; runtime checks deferred |
 | 15 | Optional AI provider integration, limits, and AI-assisted search | Pending |
 | 16 | Email digests, notifications, delivery deduplication integration | Pending |
 | 17 | Google OAuth and account binding | Pending |
@@ -436,4 +436,14 @@ project-specific rules and local backend/frontend skills. Conflicting imported
 tenancy/Drizzle/Redis prescriptions were replaced with the actual single-tenant
 Nest/Prisma/Next boundaries. See `docs/agents/instruction-system.md` for the audit,
 reading order, and maintenance scenarios. This guidance-only change adds no
-product milestone credit: progress remains **13/24 = 54.17%**.
+product milestone credit.
+
+## Standard Quick Search execution and UI
+
+- Implemented `QuickSearchExecutionService`: connects candidate quota reservation, shortlisted company selection, sequential crawler checks with `QUICK_SEARCH_DELAY_MS` pacing, candidate recommendations calculation, and run finalization.
+- Persists run metadata to `candidate_search_runs`: `companies_checked`, `jobs_found`, `matches_found`, and `success`. Uncaught errors record failure status and sanitized messages rather than dropping run history.
+- Exposed `POST /api/v1/candidate/quick-search/execute` guarded by `CandidateSessionGuard` and `CandidatePasswordChangedGuard`, validating `ExecuteQuickSearchDto`. AI mode is cleanly gated with a descriptive HTTP 400 until milestone 15.
+- Upgraded the Next.js candidate `SearchUsage` component with an execution button, in-flight status indicators, outcome summary banner, and candidate match cards with Ferio workflow actions (`Apply ↗`, `Plan`, `Applied`, `Blacklist`) and clickable external links (`target="_blank"` with `rel="noopener noreferrer"`).
+- Verification: formatting/lint (`pnpm check:style`), backend and frontend typechecks (`pnpm typecheck`), backend build (`nest build`), frontend production build (`next build`), 20 isolated unit tests (`pnpm test`), and agent instruction integrity (`pnpm check:agents`).
+- Milestone 14 is implemented: **14/24 = 58.33% complete, 41.67% remaining**.
+

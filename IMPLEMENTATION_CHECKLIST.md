@@ -252,20 +252,20 @@ entries describe the legacy runtime.
 
 - [~] Pure deterministic matcher and guarded candidate recommendations API migrated; bounded job batches and result retention, bigint-safe IDs, legacy exclusions/thresholds.
 - [~] Candidate overview recommendations with explanations, safe external links, and company pipeline actions implemented. Runtime/browser validation deferred; no tests added or run for this milestone at user request.
-- [ ] Quick Search crawler orchestration, persisted quota enforcement, and optional AI migrated to Nest/Next.
+- [~] Quick Search crawler orchestration and persisted quota enforcement migrated to Nest/Next; optional AI remains pending (milestone 15).
 - [ ] Admin company manual-review completion, creation, controlled enrichment, and table external links from gpt1.md.
 - [ ] Application-deadline persistence/display and evidence-based job freshness rules.
 - [ ] Controlled experience levels/numeric years and separate admin candidate list/new/detail views.
 - [ ] Expanded crawler diagnostics/detail view (the gpt1 request concerns crawler logs).
 - [ ] Candidate active-company directory pagination and location/personal-state filters, independent of matching.
 
-## Replacement Quick Search prerequisites
+## Replacement Quick Search execution
 
-- [~] Guarded, read-only daily-usage API and candidate overview allowance display implemented.
-- [~] Persistent quota reservation uses a shared PostgreSQL advisory lock, Dhaka day bounds, and atomic count/insert; runtime concurrency validation deferred.
-- [~] Bounded PostgreSQL company selector preserves relevance/check-time order and excludes candidate blacklists.
-- [ ] Crawler execution, run finalization, AI availability checks, and Standard/AI execution UI wired to these services.
-- [~] This milestone uses formatting/lint, source typechecks, builds, and review only; tests omitted at user request.
+- [x] Guarded, read-only daily-usage API and candidate overview allowance display implemented.
+- [x] Persistent quota reservation uses a shared PostgreSQL advisory lock, Dhaka day bounds, and atomic count/insert; runtime concurrency validation deferred.
+- [x] Bounded PostgreSQL company selector preserves relevance/check-time order and excludes candidate blacklists.
+- [x] Standard Quick Search execution orchestrator, sequential crawl checks, run finalization, and candidate execution UI wired; AI mode gated with HTTP 400 until milestone 15.
+- [x] Static formatting/lint, backend typecheck/build, frontend typecheck/build, and 20 unit tests verified.
 
 ## Prisma tooling alignment
 
@@ -299,4 +299,4 @@ entries describe the legacy runtime.
 - [~] Dedicated direct-connection advisory lock coordinates replacement daily runners; runtime lock-loss/concurrency validation deferred.
 - [x] Static formatting/lint, backend typecheck/build, and no-connection CLI help verified.
 - [ ] Deployed scheduler cutover, live source coverage, and runtime parity remain pending; no tests or database operations run for this milestone.
-- [x] Scorecard advanced to 13/24 implementation milestones (54.17%); 11 milestones (45.83%) remain.
+- [x] Scorecard advanced to 14/24 implementation milestones (58.33%); 10 milestones (41.67%) remain.
