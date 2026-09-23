@@ -20,6 +20,28 @@ export default function AdminCompaniesPage() {
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
 
+  // LinkedIn batch crawl state
+  const [linkedInPendingCount, setLinkedInPendingCount] = useState<number | null>(null);
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [batchRunning, setBatchRunning] = useState(false);
+  const [batchLimit, setBatchLimit] = useState(25);
+  const [batchDelay] = useState(1200);
+  const [batchSummary, setBatchSummary] = useState<{
+    totalProcessed: number;
+    websitesFound: number;
+    careersFound: number;
+    failed: number;
+    results: Array<{
+      companyId: string;
+      companyName: string;
+      websiteUrl: string | null;
+      careerUrl: string | null;
+      actionTaken: string;
+      success: boolean;
+      error?: string;
+    }>;
+  } | null>(null);
+
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
@@ -31,10 +53,14 @@ export default function AdminCompaniesPage() {
     Promise.all([
       api<CompanyPage>(`/admin/companies?${query}`, { signal: controller.signal }),
       api<Category[]>('/admin/categories', { signal: controller.signal }),
+      api<{ pendingCount: number }>('/admin/companies/enrich-linkedin/status', {
+        signal: controller.signal,
+      }).catch(() => ({ pendingCount: 0 })),
     ])
-      .then(([page, catalog]) => {
+      .then(([page, catalog, status]) => {
         setResult(page);
         setCategories(catalog);
+        setLinkedInPendingCount(status.pendingCount);
       })
       .catch((reason) => {
         if (!controller.signal.aborted)
@@ -45,6 +71,40 @@ export default function AdminCompaniesPage() {
       });
     return () => controller.abort();
   }, [api, filters, retry]);
+
+  async function runBatchEnrichment() {
+    setBatchRunning(true);
+    setError('');
+    try {
+      const summary = await api<{
+        totalProcessed: number;
+        websitesFound: number;
+        careersFound: number;
+        failed: number;
+        results: Array<{
+          companyId: string;
+          companyName: string;
+          websiteUrl: string | null;
+          careerUrl: string | null;
+          actionTaken: string;
+          success: boolean;
+          error?: string;
+        }>;
+      }>('/admin/companies/enrich-linkedin', {
+        method: 'POST',
+        body: JSON.stringify({
+          limit: batchLimit,
+          delayMs: batchDelay,
+        }),
+      });
+      setBatchSummary(summary);
+      setRetry((r) => r + 1);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Batch enrichment encountered an error.');
+    } finally {
+      setBatchRunning(false);
+    }
+  }
 
   function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -67,6 +127,18 @@ export default function AdminCompaniesPage() {
           <p className="text-sm text-neutral-500 mt-1">Research data, categories and crawler targets</p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setBatchModalOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 transition shadow-sm"
+          >
+            <span>⚡ Enrich from LinkedIn</span>
+            {linkedInPendingCount !== null && (
+              <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-sky-600 text-white">
+                {linkedInPendingCount}
+              </span>
+            )}
+          </button>
           <button
             type="button"
             onClick={() =>
@@ -291,6 +363,187 @@ export default function AdminCompaniesPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Batch LinkedIn Enrichment Modal */}
+      {batchModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/50 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl shadow-2xl border border-neutral-100 max-w-2xl w-full p-6 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+              <div>
+                <h3 className="text-lg font-bold text-neutral-900 flex items-center gap-2">
+                  <span>⚡ Batch LinkedIn Enrichment Crawler</span>
+                </h3>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  Scrapes LinkedIn profiles, extracts official websites, and auto-detects career URLs
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBatchModalOpen(false)}
+                disabled={batchRunning}
+                className="text-neutral-400 hover:text-neutral-700 text-sm font-semibold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="py-4 overflow-y-auto flex-1 space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-100 text-center">
+                  <div className="text-xs text-neutral-500 font-medium">Pending Queue</div>
+                  <div className="text-xl font-bold text-neutral-900 mt-1">
+                    {linkedInPendingCount ?? '—'}
+                  </div>
+                </div>
+                <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-100 text-center">
+                  <div className="text-xs text-neutral-500 font-medium">Batch Limit</div>
+                  <div className="text-xl font-bold text-sky-600 mt-1">{batchLimit}</div>
+                </div>
+                <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-100 text-center">
+                  <div className="text-xs text-neutral-500 font-medium">Rate Delay</div>
+                  <div className="text-xl font-bold text-neutral-900 mt-1">{batchDelay}ms</div>
+                </div>
+              </div>
+
+              {!batchRunning && !batchSummary && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-semibold text-neutral-700 block mb-2">
+                      Select Batch Size:
+                    </label>
+                    <div className="flex gap-2">
+                      {[5, 10, 25, 50, 100].map((num) => (
+                        <button
+                          key={num}
+                          type="button"
+                          onClick={() => setBatchLimit(num)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+                            batchLimit === num
+                              ? 'bg-neutral-900 text-white border-neutral-900'
+                              : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+                          }`}
+                        >
+                          {num} companies
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-neutral-500 leading-relaxed bg-amber-50/60 text-amber-800 p-3 rounded-xl border border-amber-200">
+                    ℹ️ Crawls LinkedIn with Googlebot crawler headers to avoid login walls, extracts the canonical company website, and tests common career endpoints (/careers, /jobs, /join-us).
+                  </p>
+                </div>
+              )}
+
+              {batchRunning && (
+                <div className="py-8 text-center space-y-3">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-3 border-sky-600 border-t-transparent"></div>
+                  <p className="text-sm font-semibold text-neutral-900">
+                    Crawling LinkedIn profiles and discovering career pages...
+                  </p>
+                  <p className="text-xs text-neutral-500">
+                    Applying rate limiting delays ({batchDelay}ms) to ensure compliance.
+                  </p>
+                </div>
+              )}
+
+              {batchSummary && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-4 gap-2">
+                    <div className="p-2.5 bg-neutral-50 rounded-xl text-center">
+                      <div className="text-[11px] text-neutral-500">Processed</div>
+                      <div className="text-base font-bold text-neutral-900 mt-0.5">
+                        {batchSummary.totalProcessed}
+                      </div>
+                    </div>
+                    <div className="p-2.5 bg-sky-50 rounded-xl text-center">
+                      <div className="text-[11px] text-sky-700">Websites</div>
+                      <div className="text-base font-bold text-sky-700 mt-0.5">
+                        {batchSummary.websitesFound}
+                      </div>
+                    </div>
+                    <div className="p-2.5 bg-emerald-50 rounded-xl text-center">
+                      <div className="text-[11px] text-emerald-700">Careers</div>
+                      <div className="text-base font-bold text-emerald-700 mt-0.5">
+                        {batchSummary.careersFound}
+                      </div>
+                    </div>
+                    <div className="p-2.5 bg-rose-50 rounded-xl text-center">
+                      <div className="text-[11px] text-rose-700">Failed</div>
+                      <div className="text-base font-bold text-rose-700 mt-0.5">
+                        {batchSummary.failed}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border border-neutral-100 rounded-xl overflow-hidden max-h-52 overflow-y-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-neutral-50 text-neutral-500 font-semibold sticky top-0">
+                        <tr>
+                          <th className="p-2">Company</th>
+                          <th className="p-2">Website</th>
+                          <th className="p-2">Career URL</th>
+                          <th className="p-2">Action Taken</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-neutral-100">
+                        {batchSummary.results.map((r) => (
+                          <tr key={r.companyId} className="hover:bg-neutral-50/50">
+                            <td className="p-2 font-medium text-neutral-900">{r.companyName}</td>
+                            <td className="p-2 text-neutral-600 truncate max-w-[140px]">
+                              {r.websiteUrl || '—'}
+                            </td>
+                            <td className="p-2 text-neutral-600 truncate max-w-[140px]">
+                              {r.careerUrl || '—'}
+                            </td>
+                            <td className="p-2">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                                  r.actionTaken === 'DISCOVERED_CAREER_URL'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : r.actionTaken === 'DISCOVERED_WEBSITE_ONLY'
+                                      ? 'bg-sky-100 text-sky-800'
+                                      : 'bg-neutral-100 text-neutral-600'
+                                }`}
+                              >
+                                {r.actionTaken}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-4 border-t border-neutral-100 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setBatchModalOpen(false);
+                  setBatchSummary(null);
+                }}
+                disabled={batchRunning}
+                className="btn-pill-secondary text-xs"
+              >
+                {batchSummary ? 'Close & Refresh' : 'Cancel'}
+              </button>
+              {!batchSummary && (
+                <button
+                  type="button"
+                  onClick={runBatchEnrichment}
+                  disabled={batchRunning}
+                  className="btn-pill-primary text-xs"
+                >
+                  {batchRunning ? 'Crawling...' : `Start Batch Crawl (${batchLimit})`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

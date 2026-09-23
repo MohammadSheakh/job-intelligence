@@ -5,11 +5,12 @@ import { AdminCategoriesController } from './controllers/admin-categories.contro
 import { AdminCompaniesController } from './controllers/admin-companies.controller.js';
 import { CategoryCatalogService } from './services/category-catalog.service.js';
 import { CompanyIntelligenceService } from './services/company-intelligence.service.js';
+import { LinkedInEnrichmentCrawlerService } from './services/linkedin-enrichment-crawler.service.js';
 
 @Module({
   imports: [AuthenticationModule, CrawlExecutionModule],
   controllers: [AdminCompaniesController, AdminCategoriesController],
-  providers: [CompanyIntelligenceService, CategoryCatalogService],
-  exports: [CompanyIntelligenceService, CategoryCatalogService],
+  providers: [CompanyIntelligenceService, CategoryCatalogService, LinkedInEnrichmentCrawlerService],
+  exports: [CompanyIntelligenceService, CategoryCatalogService, LinkedInEnrichmentCrawlerService],
 })
 export class CompanyIntelligenceModule {}

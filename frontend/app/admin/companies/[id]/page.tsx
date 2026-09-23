@@ -141,6 +141,41 @@ export default function AdminCompanyPage() {
     }
   }
 
+  async function enrichFromLinkedIn() {
+    setEnriching(true);
+    setError('');
+    setEnrichmentMsg('');
+    try {
+      const res = await api<{
+        companyId: string;
+        companyName: string;
+        websiteUrl: string | null;
+        careerUrl: string | null;
+        success: boolean;
+        actionTaken: string;
+        error?: string;
+      }>(`/admin/companies/${encodeURIComponent(id)}/enrich-linkedin`, {
+        method: 'POST',
+      });
+      const refreshed = await api<CompanyDetail>(`/admin/companies/${encodeURIComponent(id)}`);
+      setCompany(refreshed);
+      if (refreshed.websiteUrl) {
+        setEnrichWebsiteOverride(refreshed.websiteUrl);
+      }
+      if (res.success) {
+        setEnrichmentMsg(
+          `LinkedIn enrichment successful: Extracted website "${res.websiteUrl}"${res.careerUrl ? ` and discovered career page "${res.careerUrl}"` : ''} (action: ${refreshed.recommendedAction}).`,
+        );
+      } else {
+        setError(`LinkedIn enrichment was not able to find website: ${res.error || 'No official website link identified'}`);
+      }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'LinkedIn enrichment failed.');
+    } finally {
+      setEnriching(false);
+    }
+  }
+
   return (
     <>
       <Link href="/admin/companies">← Back to companies</Link>
@@ -278,16 +313,36 @@ export default function AdminCompanyPage() {
                   controls.
                 </p>
                 {company.linkedinUrl && (
-                  <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.8125rem' }}>
+                  <div style={{ marginBottom: '0.875rem', display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={enrichFromLinkedIn}
+                      disabled={enriching}
+                      style={{
+                        backgroundColor: '#0a66c2',
+                        color: '#ffffff',
+                        padding: '0.5rem 1.25rem',
+                        borderRadius: '9999px',
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                        cursor: enriching ? 'not-allowed' : 'pointer',
+                        border: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.375rem',
+                      }}
+                    >
+                      {enriching ? 'Scraping LinkedIn…' : '⚡ Crawl LinkedIn for Website & Careers'}
+                    </button>
                     <a
                       href={company.linkedinUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#2563eb', textDecoration: 'underline' }}
+                      style={{ color: '#2563eb', textDecoration: 'underline', fontSize: '0.8125rem' }}
                     >
-                      Open LinkedIn profile in new tab ↗
+                      Open LinkedIn profile ↗
                     </a>
-                  </p>
+                  </div>
                 )}
                 <div
                   style={{

@@ -4,7 +4,9 @@ import { CompanyListQueryDto } from '../dto/company-list-query.dto.js';
 import { CreateCompanyDto } from '../dto/create-company.dto.js';
 import { EnrichCompanyDto } from '../dto/enrich-company.dto.js';
 import { UpdateCompanyDto } from '../dto/update-company.dto.js';
+import { BatchEnrichLinkedInDto } from '../dto/batch-enrich-linkedin.dto.js';
 import { CompanyIntelligenceService } from '../services/company-intelligence.service.js';
+import { LinkedInEnrichmentCrawlerService } from '../services/linkedin-enrichment-crawler.service.js';
 
 /**
  * Basic-authenticated company management; creation, enrichment, review completion, and category
@@ -13,7 +15,25 @@ import { CompanyIntelligenceService } from '../services/company-intelligence.ser
 @Controller('admin/companies')
 @UseGuards(AdminBasicAuthGuard)
 export class AdminCompaniesController {
-  constructor(private readonly companies: CompanyIntelligenceService) {}
+  constructor(
+    private readonly companies: CompanyIntelligenceService,
+    private readonly linkedInEnricher: LinkedInEnrichmentCrawlerService,
+  ) {}
+
+  /** Return count of companies pending LinkedIn enrichment. */
+  @Get('enrich-linkedin/status')
+  getLinkedInStatus() {
+    return this.linkedInEnricher.getPendingCount();
+  }
+
+  /** Run batch LinkedIn enrichment on companies pending website/career discovery. */
+  @Post('enrich-linkedin')
+  batchEnrichLinkedIn(
+    @Body()
+    input: BatchEnrichLinkedInDto,
+  ) {
+    return this.linkedInEnricher.enrichPendingBatch(input);
+  }
 
   /** Return a filtered page and total count using validated query bounds. */
   @Get()
@@ -75,5 +95,16 @@ export class AdminCompaniesController {
     input: EnrichCompanyDto,
   ) {
     return this.companies.enrich(id, input);
+  }
+
+  /**
+   * Enriches a single company by crawling its LinkedIn profile and discovering website & career URLs.
+   */
+  @Post(':id/enrich-linkedin')
+  enrichLinkedIn(
+    @Param('id')
+    id: string,
+  ) {
+    return this.linkedInEnricher.enrichSingleCompany(id);
   }
 }
