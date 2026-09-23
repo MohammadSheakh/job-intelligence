@@ -32,6 +32,10 @@ export class JobListQueryDto {
   @MaxLength(120)
   sector?: string;
 
+  @IsOptional()
+  @IsIn(['all', 'job', 'company'])
+  categoryScope?: 'all' | 'job' | 'company' = 'all';
+
   @Type(() => Number)
   @IsInt()
   @Min(1)

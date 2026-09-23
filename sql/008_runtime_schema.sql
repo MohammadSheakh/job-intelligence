@@ -14,6 +14,16 @@ CREATE TABLE IF NOT EXISTS company_categories (
 CREATE INDEX IF NOT EXISTS company_categories_company_id_idx ON company_categories(company_id);
 CREATE INDEX IF NOT EXISTS company_categories_category_id_idx ON company_categories(category_id);
 
+CREATE TABLE IF NOT EXISTS job_categories (
+  job_id bigint NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+  category_id bigint NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+  source text NOT NULL DEFAULT 'inferred',
+  PRIMARY KEY (job_id, category_id)
+);
+
+CREATE INDEX IF NOT EXISTS job_categories_job_id_idx ON job_categories(job_id);
+CREATE INDEX IF NOT EXISTS job_categories_category_id_idx ON job_categories(category_id);
+
 CREATE TABLE IF NOT EXISTS candidate_auth (
   candidate_id bigint PRIMARY KEY REFERENCES candidates(id) ON DELETE CASCADE,
   password_hash text,

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '@app/database';
 import { JobListQueryDto } from '../dto/job-list-query.dto.js';
 
@@ -15,7 +16,7 @@ export class AdminJobCatalogService {
    */
   async list(input: JobListQueryDto) {
     const search = input.search?.trim();
-    const andConditions: any[] = [];
+    const andConditions: Prisma.JobWhereInput[] = [];
 
     if (input.status) {
       andConditions.push({ status: input.status });
@@ -32,63 +33,65 @@ export class AdminJobCatalogService {
       });
     }
 
-    if (input.category?.trim()) {
-      andConditions.push({
+    const scope = input.categoryScope ?? 'all';
+
+    const buildCategoryFilter = (filter: {
+      name?: string;
+      type?: string;
+    }): Prisma.JobWhereInput => {
+      const categoryCriteria: Prisma.CategoryWhereInput = {};
+      if (filter.name) {
+        categoryCriteria.name = { equals: filter.name, mode: 'insensitive' };
+      }
+      if (filter.type) {
+        categoryCriteria.type = { equals: filter.type, mode: 'insensitive' };
+      }
+
+      const jobCondition = {
+        categories: {
+          some: {
+            category: categoryCriteria,
+          },
+        },
+      };
+
+      const companyCondition = {
         company: {
           categories: {
             some: {
-              category: {
-                name: { equals: input.category.trim(), mode: 'insensitive' as const },
-              },
+              category: categoryCriteria,
             },
           },
         },
-      });
+      };
+
+      if (scope === 'job') {
+        return jobCondition;
+      }
+      if (scope === 'company') {
+        return companyCondition;
+      }
+      return {
+        OR: [jobCondition, companyCondition],
+      };
+    };
+
+    if (input.category?.trim()) {
+      andConditions.push(buildCategoryFilter({ name: input.category.trim() }));
     }
 
     if (input.technology?.trim()) {
-      andConditions.push({
-        company: {
-          categories: {
-            some: {
-              category: {
-                name: { equals: input.technology.trim(), mode: 'insensitive' as const },
-                type: { equals: 'technology', mode: 'insensitive' as const },
-              },
-            },
-          },
-        },
-      });
+      andConditions.push(
+        buildCategoryFilter({ name: input.technology.trim(), type: 'technology' }),
+      );
     }
 
     if (input.domain?.trim()) {
-      andConditions.push({
-        company: {
-          categories: {
-            some: {
-              category: {
-                name: { equals: input.domain.trim(), mode: 'insensitive' as const },
-                type: { equals: 'domain', mode: 'insensitive' as const },
-              },
-            },
-          },
-        },
-      });
+      andConditions.push(buildCategoryFilter({ name: input.domain.trim(), type: 'domain' }));
     }
 
     if (input.sector?.trim()) {
-      andConditions.push({
-        company: {
-          categories: {
-            some: {
-              category: {
-                name: { equals: input.sector.trim(), mode: 'insensitive' as const },
-                type: { equals: 'sector', mode: 'insensitive' as const },
-              },
-            },
-          },
-        },
-      });
+      andConditions.push(buildCategoryFilter({ name: input.sector.trim(), type: 'sector' }));
     }
 
     const where = andConditions.length > 0 ? { AND: andConditions } : {};
@@ -111,6 +114,16 @@ export class AdminJobCatalogService {
           status: true,
           first_seen_at: true,
           last_seen_at: true,
+          categories: {
+            include: {
+              category: {
+                select: {
+                  name: true,
+                  type: true,
+                },
+              },
+            },
+          },
           company: {
             select: {
               id: true,
@@ -147,6 +160,16 @@ export class AdminJobCatalogService {
           .map((item) => ({
             name: item.category.name,
             type: item.category.type,
+          }))
+          .filter((item) => item.name !== 'Other'),
+        jobCategories: (job.categories ?? [])
+          .map((item) => item.category.name)
+          .filter((name) => name !== 'Other'),
+        jobCategoryDetails: (job.categories ?? [])
+          .map((item) => ({
+            name: item.category.name,
+            type: item.category.type,
+            source: item.source,
           }))
           .filter((item) => item.name !== 'Other'),
         title: job.title,

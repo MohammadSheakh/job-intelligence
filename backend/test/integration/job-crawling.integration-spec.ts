@@ -54,14 +54,22 @@ describe('Job crawling, deadline parsing, and freshness policy', () => {
       company: { updateMany: jest.fn() },
       job: { upsert: jest.fn(), findMany: jest.fn() },
       crawlLog: { create: jest.fn() },
+      category: { findMany: jest.fn() },
+      jobCategory: { deleteMany: jest.fn(), createMany: jest.fn() },
     };
 
     beforeEach(async () => {
       jest.resetAllMocks();
       transaction.company.updateMany.mockResolvedValue({ count: 1 });
       transaction.job.findMany.mockResolvedValue([]);
-      transaction.job.upsert.mockResolvedValue({});
+      transaction.job.upsert.mockResolvedValue({ id: 101n });
       transaction.crawlLog.create.mockResolvedValue({ id: 1n });
+      transaction.category.findMany.mockResolvedValue([
+        { id: 1n, name: 'Full Stack' },
+        { id: 2n, name: 'Backend' },
+      ]);
+      transaction.jobCategory.deleteMany.mockResolvedValue({ count: 0 });
+      transaction.jobCategory.createMany.mockResolvedValue({ count: 1 });
 
       module = await Test.createTestingModule({
         providers: [
@@ -323,6 +331,7 @@ describe('Job crawling, deadline parsing, and freshness policy', () => {
       await service.list({
         page: 1,
         pageSize: 10,
+        categoryScope: 'company',
         technology: 'NestJS',
         domain: 'Backend',
         sector: 'Fintech',
@@ -376,6 +385,33 @@ describe('Job crawling, deadline parsing, and freshness policy', () => {
                       category: {
                         name: { equals: 'TypeScript', mode: 'insensitive' },
                       },
+                    },
+                  },
+                },
+              },
+            ]),
+          },
+        }),
+      );
+
+      // Also test job role only scope
+      await service.list({
+        page: 1,
+        pageSize: 10,
+        categoryScope: 'job',
+        technology: 'Flutter',
+      });
+
+      expect(prisma.job.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            AND: expect.arrayContaining([
+              {
+                categories: {
+                  some: {
+                    category: {
+                      name: { equals: 'Flutter', mode: 'insensitive' },
+                      type: { equals: 'technology', mode: 'insensitive' },
                     },
                   },
                 },

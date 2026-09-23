@@ -9,6 +9,9 @@ interface JobRow {
   companyName: string;
   companyWebsiteUrl: string | null;
   companyCategories: string[];
+  companyCategoryDetails?: { name: string; type: string }[];
+  jobCategories?: string[];
+  jobCategoryDetails?: { name: string; type: string; source: string }[];
   title: string;
   location: string | null;
   workMode: string | null;
@@ -61,6 +64,7 @@ export default function AdminJobsPage() {
     technology: '',
     domain: '',
     sector: '',
+    categoryScope: 'all' as 'all' | 'job' | 'company',
     status: 'OPEN',
     page: 1,
   });
@@ -93,6 +97,9 @@ export default function AdminJobsPage() {
     if (filters.technology) query.set('technology', filters.technology);
     if (filters.domain) query.set('domain', filters.domain);
     if (filters.sector) query.set('sector', filters.sector);
+    if (filters.categoryScope && filters.categoryScope !== 'all') {
+      query.set('categoryScope', filters.categoryScope);
+    }
 
     api<JobPage>(`/admin/jobs?${query.toString()}`, { signal: controller.signal })
       .then((data) => setResult(data))
@@ -117,6 +124,8 @@ export default function AdminJobsPage() {
       technology: String(form.get('technology') ?? ''),
       domain: String(form.get('domain') ?? ''),
       sector: String(form.get('sector') ?? ''),
+      categoryScope:
+        (String(form.get('categoryScope') ?? 'all') as 'all' | 'job' | 'company') || 'all',
       status: String(form.get('status') ?? ''),
       page: 1,
     }));
@@ -128,6 +137,7 @@ export default function AdminJobsPage() {
       technology: '',
       domain: '',
       sector: '',
+      categoryScope: 'all',
       status: 'OPEN',
       page: 1,
     });
@@ -150,6 +160,7 @@ export default function AdminJobsPage() {
       filters.technology ||
       filters.domain ||
       filters.sector ||
+      filters.categoryScope !== 'all' ||
       (filters.status && filters.status !== 'OPEN'),
   );
 
@@ -245,6 +256,29 @@ export default function AdminJobsPage() {
             </select>
           </div>
 
+          <div className="w-full sm:w-44">
+            <label htmlFor="filter-scope" className="text-xs font-semibold text-neutral-500 mb-1">
+              Match Scope
+            </label>
+            <select
+              id="filter-scope"
+              name="categoryScope"
+              value={filters.categoryScope}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  categoryScope: e.target.value as 'all' | 'job' | 'company',
+                  page: 1,
+                }))
+              }
+              className="select-clean"
+            >
+              <option value="all">Any (Job or Company)</option>
+              <option value="job">Job Role Only</option>
+              <option value="company">Company Only</option>
+            </select>
+          </div>
+
           <div className="w-full sm:w-36">
             <label htmlFor="filter-status" className="text-xs font-semibold text-neutral-500 mb-1">
               Status
@@ -328,6 +362,20 @@ export default function AdminJobsPage() {
                   type="button"
                   onClick={() => setFilters((prev) => ({ ...prev, sector: '', page: 1 }))}
                   className="hover:text-purple-900 ml-0.5 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {filters.categoryScope !== 'all' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-violet-50 text-violet-700 text-xs font-medium border border-violet-200">
+                Scope: {filters.categoryScope === 'job' ? 'Job Role Only' : 'Company Only'}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFilters((prev) => ({ ...prev, categoryScope: 'all', page: 1 }))
+                  }
+                  className="hover:text-violet-900 ml-0.5 cursor-pointer"
                 >
                   ✕
                 </button>
@@ -421,33 +469,31 @@ export default function AdminJobsPage() {
                                 </span>
                               )}
                             </div>
-                            {job.companyCategories.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1.5">
-                                {job.companyCategories.map((c) => {
+                            {/* Job Role categories */}
+                            {job.jobCategories && job.jobCategories.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                                <span className="text-[10px] font-semibold text-blue-600 mr-0.5">Job:</span>
+                                {job.jobCategories.map((c) => {
                                   const cat = categories.find(
                                     (item) => item.name.toLowerCase() === c.toLowerCase(),
                                   );
                                   return (
                                     <button
-                                      key={c}
+                                      key={`job-${c}`}
                                       type="button"
                                       onClick={() => {
                                         if (cat?.type === 'technology') {
                                           setFilters((prev) => ({
                                             ...prev,
                                             technology: cat.name,
+                                            categoryScope: 'job',
                                             page: 1,
                                           }));
                                         } else if (cat?.type === 'domain') {
                                           setFilters((prev) => ({
                                             ...prev,
                                             domain: cat.name,
-                                            page: 1,
-                                          }));
-                                        } else if (cat?.type === 'sector') {
-                                          setFilters((prev) => ({
-                                            ...prev,
-                                            sector: cat.name,
+                                            categoryScope: 'job',
                                             page: 1,
                                           }));
                                         } else {
@@ -458,8 +504,60 @@ export default function AdminJobsPage() {
                                           }));
                                         }
                                       }}
-                                      className="tag-pill text-[10px] hover:border-black transition cursor-pointer"
-                                      title={`Filter by ${c}`}
+                                      className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:border-blue-400 transition cursor-pointer"
+                                      title={`Filter by Job Role: ${c}`}
+                                    >
+                                      {c}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {/* Company categories */}
+                            {job.companyCategories.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-1 mt-1">
+                                <span className="text-[10px] font-semibold text-neutral-400 mr-0.5">Co:</span>
+                                {job.companyCategories.map((c) => {
+                                  const cat = categories.find(
+                                    (item) => item.name.toLowerCase() === c.toLowerCase(),
+                                  );
+                                  return (
+                                    <button
+                                      key={`co-${c}`}
+                                      type="button"
+                                      onClick={() => {
+                                        if (cat?.type === 'technology') {
+                                          setFilters((prev) => ({
+                                            ...prev,
+                                            technology: cat.name,
+                                            categoryScope: 'company',
+                                            page: 1,
+                                          }));
+                                        } else if (cat?.type === 'domain') {
+                                          setFilters((prev) => ({
+                                            ...prev,
+                                            domain: cat.name,
+                                            categoryScope: 'company',
+                                            page: 1,
+                                          }));
+                                        } else if (cat?.type === 'sector') {
+                                          setFilters((prev) => ({
+                                            ...prev,
+                                            sector: cat.name,
+                                            categoryScope: 'company',
+                                            page: 1,
+                                          }));
+                                        } else {
+                                          setFilters((prev) => ({
+                                            ...prev,
+                                            search: c,
+                                            page: 1,
+                                          }));
+                                        }
+                                      }}
+                                      className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-50 text-neutral-600 border border-neutral-200 hover:border-neutral-400 transition cursor-pointer"
+                                      title={`Filter by Company: ${c}`}
                                     >
                                       {c}
                                     </button>

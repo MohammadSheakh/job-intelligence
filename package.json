@@ -17,6 +17,7 @@
     "settings:set": "tsx scripts/set-setting.ts",
     "admin": "tsx src/admin/server.ts",
     "categories:enrich": "tsx scripts/enrich-categories.ts",
+    "job-categories:backfill": "tsx scripts/backfill-job-categories.ts",
     "db:migrate:portal": "tsx scripts/migrate-portal.ts",
     "candidate:set-default-password": "tsx scripts/set-default-password.ts",
     "env:check": "tsx scripts/check-env.ts",

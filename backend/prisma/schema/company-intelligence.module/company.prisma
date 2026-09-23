@@ -44,6 +44,7 @@ model Category {
   name      String            @unique
   type      String
   companies CompanyCategory[]
+  jobs      JobCategory[]
 
   @@map("categories")
 }
