@@ -315,6 +315,76 @@ describe('Job crawling, deadline parsing, and freshness policy', () => {
         applicationDeadline: deadline,
       });
     });
+
+    it('applies technology, domain, and sector category filters to the where clause', async () => {
+      prisma.job.count.mockResolvedValue(0);
+      prisma.job.findMany.mockResolvedValue([]);
+
+      await service.list({
+        page: 1,
+        pageSize: 10,
+        technology: 'NestJS',
+        domain: 'Backend',
+        sector: 'Fintech',
+        category: 'TypeScript',
+      });
+
+      expect(prisma.job.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            AND: expect.arrayContaining([
+              {
+                company: {
+                  categories: {
+                    some: {
+                      category: {
+                        name: { equals: 'NestJS', mode: 'insensitive' },
+                        type: { equals: 'technology', mode: 'insensitive' },
+                      },
+                    },
+                  },
+                },
+              },
+              {
+                company: {
+                  categories: {
+                    some: {
+                      category: {
+                        name: { equals: 'Backend', mode: 'insensitive' },
+                        type: { equals: 'domain', mode: 'insensitive' },
+                      },
+                    },
+                  },
+                },
+              },
+              {
+                company: {
+                  categories: {
+                    some: {
+                      category: {
+                        name: { equals: 'Fintech', mode: 'insensitive' },
+                        type: { equals: 'sector', mode: 'insensitive' },
+                      },
+                    },
+                  },
+                },
+              },
+              {
+                company: {
+                  categories: {
+                    some: {
+                      category: {
+                        name: { equals: 'TypeScript', mode: 'insensitive' },
+                      },
+                    },
+                  },
+                },
+              },
+            ]),
+          },
+        }),
+      );
+    });
   });
 
   describe('CandidateRecommendationsService freshness and deadline filtering', () => {

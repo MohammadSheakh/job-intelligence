@@ -12,6 +12,26 @@ export class JobListQueryDto {
   @IsIn(['OPEN', 'CLOSED'])
   status?: 'OPEN' | 'CLOSED';
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  technology?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  domain?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  sector?: string;
+
   @Type(() => Number)
   @IsInt()
   @Min(1)

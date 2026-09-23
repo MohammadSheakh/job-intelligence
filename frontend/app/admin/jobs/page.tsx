@@ -28,6 +28,13 @@ interface JobPage {
   rows: JobRow[];
 }
 
+interface Category {
+  id: string;
+  name: string;
+  type: 'technology' | 'domain' | 'sector' | 'other';
+  companyCount: number;
+}
+
 function formatDate(iso: string | null): string {
   if (!iso) return '—';
   const date = new Date(iso);
@@ -49,11 +56,29 @@ function isPastDeadline(iso: string | null): boolean {
 
 export default function AdminJobsPage() {
   const api = useAdminApi();
-  const [filters, setFilters] = useState({ search: '', status: 'OPEN', page: 1 });
+  const [filters, setFilters] = useState({
+    search: '',
+    technology: '',
+    domain: '',
+    sector: '',
+    status: 'OPEN',
+    page: 1,
+  });
+  const [categories, setCategories] = useState<Category[]>([]);
   const [result, setResult] = useState<JobPage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Fetch available categories once on mount
+  useEffect(() => {
+    const controller = new AbortController();
+    api<Category[]>('/admin/categories', { signal: controller.signal })
+      .then((data) => setCategories(data))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [api]);
+
+  // Fetch filtered jobs
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
@@ -65,6 +90,9 @@ export default function AdminJobsPage() {
     });
     if (filters.search) query.set('search', filters.search);
     if (filters.status) query.set('status', filters.status);
+    if (filters.technology) query.set('technology', filters.technology);
+    if (filters.domain) query.set('domain', filters.domain);
+    if (filters.sector) query.set('sector', filters.sector);
 
     api<JobPage>(`/admin/jobs?${query.toString()}`, { signal: controller.signal })
       .then((data) => setResult(data))
@@ -83,12 +111,47 @@ export default function AdminJobsPage() {
   function handleFilter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    setFilters({
+    setFilters((prev) => ({
+      ...prev,
       search: String(form.get('search') ?? '').trim(),
+      technology: String(form.get('technology') ?? ''),
+      domain: String(form.get('domain') ?? ''),
+      sector: String(form.get('sector') ?? ''),
       status: String(form.get('status') ?? ''),
+      page: 1,
+    }));
+  }
+
+  function handleReset() {
+    setFilters({
+      search: '',
+      technology: '',
+      domain: '',
+      sector: '',
+      status: 'OPEN',
       page: 1,
     });
   }
+
+  const technologies = categories
+    .filter((c) => c.type.toLowerCase() === 'technology')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const domains = categories
+    .filter((c) => c.type.toLowerCase() === 'domain')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const sectors = categories
+    .filter((c) => c.type.toLowerCase() === 'sector')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const hasActiveFilters = Boolean(
+    filters.search ||
+      filters.technology ||
+      filters.domain ||
+      filters.sector ||
+      (filters.status && filters.status !== 'OPEN'),
+  );
 
   const totalPages = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1;
 
@@ -100,28 +163,197 @@ export default function AdminJobsPage() {
         <p className="text-sm text-neutral-500 mt-1">Discovered and deduplicated openings</p>
       </div>
 
-      {/* Filter Row matching Figma image 7 */}
-      <form onSubmit={handleFilter} className="flex flex-wrap items-end gap-3 mb-8">
-        <div className="w-full sm:w-72">
-          <label className="text-xs font-semibold text-neutral-500 mb-1">Search</label>
-          <input
-            name="search"
-            defaultValue={filters.search}
-            placeholder="Job, company, location"
-            className="input-clean"
-          />
+      {/* Filter Row matching Technology, Domain, Sector grouping */}
+      <form onSubmit={handleFilter} className="space-y-4 mb-8">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="w-full sm:w-60">
+            <label htmlFor="job-search" className="text-xs font-semibold text-neutral-500 mb-1">
+              Search
+            </label>
+            <input
+              id="job-search"
+              name="search"
+              defaultValue={filters.search}
+              placeholder="Job, company, skills"
+              className="input-clean"
+            />
+          </div>
+
+          <div className="w-full sm:w-44">
+            <label htmlFor="filter-tech" className="text-xs font-semibold text-neutral-500 mb-1">
+              Technology
+            </label>
+            <select
+              id="filter-tech"
+              name="technology"
+              value={filters.technology}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, technology: e.target.value, page: 1 }))
+              }
+              className="select-clean"
+            >
+              <option value="">All technologies</option>
+              {technologies.map((t) => (
+                <option key={t.id} value={t.name}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="w-full sm:w-44">
+            <label htmlFor="filter-domain" className="text-xs font-semibold text-neutral-500 mb-1">
+              Domain
+            </label>
+            <select
+              id="filter-domain"
+              name="domain"
+              value={filters.domain}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, domain: e.target.value, page: 1 }))
+              }
+              className="select-clean"
+            >
+              <option value="">All domains</option>
+              {domains.map((d) => (
+                <option key={d.id} value={d.name}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="w-full sm:w-44">
+            <label htmlFor="filter-sector" className="text-xs font-semibold text-neutral-500 mb-1">
+              Sector
+            </label>
+            <select
+              id="filter-sector"
+              name="sector"
+              value={filters.sector}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, sector: e.target.value, page: 1 }))
+              }
+              className="select-clean"
+            >
+              <option value="">All sectors</option>
+              {sectors.map((s) => (
+                <option key={s.id} value={s.name}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="w-full sm:w-36">
+            <label htmlFor="filter-status" className="text-xs font-semibold text-neutral-500 mb-1">
+              Status
+            </label>
+            <select
+              id="filter-status"
+              name="status"
+              value={filters.status}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, status: e.target.value, page: 1 }))
+              }
+              className="select-clean"
+            >
+              <option value="">All statuses</option>
+              <option value="OPEN">OPEN</option>
+              <option value="CLOSED">CLOSED</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button type="submit" className="btn-pill-primary" disabled={loading}>
+              Filter
+            </button>
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleReset}
+                className="btn-pill-secondary text-xs"
+                disabled={loading}
+              >
+                Reset
+              </button>
+            )}
+          </div>
         </div>
-        <div className="w-full sm:w-48">
-          <label className="text-xs font-semibold text-neutral-500 mb-1">Status</label>
-          <select name="status" defaultValue={filters.status} className="select-clean">
-            <option value="">All statuses</option>
-            <option value="OPEN">OPEN</option>
-            <option value="CLOSED">CLOSED</option>
-          </select>
-        </div>
-        <button className="btn-pill-primary" disabled={loading}>
-          Filter
-        </button>
+
+        {/* Active Filter Chips */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+            <span className="text-neutral-400 font-medium">Active filters:</span>
+            {filters.search && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-800 text-xs font-medium">
+                Search: "{filters.search}"
+                <button
+                  type="button"
+                  onClick={() => setFilters((prev) => ({ ...prev, search: '', page: 1 }))}
+                  className="hover:text-black ml-0.5 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {filters.technology && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200">
+                Tech: {filters.technology}
+                <button
+                  type="button"
+                  onClick={() => setFilters((prev) => ({ ...prev, technology: '', page: 1 }))}
+                  className="hover:text-blue-900 ml-0.5 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {filters.domain && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium border border-emerald-200">
+                Domain: {filters.domain}
+                <button
+                  type="button"
+                  onClick={() => setFilters((prev) => ({ ...prev, domain: '', page: 1 }))}
+                  className="hover:text-emerald-900 ml-0.5 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {filters.sector && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 text-xs font-medium border border-purple-200">
+                Sector: {filters.sector}
+                <button
+                  type="button"
+                  onClick={() => setFilters((prev) => ({ ...prev, sector: '', page: 1 }))}
+                  className="hover:text-purple-900 ml-0.5 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {filters.status && filters.status !== 'OPEN' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-800 text-xs font-medium">
+                Status: {filters.status}
+                <button
+                  type="button"
+                  onClick={() => setFilters((prev) => ({ ...prev, status: 'OPEN', page: 1 }))}
+                  className="hover:text-black ml-0.5 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleReset}
+              className="text-xs text-neutral-400 hover:text-neutral-900 transition underline ml-1 cursor-pointer"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
       </form>
 
       {error && (
@@ -140,16 +372,16 @@ export default function AdminJobsPage() {
             </div>
           ) : (
             <div className="w-full overflow-x-auto mb-6">
-              <table className="table-clean">
+              <table className="table-clean w-full">
                 <thead>
                   <tr>
-                    <th>Job</th>
+                    <th>Job & Company</th>
                     <th>Location</th>
                     <th>Mode</th>
                     <th>Status</th>
                     <th>First Seen</th>
                     <th>Deadline</th>
-                    <th>Link</th>
+                    <th className="text-right">Link</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -157,19 +389,21 @@ export default function AdminJobsPage() {
                     const expired = isPastDeadline(job.applicationDeadline);
                     return (
                       <tr key={job.id} className="hover:bg-neutral-50/50 transition">
-                        <td>
+                        <td className="max-w-[320px]">
                           <div>
                             {job.applicationUrl ? (
                               <a
                                 href={job.applicationUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="font-bold text-neutral-900 hover:underline"
+                                className="font-bold text-neutral-900 hover:underline block text-sm"
                               >
                                 {job.title}
                               </a>
                             ) : (
-                              <span className="font-bold text-neutral-900">{job.title}</span>
+                              <span className="font-bold text-neutral-900 block text-sm">
+                                {job.title}
+                              </span>
                             )}
                             <div className="text-xs text-neutral-500 mt-0.5">
                               {job.companyWebsiteUrl ? (
@@ -177,21 +411,60 @@ export default function AdminJobsPage() {
                                   href={job.companyWebsiteUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="hover:underline text-neutral-600"
+                                  className="hover:underline text-neutral-600 font-medium"
                                 >
                                   {job.companyName}
                                 </a>
                               ) : (
-                                <span>{job.companyName}</span>
+                                <span className="font-medium text-neutral-600">
+                                  {job.companyName}
+                                </span>
                               )}
                             </div>
                             {job.companyCategories.length > 0 && (
-                              <div className="flex flex-wrap mt-1">
-                                {job.companyCategories.map((c) => (
-                                  <span key={c} className="tag-pill text-[10px]">
-                                    {c}
-                                  </span>
-                                ))}
+                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                {job.companyCategories.map((c) => {
+                                  const cat = categories.find(
+                                    (item) => item.name.toLowerCase() === c.toLowerCase(),
+                                  );
+                                  return (
+                                    <button
+                                      key={c}
+                                      type="button"
+                                      onClick={() => {
+                                        if (cat?.type === 'technology') {
+                                          setFilters((prev) => ({
+                                            ...prev,
+                                            technology: cat.name,
+                                            page: 1,
+                                          }));
+                                        } else if (cat?.type === 'domain') {
+                                          setFilters((prev) => ({
+                                            ...prev,
+                                            domain: cat.name,
+                                            page: 1,
+                                          }));
+                                        } else if (cat?.type === 'sector') {
+                                          setFilters((prev) => ({
+                                            ...prev,
+                                            sector: cat.name,
+                                            page: 1,
+                                          }));
+                                        } else {
+                                          setFilters((prev) => ({
+                                            ...prev,
+                                            search: c,
+                                            page: 1,
+                                          }));
+                                        }
+                                      }}
+                                      className="tag-pill text-[10px] hover:border-black transition cursor-pointer"
+                                      title={`Filter by ${c}`}
+                                    >
+                                      {c}
+                                    </button>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
@@ -216,21 +489,27 @@ export default function AdminJobsPage() {
                         </td>
                         <td className="text-xs whitespace-nowrap">
                           {job.applicationDeadline ? (
-                            <span className={expired ? 'text-rose-600 font-medium' : 'text-neutral-600'}>
+                            <span
+                              className={
+                                expired ? 'text-rose-600 font-medium' : 'text-neutral-600'
+                              }
+                            >
                               {formatDate(job.applicationDeadline)}
-                              {expired && <span className="ml-1 text-[10px] text-rose-500">(expired)</span>}
+                              {expired && (
+                                <span className="ml-1 text-[10px] text-rose-500">(expired)</span>
+                              )}
                             </span>
                           ) : (
                             <span className="text-neutral-400">—</span>
                           )}
                         </td>
-                        <td className="whitespace-nowrap">
+                        <td className="whitespace-nowrap text-right">
                           {job.applicationUrl ? (
                             <a
                               href={job.applicationUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs font-medium text-neutral-900 hover:underline inline-flex items-center gap-1"
+                              className="btn-pill-secondary text-xs px-3 py-1 inline-flex items-center gap-1"
                             >
                               Apply <span>↗</span>
                             </a>
@@ -249,8 +528,8 @@ export default function AdminJobsPage() {
           {/* Pagination matching Figma */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-neutral-100">
             <p className="text-xs text-neutral-500">
-              Page {result.page} of {totalPages} · {result.total}{' '}
-              {result.total === 1 ? 'opening' : 'openings'}
+              {result.total} {result.total === 1 ? 'opening' : 'openings'} · Page {result.page} of{' '}
+              {totalPages}
             </p>
             <div className="flex items-center gap-2">
               <button

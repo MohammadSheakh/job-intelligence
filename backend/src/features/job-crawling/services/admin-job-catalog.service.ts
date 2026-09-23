@@ -15,18 +15,83 @@ export class AdminJobCatalogService {
    */
   async list(input: JobListQueryDto) {
     const search = input.search?.trim();
-    const where = {
-      ...(input.status ? { status: input.status } : {}),
-      ...(search
-        ? {
-            OR: [
-              { title: { contains: search, mode: 'insensitive' as const } },
-              { location: { contains: search, mode: 'insensitive' as const } },
-              { company: { name: { contains: search, mode: 'insensitive' as const } } },
-            ],
-          }
-        : {}),
-    };
+    const andConditions: any[] = [];
+
+    if (input.status) {
+      andConditions.push({ status: input.status });
+    }
+
+    if (search) {
+      andConditions.push({
+        OR: [
+          { title: { contains: search, mode: 'insensitive' as const } },
+          { location: { contains: search, mode: 'insensitive' as const } },
+          { company: { name: { contains: search, mode: 'insensitive' as const } } },
+          { skills: { contains: search, mode: 'insensitive' as const } },
+        ],
+      });
+    }
+
+    if (input.category?.trim()) {
+      andConditions.push({
+        company: {
+          categories: {
+            some: {
+              category: {
+                name: { equals: input.category.trim(), mode: 'insensitive' as const },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    if (input.technology?.trim()) {
+      andConditions.push({
+        company: {
+          categories: {
+            some: {
+              category: {
+                name: { equals: input.technology.trim(), mode: 'insensitive' as const },
+                type: { equals: 'technology', mode: 'insensitive' as const },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    if (input.domain?.trim()) {
+      andConditions.push({
+        company: {
+          categories: {
+            some: {
+              category: {
+                name: { equals: input.domain.trim(), mode: 'insensitive' as const },
+                type: { equals: 'domain', mode: 'insensitive' as const },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    if (input.sector?.trim()) {
+      andConditions.push({
+        company: {
+          categories: {
+            some: {
+              category: {
+                name: { equals: input.sector.trim(), mode: 'insensitive' as const },
+                type: { equals: 'sector', mode: 'insensitive' as const },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    const where = andConditions.length > 0 ? { AND: andConditions } : {};
     const [total, rows] = await this.prisma.$transaction([
       this.prisma.job.count({ where }),
       this.prisma.job.findMany({
@@ -51,7 +116,16 @@ export class AdminJobCatalogService {
               id: true,
               name: true,
               website_url: true,
-              categories: { include: { category: { select: { name: true } } } },
+              categories: {
+                include: {
+                  category: {
+                    select: {
+                      name: true,
+                      type: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -69,6 +143,12 @@ export class AdminJobCatalogService {
         companyCategories: job.company.categories
           .map((item) => item.category.name)
           .filter((name) => name !== 'Other'),
+        companyCategoryDetails: job.company.categories
+          .map((item) => ({
+            name: item.category.name,
+            type: item.category.type,
+          }))
+          .filter((item) => item.name !== 'Other'),
         title: job.title,
         location: job.location,
         workMode: job.work_mode,
