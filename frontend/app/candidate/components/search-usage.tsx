@@ -141,157 +141,184 @@ export function SearchUsage() {
   }
 
   return (
-    <section className="card" aria-labelledby="search-usage-heading">
-      <h2 id="search-usage-heading">Quick Search</h2>
-      <p>
-        Perform an on-demand check of monitor-ready companies relevant to your profile, discovering
-        vacancies without waiting for the daily crawl.
-      </p>
-      {usage && (
-        <>
-          <p>
-            <strong>{usage.remaining}</strong> of {usage.dailyLimit} standard searches remaining
-            {usage.aiAvailable ? (
-              <>
-                {' '}
-                · <strong>{usage.aiRemaining}</strong> of {usage.aiDailyLimit} AI-assisted searches
-                remaining
-              </>
-            ) : null}
-            . Resets at{' '}
-            <time dateTime={usage.resetsAt}>
-              {new Date(usage.resetsAt).toLocaleString('en-GB', {
-                timeZone: 'Asia/Dhaka',
-                hour: '2-digit',
-                minute: '2-digit',
-                day: 'numeric',
-                month: 'short',
-              })}
-            </time>{' '}
-            (Dhaka).
-          </p>
-          {!usage.aiAvailable && (
-            <p className="muted text-xs">
-              AI-assisted search is currently disabled by administrator settings.
-            </p>
-          )}
-        </>
-      )}
-      {!usage && !error && <p role="status">Loading search allowance…</p>}
-
-      {usage && (
+    <section aria-labelledby="search-usage-heading" className="space-y-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <button
-            disabled={running || usage.remaining === 0}
-            onClick={() => void runQuickSearch('STANDARD')}
-          >
-            {running ? 'Running Quick Search…' : 'Run Quick Search'}
-          </button>
-          <button
-            className="secondary"
-            disabled={
-              running || usage.remaining === 0 || usage.aiRemaining === 0 || !usage.aiAvailable
-            }
-            onClick={() => void runQuickSearch('AI')}
-          >
-            Run AI Quick Search
-          </button>
+          <p className="text-[11px] uppercase tracking-wider font-bold text-neutral-400 mb-0.5">On-demand refresh</p>
+          <h2 id="search-usage-heading" className="text-xl font-bold tracking-tight text-neutral-950 mb-1">
+            Quick job search
+          </h2>
+          <p className="text-xs text-neutral-500 max-w-xl">
+            The scheduled crawler runs once per day. Quick Search checks up to 8 relevant companies now, then refreshes your matches.
+          </p>
+          {usage && (
+            <div className="text-[11px] text-neutral-400 mt-1 space-y-0.5">
+              <p>
+                {usage.remaining} standard/total searches remaining today · {usage.aiRemaining} AI search remaining
+              </p>
+              {!usage.aiAvailable && (
+                <p>AI-assisted search is unavailable until AI is enabled and configured.</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {usage && (
+          <div className="flex items-center gap-2.5 flex-shrink-0">
+            <button
+              type="button"
+              disabled={running || usage.remaining === 0}
+              onClick={() => void runQuickSearch('STANDARD')}
+              className="btn-pill-primary text-xs px-5 py-2"
+            >
+              {running ? 'Searching…' : 'Quick Search'}
+            </button>
+            <button
+              type="button"
+              className="btn-pill-secondary text-xs px-5 py-2 disabled:opacity-40"
+              disabled={
+                running || usage.remaining === 0 || usage.aiRemaining === 0 || !usage.aiAvailable
+              }
+              onClick={() => void runQuickSearch('AI')}
+            >
+              Search with AI
+            </button>
+          </div>
+        )}
+      </div>
+
+      {running && (
+        <div className="py-6 text-center text-xs text-neutral-500">
+          Checking shortlisted companies and updating vacancies…
         </div>
       )}
 
-      {running && (
-        <p role="status" className="muted mt-3">
-          Checking shortlisted companies and updating vacancies…
-        </p>
-      )}
-
       {error && (
-        <div role="alert">
-          <p className="error">{error}</p>
-          <button className="secondary" onClick={() => setRevision((value) => value + 1)}>
+        <div role="alert" className="p-3 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between">
+          <p>{error}</p>
+          <button
+            type="button"
+            className="btn-pill-secondary text-xs px-3 py-1"
+            onClick={() => setRevision((value) => value + 1)}
+          >
             Retry
           </button>
         </div>
       )}
 
       {runOutcome && (
-        <div className="mt-6 border-t border-slate-200 pt-5">
-          <p className="success font-medium" role="status">
+        <div className="mt-4 pt-4 border-t border-neutral-100 space-y-3">
+          <p className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2" role="status">
             {runOutcome.summary}
           </p>
 
-          <div className="results mt-4">
+          <div className="grid gap-3">
             {runOutcome.matches.map((match) => {
               const website = webUrl(match.companyWebsiteUrl);
               const application = webUrl(match.applicationUrl);
               const isSaving = savingCompanyId === match.companyId;
 
               return (
-                <article className="card" key={match.jobId}>
-                  <h3>{match.title}</h3>
-                  <p>
-                    {website ? (
-                      <a href={website} target="_blank" rel="noopener noreferrer">
-                        {match.companyName} ↗
-                      </a>
-                    ) : (
-                      match.companyName
-                    )}
-                  </p>
-                  <p>
-                    {match.location ?? 'Location not listed'}
-                    {match.workMode ? ` · ${match.workMode}` : ''} · Match score: {match.score}/100
-                    {match.aiUsed && <span className="status ml-2">AI Enhanced</span>}
-                  </p>
-                  <p className="tags">{match.categories.join(' · ')}</p>
-                  {match.reasons.length > 0 && (
-                    <ul>
-                      {match.reasons.map((reason) => (
-                        <li key={reason}>{reason}</li>
+                <article
+                  className="p-4 rounded-xl border border-neutral-100 bg-white space-y-2 text-xs"
+                  key={match.jobId}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-bold text-neutral-900 text-sm">{match.title}</h3>
+                      <div className="flex items-center gap-2 text-neutral-500 mt-0.5">
+                        {website ? (
+                          <a
+                            href={website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-neutral-800 hover:underline"
+                          >
+                            {match.companyName} ↗
+                          </a>
+                        ) : (
+                          <span className="font-medium text-neutral-800">{match.companyName}</span>
+                        )}
+                        <span>·</span>
+                        <span>{match.location ?? 'Location not listed'}</span>
+                        {match.workMode && (
+                          <>
+                            <span>·</span>
+                            <span>{match.workMode}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="badge-neutral text-[11px] font-semibold">
+                        Match: {match.score}%
+                      </span>
+                      {match.aiUsed && (
+                        <span className="badge-neutral text-[11px] font-semibold bg-purple-50 text-purple-700 border-purple-100">
+                          AI
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {match.categories.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {match.categories.map((cat) => (
+                        <span key={cat} className="tag-pill text-[10px]">
+                          {cat}
+                        </span>
                       ))}
-                    </ul>
+                    </div>
                   )}
-                  {match.trackingStatus && (
-                    <p role="status">
-                      {match.trackingStatus === 'APPLIED'
-                        ? 'Applied'
-                        : match.trackingStatus === 'PLANNING'
-                          ? 'Planning'
-                          : match.trackingStatus}
-                    </p>
-                  )}
-                  <div className="company-actions">
-                    {application && (
-                      <a href={application} target="_blank" rel="noopener noreferrer">
-                        Apply ↗
-                      </a>
-                    )}
-                    <button
-                      disabled={isSaving || match.trackingStatus === 'PLANNING'}
-                      onClick={() => void trackCompany(match.companyId, 'PLANNING')}
-                    >
-                      Plan
-                    </button>
-                    <button
-                      disabled={isSaving || match.trackingStatus === 'APPLIED'}
-                      onClick={() => void trackCompany(match.companyId, 'APPLIED')}
-                    >
-                      Applied
-                    </button>
-                    <button
-                      className="secondary"
-                      disabled={isSaving}
-                      onClick={() => void trackCompany(match.companyId, 'EXCLUDED')}
-                    >
-                      Blacklist
-                    </button>
+
+                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-neutral-50">
+                    <div>
+                      {application && (
+                        <a
+                          href={application}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold text-neutral-900 hover:underline"
+                        >
+                          Apply ↗
+                        </a>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        disabled={isSaving || match.trackingStatus === 'PLANNING'}
+                        onClick={() => void trackCompany(match.companyId, 'PLANNING')}
+                        className="btn-pill-secondary text-xs px-3 py-0.5"
+                      >
+                        Plan
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSaving || match.trackingStatus === 'APPLIED'}
+                        onClick={() => void trackCompany(match.companyId, 'APPLIED')}
+                        className="btn-pill-primary text-xs px-3 py-0.5"
+                      >
+                        Applied
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-pill-danger text-xs px-3 py-0.5"
+                        disabled={isSaving}
+                        onClick={() => void trackCompany(match.companyId, 'EXCLUDED')}
+                      >
+                        Blacklist
+                      </button>
+                    </div>
                   </div>
                 </article>
               );
             })}
 
             {runOutcome.matches.length === 0 && (
-              <p className="muted">No matching open vacancies were found in this search.</p>
+              <p className="text-xs text-neutral-400 py-3 text-center">
+                No matching open vacancies were found in this search.
+              </p>
             )}
           </div>
         </div>

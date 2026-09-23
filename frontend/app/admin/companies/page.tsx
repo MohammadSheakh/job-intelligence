@@ -59,51 +59,61 @@ export default function AdminCompaniesPage() {
   }
 
   return (
-    <>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          marginBottom: '1rem',
-        }}
-      >
+    <div className="max-w-6xl">
+      {/* Top Header matching Figma image 2 */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1>Companies</h1>
-          <p>Review company research, hiring pages, and category assignments.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Companies</h1>
+          <p className="text-sm text-neutral-500 mt-1">Research data, categories and crawler targets</p>
         </div>
-        <Link
-          href="/admin/companies/new"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            padding: '0.5rem 1.25rem',
-            borderRadius: '9999px',
-            backgroundColor: '#111114',
-            color: '#ffffff',
-            fontWeight: 500,
-            textDecoration: 'none',
-            fontSize: '0.875rem',
-          }}
-        >
-          + Add Company
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() =>
+              setFilters((f) => ({
+                ...f,
+                needsManualReview: f.needsManualReview === 'true' ? '' : 'true',
+                page: 1,
+              }))
+            }
+            className={
+              filters.needsManualReview === 'true' ? 'btn-pill-primary' : 'btn-pill-secondary'
+            }
+          >
+            {filters.needsManualReview === 'true' ? '✓ In Review Queue' : 'Manual Review Queue'}
+          </button>
+          <Link href="/admin/companies/new" className="btn-pill-primary">
+            + Add Company
+          </Link>
+        </div>
       </div>
-      <form className="admin-filters" onSubmit={search}>
-        <label>
-          Search companies
+
+      {/* Filter Row matching Figma image 2 */}
+      <form onSubmit={search} className="flex flex-wrap items-end gap-3 mb-8">
+        <div className="w-full sm:w-64">
+          <label htmlFor="search-companies-input" className="text-xs font-semibold text-neutral-500 mb-1">
+            Search companies
+          </label>
           <input
+            id="search-companies-input"
             name="search"
             defaultValue={filters.search}
-            placeholder="Name, website, or location"
+            className="input-clean"
+            placeholder="Company, domain, location"
             maxLength={200}
           />
-        </label>
-        <label>
-          Category
-          <select name="category" defaultValue={filters.category} aria-label="Category">
+        </div>
+        <div className="w-full sm:w-48">
+          <label htmlFor="category-select" className="text-xs font-semibold text-neutral-500 mb-1">
+            Category
+          </label>
+          <select
+            id="category-select"
+            name="category"
+            defaultValue={filters.category}
+            aria-label="Category"
+            className="select-clean"
+          >
             <option value="">All categories</option>
             {categories.map((category) => (
               <option key={category.id} value={category.name}>
@@ -111,176 +121,177 @@ export default function AdminCompaniesPage() {
               </option>
             ))}
           </select>
-        </label>
-        <label>
-          Research action
-          <select name="action" defaultValue={filters.action} aria-label="Research action">
-            <option value="">All actions</option>
+        </div>
+        <div className="w-full sm:w-48">
+          <label htmlFor="action-select" className="text-xs font-semibold text-neutral-500 mb-1">
+            Action
+          </label>
+          <select
+            id="action-select"
+            name="action"
+            defaultValue={filters.action}
+            aria-label="Research action"
+            className="select-clean"
+          >
+            <option value="">All</option>
             {companyActions.map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>
             ))}
           </select>
-        </label>
-        <label>
-          Review queue
-          <select
-            name="needsManualReview"
-            defaultValue={filters.needsManualReview}
-            aria-label="Review queue"
-          >
-            <option value="">All review states</option>
-            <option value="true">Needs manual review</option>
-            <option value="false">Review not required</option>
-          </select>
-        </label>
-        <button disabled={loading}>Search</button>
+        </div>
+        <button type="submit" className="btn-pill-primary" disabled={loading}>
+          Search
+        </button>
       </form>
+
       {error && (
-        <div role="alert">
-          <p className="error">{error}</p>
-          <button onClick={() => setRetry((value) => value + 1)}>Retry</button>
+        <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-4 mb-6" role="alert">
+          <p className="text-sm font-medium text-rose-700">{error}</p>
+          <button
+            onClick={() => setRetry((value) => value + 1)}
+            className="btn-pill-secondary mt-2 text-xs"
+          >
+            Retry
+          </button>
         </div>
       )}
-      {loading && <p role="status">Loading companies…</p>}
+
+      {loading && <p className="py-8 text-sm text-neutral-400">Loading companies…</p>}
+
       {!loading && !error && result && (
         <>
-          <p role="status">
-            {result.total} {result.total === 1 ? 'company' : 'companies'} · Page {result.page} of{' '}
-            {Math.max(1, Math.ceil(result.total / result.pageSize))}
-          </p>
           {result.rows.length === 0 ? (
-            <p className="card">No companies match these filters.</p>
+            <div className="py-12 text-center text-sm text-neutral-400 border border-neutral-100 rounded-2xl">
+              No companies match these filters.
+            </div>
           ) : (
-            <div className="admin-table-wrap">
-              <table>
-                <caption className="sr-only">Company search results</caption>
+            <div className="w-full overflow-x-auto mb-6">
+              <table className="table-clean">
                 <thead>
                   <tr>
-                    <th scope="col">Company</th>
-                    <th scope="col">Links</th>
-                    <th scope="col">Categories</th>
-                    <th scope="col">Research</th>
-                    <th scope="col">Status</th>
+                    <th>Company</th>
+                    <th>Location</th>
+                    <th>Categories</th>
+                    <th>Career</th>
+                    <th>Action</th>
+                    <th>Status</th>
+                    <th>Last Checked</th>
                   </tr>
                 </thead>
                 <tbody>
                   {result.rows.map((company) => (
-                    <tr key={company.id}>
+                    <tr key={company.id} className="hover:bg-neutral-50/50 transition">
                       <td>
-                        <Link href={`/admin/companies/${encodeURIComponent(company.id)}`}>
-                          <strong>{company.name}</strong>
+                        <Link
+                          href={`/admin/companies/${encodeURIComponent(company.id)}`}
+                          className="font-semibold text-neutral-900 hover:underline block"
+                        >
+                          {company.name}
                         </Link>
-                        <p>{company.location || 'Location not set'}</p>
+                        {company.websiteUrl && (
+                          <a
+                            href={company.websiteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] font-mono text-neutral-400 hover:text-black block truncate max-w-xs"
+                          >
+                            {company.websiteUrl}
+                          </a>
+                        )}
+                      </td>
+                      <td className="text-sm text-neutral-600 whitespace-nowrap">
+                        {company.location || '—'}
                       </td>
                       <td>
-                        <div
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '0.25rem',
-                            fontSize: '0.8125rem',
-                          }}
-                        >
-                          {company.websiteUrl ? (
-                            <a
-                              href={company.websiteUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ color: '#111114', textDecoration: 'underline' }}
-                            >
-                              Website ↗
-                            </a>
-                          ) : null}
-                          {company.careerUrl ? (
-                            <a
-                              href={company.careerUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ color: '#111114', textDecoration: 'underline' }}
-                            >
-                              Career page ↗
-                            </a>
-                          ) : null}
-                          {company.linkedinUrl ? (
-                            <a
-                              href={company.linkedinUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ color: '#6e6e73', textDecoration: 'underline' }}
-                            >
-                              LinkedIn ↗
-                            </a>
-                          ) : null}
-                          {!company.websiteUrl && !company.careerUrl && !company.linkedinUrl && (
-                            <span style={{ color: '#8e8e93' }}>—</span>
+                        <div className="flex flex-wrap max-w-xs">
+                          {company.categories.length > 0 ? (
+                            company.categories.map((c) => (
+                              <span key={c} className="tag-pill">
+                                {c}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-neutral-400">—</span>
                           )}
                         </div>
                       </td>
-                      <td>{company.categories.join(', ') || 'Uncategorized'}</td>
-                      <td>
-                        <div>
-                          {companyActions.find(
-                            ([value]) => value === company.recommendedAction,
-                          )?.[1] ??
-                            company.recommendedAction ??
-                            'Not set'}
-                        </div>
-                        {company.needsManualReview && (
-                          <div style={{ marginTop: '0.25rem' }}>
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                padding: '0.125rem 0.5rem',
-                                borderRadius: '4px',
-                                fontSize: '0.75rem',
-                                fontWeight: 500,
-                                backgroundColor: '#fef3c7',
-                                color: '#92400e',
-                              }}
-                            >
-                              Needs manual review
-                            </span>
-                            {company.reviewReasons && (
-                              <p
-                                style={{
-                                  marginTop: '0.25rem',
-                                  color: '#6e6e73',
-                                  fontSize: '0.75rem',
-                                }}
-                              >
-                                {company.reviewReasons}
-                              </p>
-                            )}
-                          </div>
+                      <td className="whitespace-nowrap">
+                        {company.careerUrl ? (
+                          <a
+                            href={company.careerUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-medium text-neutral-900 hover:underline inline-flex items-center gap-1"
+                          >
+                            Career page <span>↗</span>
+                          </a>
+                        ) : company.websiteUrl ? (
+                          <a
+                            href={company.websiteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-medium text-neutral-500 hover:text-black hover:underline inline-flex items-center gap-1"
+                          >
+                            Website <span>↗</span>
+                          </a>
+                        ) : (
+                          <span className="text-xs text-neutral-400">—</span>
                         )}
                       </td>
-                      <td>{company.active ? 'Active' : 'Inactive'}</td>
+                      <td className="text-xs font-semibold tracking-wider text-neutral-700 whitespace-nowrap">
+                        {company.recommendedAction ?? '—'}
+                      </td>
+                      <td className="whitespace-nowrap">
+                        <span className={company.active ? 'badge-success' : 'badge-neutral'}>
+                          {company.active ? 'Active' : 'Inactive'}
+                        </span>
+                        {company.needsManualReview && (
+                          <span className="badge-review ml-1.5">Review</span>
+                        )}
+                      </td>
+                      <td className="text-xs text-neutral-400 whitespace-nowrap">
+                        {company.lastCheckedAt
+                          ? new Date(company.lastCheckedAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })
+                          : '—'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-          <div className="admin-pagination">
-            <button
-              className="secondary"
-              disabled={filters.page === 1}
-              onClick={() => setFilters((value) => ({ ...value, page: value.page - 1 }))}
-            >
-              Previous
-            </button>
-            <button
-              className="secondary"
-              disabled={result.page * result.pageSize >= result.total}
-              onClick={() => setFilters((value) => ({ ...value, page: value.page + 1 }))}
-            >
-              Next
-            </button>
+
+          {/* Clean Pagination matching Figma */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-neutral-100">
+            <p className="text-xs text-neutral-500">
+              {result.total} {result.total === 1 ? 'company' : 'companies'} · Page {result.page} of{' '}
+              {Math.max(1, Math.ceil(result.total / result.pageSize))}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                className="btn-pill-secondary text-xs"
+                disabled={filters.page === 1}
+                onClick={() => setFilters((value) => ({ ...value, page: value.page - 1 }))}
+              >
+                Previous
+              </button>
+              <button
+                className="btn-pill-secondary text-xs"
+                disabled={result.page * result.pageSize >= result.total}
+                onClick={() => setFilters((value) => ({ ...value, page: value.page + 1 }))}
+              >
+                Next
+              </button>
+            </div>
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }

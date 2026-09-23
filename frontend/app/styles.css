@@ -2,185 +2,101 @@
 
 @layer base {
   :root {
-    @apply bg-slate-50 font-sans text-slate-950;
+    @apply bg-white font-sans text-neutral-900 antialiased;
   }
+  html,
   body {
-    @apply m-0 min-h-screen;
-  }
-  main {
-    @apply mx-auto my-8 w-full max-w-5xl px-4 sm:my-16 sm:px-6;
+    @apply m-0 min-h-screen bg-white max-w-full overflow-x-hidden;
   }
   p {
-    @apply text-slate-600;
+    @apply text-neutral-600;
   }
   h1 {
-    @apply mt-1 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl;
+    @apply text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl;
   }
   h2 {
-    @apply m-0 text-lg font-semibold text-slate-950;
+    @apply text-lg font-semibold text-neutral-900;
   }
   a {
-    @apply font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-900;
+    @apply text-neutral-900 no-underline transition hover:text-black;
   }
   label {
-    @apply mt-4 block text-sm font-semibold text-slate-800;
+    @apply block text-sm font-medium text-neutral-700;
   }
   input,
   textarea,
   select {
-    @apply mt-1.5 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-950 shadow-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100;
+    @apply block w-full rounded-lg border border-neutral-200 bg-white px-3.5 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 shadow-none outline-none transition focus:border-black focus:ring-2 focus:ring-black/10 disabled:cursor-not-allowed disabled:bg-neutral-100;
   }
   textarea {
     @apply min-h-24 resize-y;
   }
-  button {
-    @apply mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-700 disabled:cursor-wait disabled:opacity-70;
-  }
 }
 
 @layer components {
-  .auth {
-    @apply max-w-md;
+  /* Minimalist Pill Buttons matching Figma */
+  .btn-pill-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-black px-5 py-2 text-sm font-medium text-white shadow-none transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50;
   }
-  .card {
-    @apply rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7;
+  .btn-pill-secondary {
+    @apply inline-flex items-center justify-center rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-sm font-medium text-neutral-800 shadow-none transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50;
   }
-  .eyebrow {
-    @apply m-0 text-xs font-bold uppercase tracking-[0.12em] text-slate-500;
+  .btn-pill-danger {
+    @apply inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50/50 px-3 py-1 text-xs font-medium text-rose-700 transition hover:bg-rose-100/60 disabled:cursor-not-allowed disabled:opacity-50;
   }
-  .muted {
-    @apply text-slate-600;
-  }
-  .error {
-    @apply mt-4 text-sm font-medium text-red-700;
-  }
-  .success {
-    @apply mt-4 text-sm font-medium text-emerald-700;
-  }
-  header {
-    @apply mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between;
-  }
-  nav {
-    @apply flex flex-wrap gap-x-4 gap-y-2 text-sm;
-  }
-  .form-grid {
-    @apply grid gap-1;
-  }
-  .form-grid fieldset {
-    @apply mt-4 rounded-lg border border-slate-200 p-3;
-  }
-  .form-grid legend {
-    @apply px-1 text-sm font-semibold text-slate-800;
-  }
-  .check {
-    @apply mr-4 inline-flex items-center gap-2 text-sm font-normal;
-  }
-  .check input {
-    @apply m-0 size-4;
-  }
-  .check-list {
-    @apply flex flex-wrap;
-  }
-  .search {
-    @apply mb-5 flex flex-col gap-2 sm:flex-row;
-  }
-  .search input,
-  .search button {
-    @apply m-0;
-  }
-  .search button {
-    @apply sm:shrink-0;
-  }
-  .results {
-    @apply grid gap-3;
-  }
-  .company {
-    @apply flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between;
-  }
-  .company-actions {
-    @apply flex flex-wrap items-start gap-3;
-  }
-  .compact-label {
-    @apply m-0 text-xs;
-  }
-  .compact-label select {
-    @apply mt-1 w-auto py-1.5 text-sm;
-  }
-  .tags {
-    @apply mt-2 text-sm;
-  }
-  .status {
-    @apply rounded-full bg-slate-100 px-2 py-1 text-xs font-bold tracking-wide text-slate-700;
-  }
-  .pipeline {
-    @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-3;
-  }
-  .pipeline > div:first-child,
-  .pipeline label:last-of-type {
-    @apply sm:col-span-2 lg:col-span-3;
-  }
-  .pipeline label {
-    @apply m-0;
-  }
-  .secondary {
-    @apply ml-2 bg-slate-100 text-slate-950 hover:bg-slate-200;
-  }
-}
 
-@layer components {
-  .admin {
-    @apply text-neutral-950;
+  /* Status Badges & Pills matching Figma */
+  .badge-success {
+    @apply inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700;
   }
-  .admin p {
-    @apply text-neutral-600;
+  .badge-warning {
+    @apply inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-800;
   }
-  .admin .card,
-  .admin input,
-  .admin select,
-  .admin textarea {
-    @apply border-neutral-200 shadow-none;
+  .badge-danger {
+    @apply inline-flex items-center rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-medium text-rose-700;
   }
-  .admin button {
-    @apply rounded-full bg-neutral-950;
+  .badge-neutral {
+    @apply inline-flex items-center rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700;
   }
-  .admin button.secondary {
-    @apply ml-0 bg-neutral-100 text-neutral-950;
+  .badge-review {
+    @apply inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800;
   }
-  .admin nav {
-    @apply items-center;
+  .tag-pill {
+    @apply inline-flex items-center rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 mr-1.5 mb-1;
   }
-  .admin nav button {
-    @apply mt-0;
+
+  /* Form and Field Utilities */
+  .input-clean {
+    @apply block w-full rounded-lg border border-neutral-200 bg-white px-3.5 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 shadow-none outline-none transition focus:border-black focus:ring-2 focus:ring-black/10;
   }
-  .admin-filters {
-    @apply mb-6 grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-4;
+  .select-clean {
+    @apply block w-full rounded-lg border border-neutral-200 bg-white px-3.5 py-2 text-sm text-neutral-900 shadow-none outline-none transition focus:border-black focus:ring-2 focus:ring-black/10;
   }
-  .admin-fields {
-    @apply grid gap-x-5 sm:grid-cols-2;
-  }
-  .admin-table-wrap {
-    @apply w-full overflow-x-auto;
-  }
-  .admin table {
+
+  /* Clean Tables matching Figma */
+  .table-clean {
     @apply w-full border-collapse text-left text-sm;
   }
-  .admin th,
-  .admin td {
-    @apply border-b border-neutral-200 px-3 py-4 align-top;
+  .table-clean th {
+    @apply border-b border-neutral-100 pb-3 pt-2 px-3 text-xs font-semibold uppercase tracking-wider text-neutral-400 font-sans;
   }
-  .admin td p {
-    @apply mb-0 mt-1 text-xs;
+  .table-clean td {
+    @apply border-b border-neutral-100 py-3.5 px-3 align-middle text-neutral-800;
   }
-  .admin td button {
-    @apply mt-0;
+
+  /* Eyebrows & Dividers */
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1;
   }
-  .admin-pagination {
-    @apply flex justify-between gap-3;
+
+  /* Backward Compatibility helper classes */
+  .card {
+    @apply rounded-2xl border border-neutral-200/80 bg-white p-6;
   }
-  .admin .error {
-    @apply text-red-700;
+  .error {
+    @apply mt-2 text-sm font-medium text-rose-600;
   }
-  .admin .success {
-    @apply text-emerald-700;
+  .success {
+    @apply mt-2 text-sm font-medium text-emerald-600;
   }
 }

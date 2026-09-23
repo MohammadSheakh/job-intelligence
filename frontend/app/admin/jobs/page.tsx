@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useAdminApi } from '../../../lib/admin-api';
 
@@ -37,6 +36,8 @@ function formatDate(iso: string | null): string {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(date);
 }
 
@@ -48,7 +49,7 @@ function isPastDeadline(iso: string | null): boolean {
 
 export default function AdminJobsPage() {
   const api = useAdminApi();
-  const [filters, setFilters] = useState({ search: '', status: '', page: 1 });
+  const [filters, setFilters] = useState({ search: '', status: 'OPEN', page: 1 });
   const [result, setResult] = useState<JobPage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -92,177 +93,184 @@ export default function AdminJobsPage() {
   const totalPages = result ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1;
 
   return (
-    <>
-      <div className="flex flex-col gap-1 mb-6">
-        <h1>Jobs Catalog</h1>
-        <p>Discovered and deduplicated job openings from career crawls.</p>
+    <div className="max-w-6xl">
+      {/* Header matching Figma image 7 */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Jobs</h1>
+        <p className="text-sm text-neutral-500 mt-1">Discovered and deduplicated openings</p>
       </div>
 
-      <form className="admin-filters" onSubmit={handleFilter}>
-        <label>
-          Search jobs
+      {/* Filter Row matching Figma image 7 */}
+      <form onSubmit={handleFilter} className="flex flex-wrap items-end gap-3 mb-8">
+        <div className="w-full sm:w-72">
+          <label className="text-xs font-semibold text-neutral-500 mb-1">Search</label>
           <input
             name="search"
             defaultValue={filters.search}
-            placeholder="Job title, company, or location"
-            maxLength={200}
+            placeholder="Job, company, location"
+            className="input-clean"
           />
-        </label>
-        <label>
-          Status
-          <select name="status" defaultValue={filters.status}>
+        </div>
+        <div className="w-full sm:w-48">
+          <label className="text-xs font-semibold text-neutral-500 mb-1">Status</label>
+          <select name="status" defaultValue={filters.status} className="select-clean">
             <option value="">All statuses</option>
             <option value="OPEN">OPEN</option>
             <option value="CLOSED">CLOSED</option>
           </select>
-        </label>
-        <button type="submit" className="w-auto px-6">
+        </div>
+        <button className="btn-pill-primary" disabled={loading}>
           Filter
         </button>
       </form>
 
       {error && (
-        <p className="error mb-4" role="alert">
-          {error}
-        </p>
+        <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-4 mb-6" role="alert">
+          <p className="text-sm font-medium text-rose-700">{error}</p>
+        </div>
       )}
 
-      {loading ? (
-        <section className="card">
-          <p className="muted">Loading jobs catalog…</p>
-        </section>
-      ) : result && result.rows.length === 0 ? (
-        <section className="card">
-          <p className="muted">
-            No jobs match your search criteria. Run the crawler to discover new roles.
-          </p>
-        </section>
-      ) : result ? (
+      {loading && <p className="py-8 text-sm text-neutral-400">Loading jobs…</p>}
+
+      {!loading && !error && result && (
         <>
-          <div className="admin-table-wrap card p-0 overflow-hidden mb-6">
-            <table>
-              <thead>
-                <tr>
-                  <th>Job Title & Company</th>
-                  <th>Location</th>
-                  <th>Work Mode</th>
-                  <th>Deadline</th>
-                  <th>Status</th>
-                  <th>First Seen</th>
-                  <th>Application</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.rows.map((job) => {
-                  const expired = isPastDeadline(job.applicationDeadline);
-                  return (
-                    <tr key={job.id}>
-                      <td>
-                        <div className="font-semibold text-slate-900">{job.title}</div>
-                        <div className="text-xs text-slate-600 mt-0.5">
-                          {job.companyWebsiteUrl ? (
+          {result.rows.length === 0 ? (
+            <div className="py-12 text-center text-sm text-neutral-400 border border-neutral-100 rounded-2xl">
+              No jobs found matching the current filters.
+            </div>
+          ) : (
+            <div className="w-full overflow-x-auto mb-6">
+              <table className="table-clean">
+                <thead>
+                  <tr>
+                    <th>Job</th>
+                    <th>Location</th>
+                    <th>Mode</th>
+                    <th>Status</th>
+                    <th>First Seen</th>
+                    <th>Deadline</th>
+                    <th>Link</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.rows.map((job) => {
+                    const expired = isPastDeadline(job.applicationDeadline);
+                    return (
+                      <tr key={job.id} className="hover:bg-neutral-50/50 transition">
+                        <td>
+                          <div>
+                            {job.applicationUrl ? (
+                              <a
+                                href={job.applicationUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-bold text-neutral-900 hover:underline"
+                              >
+                                {job.title}
+                              </a>
+                            ) : (
+                              <span className="font-bold text-neutral-900">{job.title}</span>
+                            )}
+                            <div className="text-xs text-neutral-500 mt-0.5">
+                              {job.companyWebsiteUrl ? (
+                                <a
+                                  href={job.companyWebsiteUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:underline text-neutral-600"
+                                >
+                                  {job.companyName}
+                                </a>
+                              ) : (
+                                <span>{job.companyName}</span>
+                              )}
+                            </div>
+                            {job.companyCategories.length > 0 && (
+                              <div className="flex flex-wrap mt-1">
+                                {job.companyCategories.map((c) => (
+                                  <span key={c} className="tag-pill text-[10px]">
+                                    {c}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="text-xs text-neutral-600 whitespace-nowrap">
+                          {job.location || '—'}
+                        </td>
+                        <td className="text-xs text-neutral-600 whitespace-nowrap">
+                          {job.workMode || '—'}
+                        </td>
+                        <td className="whitespace-nowrap">
+                          <span
+                            className={
+                              job.status === 'OPEN' ? 'badge-success' : 'badge-neutral'
+                            }
+                          >
+                            {job.status}
+                          </span>
+                        </td>
+                        <td className="text-xs text-neutral-500 whitespace-nowrap">
+                          {formatDate(job.firstSeenAt)}
+                        </td>
+                        <td className="text-xs whitespace-nowrap">
+                          {job.applicationDeadline ? (
+                            <span className={expired ? 'text-rose-600 font-medium' : 'text-neutral-600'}>
+                              {formatDate(job.applicationDeadline)}
+                              {expired && <span className="ml-1 text-[10px] text-rose-500">(expired)</span>}
+                            </span>
+                          ) : (
+                            <span className="text-neutral-400">—</span>
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap">
+                          {job.applicationUrl ? (
                             <a
-                              href={job.companyWebsiteUrl}
+                              href={job.applicationUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="underline text-slate-800 hover:text-black"
+                              className="text-xs font-medium text-neutral-900 hover:underline inline-flex items-center gap-1"
                             >
-                              {job.companyName} ↗
+                              Apply <span>↗</span>
                             </a>
                           ) : (
-                            <Link
-                              href={`/admin/companies/${encodeURIComponent(job.companyId)}`}
-                              className="underline text-slate-800"
-                            >
-                              {job.companyName}
-                            </Link>
+                            <span className="text-xs text-neutral-400">—</span>
                           )}
-                        </div>
-                        {job.companyCategories.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {job.companyCategories.map((cat) => (
-                              <span
-                                key={cat}
-                                className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600"
-                              >
-                                {cat}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap text-xs text-slate-700">
-                        {job.location || '—'}
-                      </td>
-                      <td className="whitespace-nowrap text-xs text-slate-700">
-                        {job.workMode || '—'}
-                      </td>
-                      <td className="whitespace-nowrap text-xs text-slate-700">
-                        <div>{formatDate(job.applicationDeadline)}</div>
-                        {expired && (
-                          <span className="inline-block mt-0.5 rounded bg-rose-100 px-1.5 py-0.2 text-[10px] font-semibold text-rose-800">
-                            Expired
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                            job.status === 'OPEN'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          {job.status}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap text-xs text-slate-600">
-                        {formatDate(job.firstSeenAt)}
-                      </td>
-                      <td className="whitespace-nowrap">
-                        {job.applicationUrl ? (
-                          <a
-                            href={job.applicationUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-semibold"
-                          >
-                            Apply ↗
-                          </a>
-                        ) : (
-                          <span className="text-xs text-slate-400">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-          <div className="admin-pagination items-center mb-8">
-            <button
-              type="button"
-              className="secondary"
-              disabled={filters.page <= 1}
-              onClick={() => setFilters((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
-            >
-              Previous
-            </button>
-            <span className="text-xs text-slate-600">
-              Page {result.page} of {totalPages} · {result.total} total jobs
-            </span>
-            <button
-              type="button"
-              className="secondary"
-              disabled={filters.page >= totalPages}
-              onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}
-            >
-              Next
-            </button>
+          {/* Pagination matching Figma */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-neutral-100">
+            <p className="text-xs text-neutral-500">
+              Page {result.page} of {totalPages} · {result.total}{' '}
+              {result.total === 1 ? 'opening' : 'openings'}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                className="btn-pill-secondary text-xs"
+                disabled={filters.page === 1}
+                onClick={() => setFilters((f) => ({ ...f, page: f.page - 1 }))}
+              >
+                Previous
+              </button>
+              <button
+                className="btn-pill-secondary text-xs"
+                disabled={filters.page >= totalPages}
+                onClick={() => setFilters((f) => ({ ...f, page: f.page + 1 }))}
+              >
+                Next
+              </button>
+            </div>
           </div>
         </>
-      ) : null}
-    </>
+      )}
+    </div>
   );
 }

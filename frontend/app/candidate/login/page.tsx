@@ -1,4 +1,5 @@
 'use client';
+
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, apiBaseUrl } from '../../../lib/api';
@@ -40,17 +41,21 @@ export default function CandidateLoginPage() {
   }
 
   return (
-    <main className="auth">
-      <section className="card">
-        <p className="eyebrow">Job Intelligence · Candidate</p>
-        <h1>Sign in</h1>
-        <p className="muted">Use the email your admin added to Job Intelligence.</p>
+    <main className="min-h-screen flex items-center justify-center p-6 bg-white">
+      <div className="w-full max-w-sm rounded-2xl border border-neutral-200/80 p-8 shadow-sm space-y-6">
+        <div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+            Job Intelligence · Candidate
+          </span>
+          <h1 className="text-2xl font-extrabold text-neutral-950 tracking-tight">Sign in</h1>
+          <p className="text-xs text-neutral-500 mt-1">Use the email your admin added to Job Intelligence.</p>
+        </div>
 
         {googleEnabled && (
-          <div style={{ marginTop: '1.25rem', marginBottom: '1.25rem' }}>
+          <div>
             <a
               href={`${apiBaseUrl}/candidate-auth/google/start`}
-              className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50 no-underline"
+              className="inline-flex min-h-10 w-full items-center justify-center rounded-full border border-neutral-200 bg-white px-4 py-2 text-xs font-semibold text-neutral-900 transition hover:bg-neutral-50 no-underline shadow-sm"
             >
               <svg className="mr-2.5 size-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path
@@ -73,33 +78,60 @@ export default function CandidateLoginPage() {
               Continue with Google
             </a>
             <div className="relative my-4 flex items-center justify-center">
-              <div className="w-full border-t border-slate-200" />
-              <span className="absolute bg-white px-2 text-xs uppercase tracking-wider text-slate-500">
+              <div className="w-full border-t border-neutral-100" />
+              <span className="absolute bg-white px-2 text-[10px] uppercase tracking-wider text-neutral-400 font-semibold">
                 or
               </span>
             </div>
           </div>
         )}
 
-        {googleEnabled === false && (
-          <p className="mt-3 text-xs text-slate-500">
-            Google login becomes available after Google OAuth is configured.
-          </p>
+        {error && (
+          <div className="p-3 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl" role="alert">
+            {error}
+          </div>
         )}
 
-        <form onSubmit={submit}>
-          <label>
-            Email
-            <input name="email" type="email" autoComplete="email" required />
-          </label>
-          <label>
-            Password
-            <input name="password" type="password" autoComplete="current-password" required />
-          </label>
-          {error && <p className="error">{error}</p>}
-          <button disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button>
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1.5" htmlFor="login-email">
+              Email
+            </label>
+            <input
+              id="login-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              className="input-clean w-full text-xs"
+              placeholder="candidate@example.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1.5" htmlFor="login-password">
+              Password
+            </label>
+            <input
+              id="login-password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              className="input-clean w-full text-xs"
+              placeholder="••••••••"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-pill-primary w-full py-2.5 text-xs font-semibold mt-2"
+          >
+            {loading ? 'Signing in…' : 'Sign in'}
+          </button>
         </form>
-      </section>
+      </div>
     </main>
   );
 }

@@ -147,74 +147,65 @@ export default function AdminCrawlLogsPage() {
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   return (
-    <section>
-      <div className="flex flex-col gap-1 mb-4">
-        <p className="eyebrow">Operational Diagnostics</p>
-        <h1>Crawler Logs</h1>
-        <p>
-          Recorded crawl attempts, HTTP response metrics, and failure diagnostics for career-page
-          crawls.
-        </p>
+    <section className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-extrabold tracking-tight text-neutral-950 mb-1">Crawler</h1>
+        <p className="text-sm text-neutral-500">Recent career-page checks</p>
       </div>
 
-      <div className="admin-filters">
-        <label className="compact-label sm:col-span-2">
-          Search by company
-          <input
-            type="search"
-            maxLength={120}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            placeholder="Search company name…"
-          />
-        </label>
+      <div className="rounded-xl border border-neutral-100 bg-neutral-50/80 px-4 py-3 text-xs text-neutral-600 font-mono">
+        This page is monitoring only. Run the crawler through the scheduled worker or npm run crawl:daily.
+      </div>
 
-        <label className="compact-label">
-          Outcome
-          <select
-            value={successFilter}
-            onChange={(e) => {
-              setSuccessFilter(e.target.value as 'all' | 'success' | 'failure');
-              setPage(1);
-            }}
-          >
-            <option value="all">All crawl outcomes</option>
-            <option value="success">Success only</option>
-            <option value="failure">Failures only</option>
-          </select>
-        </label>
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          type="search"
+          maxLength={120}
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          placeholder="Search company name…"
+          className="input-clean flex-1 min-w-[220px]"
+        />
+
+        <select
+          value={successFilter}
+          onChange={(e) => {
+            setSuccessFilter(e.target.value as 'all' | 'success' | 'failure');
+            setPage(1);
+          }}
+          className="select-clean min-w-[160px]"
+        >
+          <option value="all">All crawl outcomes</option>
+          <option value="success">Success only</option>
+          <option value="failure">Failures only</option>
+        </select>
       </div>
 
       {error && (
-        <p className="error mb-4" role="alert">
+        <div className="p-3 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl" role="alert">
           {error}
-        </p>
+        </div>
       )}
 
       {loading ? (
-        <section className="card">
-          <p className="muted">Loading crawl logs…</p>
-        </section>
+        <div className="py-12 text-center text-sm text-neutral-400">Loading crawl logs…</div>
       ) : data && data.rows.length === 0 ? (
-        <section className="card">
-          <p className="muted">No crawl logs recorded matching the criteria.</p>
-        </section>
+        <div className="py-12 text-center text-sm text-neutral-400">No crawl logs recorded matching the criteria.</div>
       ) : data ? (
         <>
-          <div className="admin-table-wrap card p-0 overflow-x-auto mb-6">
-            <table>
+          <div className="overflow-x-auto">
+            <table className="table-clean w-full">
               <thead>
                 <tr>
-                  <th>Company &amp; Source</th>
-                  <th>Checked</th>
-                  <th>Result</th>
-                  <th>Fetch time</th>
-                  <th>Jobs</th>
-                  <th>Suggested Follow-up</th>
-                  <th>Diagnostic</th>
+                  <th>COMPANY</th>
+                  <th>CHECKED</th>
+                  <th>STATUS</th>
+                  <th>JOBS FOUND</th>
+                  <th>ERROR / ACTION</th>
+                  <th className="text-right">DETAILS</th>
                 </tr>
               </thead>
               <tbody>
@@ -227,93 +218,80 @@ export default function AdminCrawlLogsPage() {
                   );
 
                   return (
-                    <tr key={log.id} className="border-b border-neutral-100">
+                    <tr key={log.id} className="group">
                       <td className="max-w-[220px]">
                         <Link
                           href={`/admin/companies/${encodeURIComponent(log.companyId)}`}
-                          className="font-bold text-neutral-950 hover:underline"
+                          className="font-semibold text-neutral-900 hover:underline block"
                         >
                           {log.companyName}
                         </Link>
                         {safeExternalUrl(log.careerUrl) ? (
-                          <p className="text-xs mt-0.5">
-                            <a
-                              href={safeExternalUrl(log.careerUrl)!}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-neutral-500 hover:text-neutral-900"
-                            >
-                              Current career page ↗
-                            </a>
-                          </p>
+                          <a
+                            href={safeExternalUrl(log.careerUrl)!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] text-neutral-400 hover:text-neutral-700 transition"
+                          >
+                            Career page ↗
+                          </a>
                         ) : null}
                       </td>
 
-                      <td className="whitespace-nowrap text-xs text-neutral-600">
+                      <td className="whitespace-nowrap text-xs text-neutral-500">
                         {formatDate(log.checkedAt)}
                       </td>
 
                       <td>
                         <div className="flex items-center gap-1.5">
                           <span
-                            className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                            className={
                               log.success
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
+                                ? 'badge-success'
+                                : 'badge-danger'
+                            }
                           >
-                            {log.success ? 'SUCCESS' : 'FAILED'}
+                            {log.success ? 'Success' : 'Failed'}
                           </span>
                           {log.httpStatus && (
-                            <span className="font-mono text-xs text-neutral-500">
+                            <span className="font-mono text-xs text-neutral-400">
                               {log.httpStatus}
                             </span>
                           )}
                         </div>
                       </td>
 
-                      <td className="whitespace-nowrap text-xs font-mono text-neutral-700">
-                        {formatDuration(log.durationMs)}
-                      </td>
-
-                      <td>
+                      <td className="text-xs text-neutral-800">
                         {log.success ? (
-                          <div className="text-xs">
-                            <strong>{log.jobsFound} found</strong>
-                            <p className="text-[11px] text-neutral-500 m-0">
-                              {log.jobsCreated ?? '—'} new · {log.jobsUpdated ?? '—'} existing
-                              refreshed
-                            </p>
+                          <div>
+                            <span className="font-semibold">{log.jobsFound}</span>
+                            <span className="text-[11px] text-neutral-400 ml-1.5">
+                              ({log.jobsCreated ?? 0} new)
+                            </span>
                           </div>
                         ) : (
-                          <span className="text-xs text-neutral-400">0 found</span>
+                          <span className="text-neutral-400">0</span>
                         )}
                       </td>
 
-                      <td>
-                        <span
-                          className={`inline-block font-mono text-[11px] font-semibold px-2 py-0.5 rounded ${
-                            actionInfo.tone === 'alert'
-                              ? 'bg-red-50 text-red-700 border border-red-200'
-                              : actionInfo.tone === 'warning'
-                                ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                                : 'bg-neutral-100 text-neutral-800'
-                          }`}
-                        >
-                          {actionInfo.label}
-                        </span>
+                      <td className="text-xs text-neutral-600 max-w-[260px]">
+                        {log.error ? (
+                          <span className="text-rose-600 font-mono text-[11px] truncate block">{log.error}</span>
+                        ) : (
+                          <span className="text-neutral-400 text-xs font-mono">{actionInfo.label}</span>
+                        )}
                       </td>
 
-                      <td>
+                      <td className="text-right">
                         <button
                           type="button"
                           aria-expanded={isExpanded}
                           aria-controls={isExpanded ? `crawl-detail-${log.id}` : undefined}
                           aria-label={`${isExpanded ? 'Hide' : 'Show'} details for ${log.companyName}`}
                           onClick={() => toggleExpand(log.id)}
-                          className="inline-flex items-center justify-center rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-900 transition hover:bg-neutral-200"
+                          className="btn-pill-secondary text-xs px-3 py-1"
                         >
-                          {isExpanded ? 'Hide ▲' : 'Details ▼'}
+                          {isExpanded ? 'Hide' : 'Details'}
                         </button>
                       </td>
                     </tr>
@@ -333,26 +311,26 @@ export default function AdminCrawlLogsPage() {
                 <div
                   id={`crawl-detail-${log.id}`}
                   key={`expanded-${log.id}`}
-                  className="card mb-4 border-l-4 border-l-neutral-900 bg-neutral-50"
+                  className="rounded-2xl border border-neutral-200 bg-neutral-50/50 p-5 space-y-4"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
-                      <h2 className="text-base font-bold text-neutral-950">
+                      <h2 className="text-sm font-bold text-neutral-900">
                         Crawl Diagnostic · {log.companyName}
                       </h2>
-                      <p className="text-xs text-neutral-500 m-0">
+                      <p className="text-xs text-neutral-400">
                         Run ID #{log.id} · Checked at {formatDate(log.checkedAt)}
                       </p>
                     </div>
-                    <div className="flex gap-2 mt-2 sm:mt-0">
+                    <div className="flex gap-3 text-xs">
                       {safeExternalUrl(log.careerUrl) && (
                         <a
                           href={safeExternalUrl(log.careerUrl)!}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs font-semibold text-neutral-800 hover:underline"
+                          className="font-medium text-neutral-700 hover:text-black hover:underline"
                         >
-                          Visit Current career page ↗
+                          Career page ↗
                         </a>
                       )}
                       {safeExternalUrl(log.websiteUrl) && (
@@ -360,86 +338,83 @@ export default function AdminCrawlLogsPage() {
                           href={safeExternalUrl(log.websiteUrl)!}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs font-semibold text-neutral-800 hover:underline"
+                          className="font-medium text-neutral-700 hover:text-black hover:underline"
                         >
-                          Visit Website ↗
+                          Website ↗
                         </a>
                       )}
                     </div>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-4 bg-white p-3 rounded-lg border border-neutral-200 text-xs mb-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white p-3.5 rounded-xl border border-neutral-100 text-xs">
                     <div>
-                      <span className="text-neutral-500">Crawler Engine:</span>
-                      <p className="font-semibold text-neutral-900 m-0">
-                        {log.crawlerType ?? 'Not recorded'}
-                      </p>
+                      <span className="text-neutral-400 block text-[11px] mb-0.5">Engine</span>
+                      <span className="font-medium text-neutral-900">{log.crawlerType ?? 'Standard'}</span>
                     </div>
                     <div>
-                      <span className="text-neutral-500">HTTP Status:</span>
-                      <p className="font-semibold font-mono text-neutral-900 m-0">
-                        {log.httpStatus ?? '—'}
-                      </p>
+                      <span className="text-neutral-400 block text-[11px] mb-0.5">HTTP Status</span>
+                      <span className="font-mono font-medium text-neutral-900">{log.httpStatus ?? '—'}</span>
                     </div>
                     <div>
-                      <span className="text-neutral-500">Duration:</span>
-                      <p className="font-semibold font-mono text-neutral-900 m-0">
-                        {formatDuration(log.durationMs)}
-                      </p>
+                      <span className="text-neutral-400 block text-[11px] mb-0.5">Duration</span>
+                      <span className="font-mono font-medium text-neutral-900">{formatDuration(log.durationMs)}</span>
                     </div>
                     <div>
-                      <span className="text-neutral-500">Jobs Detected:</span>
-                      <p className="font-semibold text-neutral-900 m-0">
-                        {log.jobsFound} total ({log.jobsCreated ?? '—'} created,{' '}
-                        {log.jobsUpdated ?? '—'} existing refreshed)
-                      </p>
+                      <span className="text-neutral-400 block text-[11px] mb-0.5">Jobs Result</span>
+                      <span className="font-medium text-neutral-900">
+                        {log.jobsFound} found ({log.jobsCreated ?? 0} new, {log.jobsUpdated ?? 0} updated)
+                      </span>
                     </div>
                   </div>
 
                   <div
-                    className={`p-3 rounded-lg text-xs mb-3 ${
+                    className={`p-3 rounded-xl text-xs ${
                       actionInfo.tone === 'alert'
-                        ? 'bg-red-50 text-red-900 border border-red-200'
+                        ? 'bg-rose-50 text-rose-800 border border-rose-100'
                         : actionInfo.tone === 'warning'
-                          ? 'bg-amber-50 text-amber-900 border border-amber-200'
-                          : 'bg-emerald-50 text-emerald-900 border border-emerald-200'
+                          ? 'bg-amber-50 text-amber-800 border border-amber-100'
+                          : 'bg-emerald-50 text-emerald-800 border border-emerald-100'
                     }`}
                   >
-                    <strong>Suggested follow-up ({actionInfo.label}):</strong> {actionInfo.tip}
+                    <span className="font-bold">{actionInfo.label}:</span> {actionInfo.tip}
                   </div>
 
-                  {log.error ? (
-                    <div>
-                      <span className="text-xs font-semibold text-red-700">Diagnostic:</span>
-                      <pre className="mt-1 p-2 bg-neutral-900 text-neutral-100 rounded text-[11px] font-mono whitespace-pre-wrap break-all">
+                  {log.error && (
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+                        Raw Diagnostics
+                      </span>
+                      <pre className="p-3 bg-neutral-900 text-neutral-200 rounded-xl text-xs font-mono whitespace-pre-wrap break-all overflow-x-auto">
                         {log.error}
                       </pre>
                     </div>
-                  ) : null}
+                  )}
                 </div>
               );
             })}
 
-          <div className="admin-pagination items-center mb-8">
-            <button
-              type="button"
-              className="secondary"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              Previous
-            </button>
-            <span className="text-xs text-neutral-600">
-              Page {data.page} of {totalPages} · {data.total} total runs
+          <div className="flex items-center justify-between pt-4 border-t border-neutral-100 text-xs text-neutral-500">
+            <span>
+              Page {data.page} of {totalPages} · {data.total} records
             </span>
-            <button
-              type="button"
-              className="secondary"
-              disabled={page >= totalPages || page >= 10000}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="btn-pill-secondary text-xs px-4 py-1.5"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                className="btn-pill-secondary text-xs px-4 py-1.5"
+                disabled={page >= totalPages || page >= 10000}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next
+              </button>
+            </div>
           </div>
         </>
       ) : null}

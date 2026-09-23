@@ -42,6 +42,7 @@ function formatDate(iso: string): string {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
+    year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   }).format(date);
@@ -74,154 +75,168 @@ export default function AdminDashboardPage() {
 
   if (loading) {
     return (
-      <section className="card">
-        <p className="muted">Loading dashboard…</p>
-      </section>
+      <div className="py-12">
+        <p className="text-sm text-neutral-400">Loading dashboard…</p>
+      </div>
     );
   }
 
   if (error || !data) {
     return (
-      <section className="card">
-        <p className="error" role="alert">
+      <div className="py-12">
+        <p className="text-sm text-rose-600" role="alert">
           {error || 'Dashboard unavailable.'}
         </p>
-      </section>
+      </div>
     );
   }
 
   const { stats, settings, recentCrawlLogs } = data;
 
   return (
-    <>
-      <div className="flex flex-col gap-1 mb-6">
-        <h1>Dashboard</h1>
-        <p>Live operational status, system metrics, and crawler activity.</p>
+    <div className="max-w-6xl">
+      {/* Header matching Figma image 1 */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Dashboard</h1>
+        <p className="text-sm text-neutral-500 mt-1">Live Neon-backed MVP status</p>
       </div>
 
-      {/* Primary KPI Grid */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 mb-8">
-        <div className="card">
-          <p className="eyebrow">Companies</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.companies}</p>
+      {/* Unboxed KPI Metrics Row matching Figma image 1 */}
+      <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6 border-b border-neutral-100 pb-8 mb-10">
+        <div>
+          <p className="text-[11px] font-semibold text-neutral-400 tracking-wider uppercase mb-1">
+            Companies
+          </p>
+          <p className="text-4xl font-bold tracking-tight text-neutral-900">{stats.companies}</p>
         </div>
-        <div className="card">
-          <p className="eyebrow">Monitor Ready</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.monitorReady}</p>
+        <div>
+          <p className="text-[11px] font-semibold text-neutral-400 tracking-wider uppercase mb-1">
+            Monitor Ready
+          </p>
+          <p className="text-4xl font-bold tracking-tight text-neutral-900">{stats.monitorReady}</p>
         </div>
-        <div className="card">
-          <p className="eyebrow">Open Jobs</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.openJobs}</p>
+        <div>
+          <p className="text-[11px] font-semibold text-neutral-400 tracking-wider uppercase mb-1">
+            Open Jobs
+          </p>
+          <p className="text-4xl font-bold tracking-tight text-neutral-900">{stats.openJobs}</p>
         </div>
-        <div className="card">
-          <p className="eyebrow">Candidates</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.candidates}</p>
+        <div>
+          <p className="text-[11px] font-semibold text-neutral-400 tracking-wider uppercase mb-1">
+            Active Candidates
+          </p>
+          <p className="text-4xl font-bold tracking-tight text-neutral-900">{stats.candidates}</p>
         </div>
-        <div className="card">
-          <p className="eyebrow">Notifications</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.notifications}</p>
+        <div>
+          <p className="text-[11px] font-semibold text-neutral-400 tracking-wider uppercase mb-1">
+            Notifications Sent
+          </p>
+          <p className="text-4xl font-bold tracking-tight text-neutral-900">{stats.notifications}</p>
         </div>
-        <div className="card">
-          <p className="eyebrow">Crawl Fails (24h)</p>
+        <div>
+          <p className="text-[11px] font-semibold text-neutral-400 tracking-wider uppercase mb-1">
+            Crawler Failures / 24h
+          </p>
           <p
-            className={`mt-2 text-2xl font-bold ${stats.crawlFailures24h > 0 ? 'text-red-700' : 'text-slate-900'}`}
+            className={`text-4xl font-bold tracking-tight ${
+              stats.crawlFailures24h > 0 ? 'text-neutral-900' : 'text-neutral-900'
+            }`}
           >
             {stats.crawlFailures24h}
           </p>
         </div>
       </div>
 
-      {/* Operational Controls Summary */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2>Operational Controls</h2>
-          <Link href="/admin/settings" className="text-sm font-semibold">
-            Edit settings →
-          </Link>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-900">AI Intelligence</span>
+      {/* Controls Section matching Figma image 1 */}
+      <div className="mb-10">
+        <h2 className="text-base font-semibold text-neutral-900 mb-4">Controls</h2>
+        <div className="grid gap-5 sm:grid-cols-2 max-w-4xl">
+          {/* AI Control Card */}
+          <div className="rounded-2xl border border-neutral-200/80 p-5 bg-white flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-neutral-900">AI</span>
               <span
-                className={`rounded-full px-2 py-0.5 text-xs font-bold ${settings.aiEnabled ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}
+                className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                  settings.aiEnabled
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-neutral-100 text-neutral-600'
+                }`}
               >
-                {settings.aiEnabled ? 'ENABLED' : 'DISABLED'}
+                {settings.aiEnabled ? 'ON' : 'OFF'}
               </span>
             </div>
-            <p className="mt-2 text-xs text-slate-600">
-              Matching: {settings.aiMatchingEnabled ? 'Active' : 'Disabled'} · Daily Limit:{' '}
-              {settings.aiDailyLimit} calls
+            <p className="text-xs text-neutral-500">
+              Matching: {settings.aiMatchingEnabled ? 'enabled' : 'disabled'} · daily limit{' '}
+              {settings.aiDailyLimit}
             </p>
           </div>
 
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-900">Email Delivery</span>
+          {/* Email Control Card */}
+          <div className="rounded-2xl border border-neutral-200/80 p-5 bg-white flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-neutral-900">Email</span>
               <span
-                className={`rounded-full px-2 py-0.5 text-xs font-bold ${settings.emailEnabled ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'}`}
+                className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                  settings.emailEnabled
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-neutral-100 text-neutral-600'
+                }`}
               >
-                {settings.emailEnabled ? 'ENABLED' : 'DISABLED'}
+                {settings.emailEnabled ? 'ON' : 'OFF'}
               </span>
             </div>
-            <p className="mt-2 text-xs text-slate-600">
-              Default match threshold: {settings.defaultMatchThreshold}%
-            </p>
-          </div>
-
-          <div className="card">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-900">Quick Search Quota</span>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-700">
-                {settings.quickSearchCompanyLimit} cos/run
-              </span>
-            </div>
-            <p className="mt-2 text-xs text-slate-600">
-              Standard: {settings.quickSearchDailyLimit}/day · AI:{' '}
-              {settings.quickSearchAiDailyLimit}/day
+            <p className="text-xs text-neutral-500">
+              Default match threshold {settings.defaultMatchThreshold}%
             </p>
           </div>
         </div>
       </div>
 
-      {/* Recent Crawler Activity */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2>Recent Crawler Activity</h2>
-          <Link href="/admin/crawl-logs" className="text-sm font-semibold">
+      {/* Recent Crawler Activity Table matching Figma image 1 */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-neutral-900">Recent crawler activity</h2>
+          <Link
+            href="/admin/crawl-logs"
+            className="text-xs font-medium text-neutral-500 hover:text-black transition"
+          >
             View all logs →
           </Link>
         </div>
-        <div className="admin-table-wrap card p-0 overflow-hidden">
+        <div className="w-full overflow-x-auto">
           {recentCrawlLogs.length === 0 ? (
-            <p className="p-6 text-sm text-slate-500">No crawler runs recorded yet.</p>
+            <p className="py-6 text-xs text-neutral-400">No crawler runs recorded yet.</p>
           ) : (
-            <table>
+            <table className="table-clean">
               <thead>
                 <tr>
                   <th>Company</th>
                   <th>Checked</th>
                   <th>Status</th>
-                  <th>Jobs Found</th>
-                  <th>Diagnostic</th>
+                  <th>Jobs</th>
+                  <th>Error</th>
                 </tr>
               </thead>
               <tbody>
                 {recentCrawlLogs.map((log) => (
                   <tr key={log.id}>
-                    <td>
-                      <strong>{log.companyName}</strong>
+                    <td className="font-semibold text-neutral-900">{log.companyName}</td>
+                    <td className="text-xs text-neutral-500 whitespace-nowrap">
+                      {formatDate(log.checkedAt)}
                     </td>
-                    <td className="whitespace-nowrap">{formatDate(log.checkedAt)}</td>
                     <td>
                       <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-bold ${log.success ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium inline-flex items-center ${
+                          log.success
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-rose-50 text-rose-700'
+                        }`}
                       >
                         {log.success ? 'Success' : 'Failed'}
                       </span>
                     </td>
-                    <td>{log.jobsFound}</td>
-                    <td className="text-xs text-slate-600">{log.error ?? '—'}</td>
+                    <td className="text-sm text-neutral-800">{log.jobsFound}</td>
+                    <td className="text-xs text-neutral-400">{log.error ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -229,6 +244,6 @@ export default function AdminDashboardPage() {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

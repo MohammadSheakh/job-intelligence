@@ -203,248 +203,344 @@ export default function AdminCandidateDetailPage() {
   }
 
   return (
-    <section>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+    <section className="space-y-6 max-w-5xl">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <p className="eyebrow">
-            <Link href="/admin/candidates">← Back to Candidates</Link>
+          <p className="text-xs text-neutral-400 mb-2">
+            <Link href="/admin/candidates" className="hover:text-neutral-900 transition font-medium">← Back to Candidates</Link>
           </p>
-          <h1>{candidate?.name || `Candidate #${id}`}</h1>
-          <p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-neutral-950 mb-1">
+            {candidate?.name || `Candidate #${id}`}
+          </h1>
+          <p className="text-sm text-neutral-500">
             Candidate ID: <code className="font-mono text-xs">#{id}</code> ·{' '}
             <span
               className={`font-semibold ${
                 candidate?.active ? 'text-emerald-700' : 'text-neutral-500'
               }`}
             >
-              {candidate?.active ? 'Active Account' : 'Inactive Account'}
+              {candidate?.active ? 'Active' : 'Inactive'}
             </span>
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {candidate?.hasPassword ? (
-            <span className="status bg-neutral-100 text-neutral-800">🔑 Password active</span>
-          ) : (
-            <span className="status bg-amber-50 text-amber-800">No password</span>
+        <div className="flex items-center gap-2">
+          {candidate?.hasPassword && (
+            <span className="badge-neutral text-xs">Password active</span>
           )}
           {candidate?.hasGoogle && (
-            <span className="status bg-blue-50 text-blue-800">🌐 Google linked</span>
+            <span className="badge-neutral text-xs">Google linked</span>
           )}
         </div>
       </div>
 
+      <div className="border-b border-neutral-100 pb-2"></div>
+
       {error && (
-        <p className="error" role="alert">
+        <div className="p-3 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl" role="alert">
           {error}
-        </p>
+        </div>
       )}
 
       {success && (
-        <p className="success" role="status">
+        <div className="p-3 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl" role="status">
           {success}
-        </p>
+        </div>
       )}
 
-      <form className="card form-grid" onSubmit={handleSubmit}>
-        <div className="admin-fields">
-          <label>
-            Full name *
+      <form className="space-y-6" onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Name *</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={120}
               required
+              className="input-clean w-full"
             />
-          </label>
+          </div>
 
-          <label>
-            Email address *
+          <div>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Email *</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               maxLength={320}
               required
+              className="input-clean w-full"
             />
-          </label>
-        </div>
+          </div>
 
-        <div className="admin-fields">
-          <label>
-            Primary role / expertise
+          <div>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Expertise</label>
             <input
               value={expertise}
               onChange={(e) => setExpertise(e.target.value)}
               placeholder="e.g. Lead Backend Engineer"
               maxLength={500}
+              className="input-clean w-full"
             />
-          </label>
+          </div>
 
-          <label>
-            Reset password
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Experience level</label>
+              <select
+                value={experienceLevel}
+                onChange={(e) => setExperienceLevel(e.target.value)}
+                className="select-clean w-full"
+              >
+                <option value="">junior / mid / senior</option>
+                {CONTROLLED_EXPERIENCE_LEVELS.map((lvl) => (
+                  <option key={lvl} value={lvl}>
+                    {lvl}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Years</label>
+              <input
+                type="number"
+                min="0"
+                max="70"
+                value={experienceYears}
+                onChange={(e) => setExperienceYears(e.target.value)}
+                placeholder="e.g. 5"
+                className="input-clean w-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Skills</label>
+          <input
+            value={skills}
+            onChange={(e) => setSkills(e.target.value)}
+            placeholder="Node.js, TypeScript, PostgreSQL"
+            maxLength={1000}
+            className="input-clean w-full"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Preferred locations</label>
+            <input
+              value={preferredLocations}
+              onChange={(e) => setPreferredLocations(e.target.value)}
+              placeholder="Gulshan, Badda"
+              maxLength={1000}
+              className="input-clean w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Excluded locations</label>
+            <input
+              value={excludedLocations}
+              onChange={(e) => setExcludedLocations(e.target.value)}
+              placeholder="Uttara, Savar"
+              maxLength={1000}
+              className="input-clean w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Preferred work modes</label>
+            <div className="flex items-center gap-4 pt-1">
+              {['Remote', 'Hybrid', 'On-site'].map((mode) => (
+                <label key={mode} className="flex items-center gap-2 cursor-pointer text-xs font-medium text-neutral-800">
+                  <input
+                    type="checkbox"
+                    checked={preferredWorkModes.includes(mode)}
+                    onChange={() => toggleWorkMode(mode)}
+                    className="rounded border-neutral-300 text-neutral-950 focus:ring-neutral-950 size-4"
+                  />
+                  {mode}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Minimum match score</label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={minimumMatchScore}
+              onChange={(e) => setMinimumMatchScore(parseInt(e.target.value, 10))}
+              className="input-clean w-full"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs font-semibold text-neutral-700 mb-1.5">Reset login password</label>
             <input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Leave blank to preserve current password"
               minLength={8}
+              className="input-clean w-full"
             />
-            <span className="muted text-xs">
-              If changed, the candidate must use the new password upon subsequent sign-in.
-            </span>
-          </label>
-        </div>
-
-        <div className="admin-fields">
-          <label>
-            Experience level
-            <select value={experienceLevel} onChange={(e) => setExperienceLevel(e.target.value)}>
-              <option value="">Select level…</option>
-              {CONTROLLED_EXPERIENCE_LEVELS.map((lvl) => (
-                <option key={lvl} value={lvl}>
-                  {lvl}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            Years of experience
-            <input
-              type="number"
-              min="0"
-              max="70"
-              value={experienceYears}
-              onChange={(e) => setExperienceYears(e.target.value)}
-              placeholder="e.g. 5"
-            />
-            <span className="muted text-xs">
-              Used for exact numeric year compatibility in job matching.
-            </span>
-          </label>
-        </div>
-
-        <label>
-          Skills (comma-separated)
-          <input
-            value={skills}
-            onChange={(e) => setSkills(e.target.value)}
-            placeholder="e.g. TypeScript, React, Node.js, PostgreSQL"
-            maxLength={1000}
-          />
-        </label>
-
-        <div className="admin-fields">
-          <label>
-            Preferred locations
-            <input
-              value={preferredLocations}
-              onChange={(e) => setPreferredLocations(e.target.value)}
-              placeholder="e.g. Dhaka, Remote"
-              maxLength={1000}
-            />
-          </label>
-
-          <label>
-            Excluded locations
-            <input
-              value={excludedLocations}
-              onChange={(e) => setExcludedLocations(e.target.value)}
-              placeholder="e.g. Chittagong"
-              maxLength={1000}
-            />
-          </label>
-        </div>
-
-        <fieldset>
-          <legend>Preferred work modes</legend>
-          <div className="check-list mt-2">
-            {['Remote', 'Hybrid', 'On-site'].map((mode) => (
-              <label key={mode} className="check">
-                <input
-                  type="checkbox"
-                  checked={preferredWorkModes.includes(mode)}
-                  onChange={() => toggleWorkMode(mode)}
-                />
-                {mode}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend>Category preferences &amp; exclusions</legend>
-          <p className="muted text-xs mb-3">
-            Check preferred categories to prioritize relevant companies. Excluded categories take
-            strict precedence.
-          </p>
-          <div className="grid gap-2 max-h-60 overflow-y-auto p-1">
-            {categories.map((cat) => {
-              const isPref = preferredCategories.has(cat.name);
-              const isExcl = excludedCategories.has(cat.name);
-              return (
-                <div
-                  key={cat.id}
-                  className="flex items-center justify-between border-b border-neutral-100 py-1 text-xs"
-                >
-                  <span>
-                    <strong>{cat.name}</strong> <span className="muted">({cat.type})</span>
-                  </span>
-                  <div className="flex gap-3">
-                    <label className="check m-0">
-                      <input
-                        type="checkbox"
-                        checked={isPref}
-                        onChange={() => toggleCategory(cat.name, 'preferred')}
-                      />
-                      Prefer
-                    </label>
-                    <label className="check m-0 text-red-700">
-                      <input
-                        type="checkbox"
-                        checked={isExcl}
-                        onChange={() => toggleCategory(cat.name, 'excluded')}
-                      />
-                      Exclude
-                    </label>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </fieldset>
-
-        <div className="admin-fields items-center">
-          <label>
-            Minimum match score ({minimumMatchScore}%)
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={minimumMatchScore}
-              onChange={(e) => setMinimumMatchScore(parseInt(e.target.value, 10))}
-            />
-          </label>
-
-          <div className="mt-4">
-            <label className="check font-semibold">
-              <input
-                type="checkbox"
-                checked={active}
-                onChange={(e) => setActive(e.target.checked)}
-              />
-              Account active (enabled for daily matching &amp; sign-in)
-            </label>
           </div>
         </div>
 
-        <div className="flex gap-4 mt-6">
-          <button type="submit" disabled={saving}>
-            {saving ? 'Saving changes…' : 'Save Changes'}
+        {/* Category preferences */}
+        <div className="pt-4 border-t border-neutral-100 space-y-4">
+          <div>
+            <h2 className="text-base font-bold text-neutral-900 mb-0.5">Category preferences</h2>
+            <p className="text-xs text-neutral-500">
+              Sector exclusions are hard filters. Technology/domain exclusions only block jobs that explicitly match that category.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Technology Column */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900 border-b border-neutral-100 pb-2 mb-3">
+                Technology
+              </h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                {categories
+                  .filter((c) => c.type.toLowerCase() === 'technology')
+                  .map((cat) => {
+                    const isPref = preferredCategories.has(cat.name);
+                    const isExcl = excludedCategories.has(cat.name);
+                    return (
+                      <div key={cat.id} className="flex items-center justify-between text-xs py-1 border-b border-neutral-50">
+                        <span className="font-medium text-neutral-800 truncate mr-2">{cat.name}</span>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <label className="flex items-center gap-1 cursor-pointer text-[11px] text-neutral-600">
+                            <input
+                              type="checkbox"
+                              checked={isPref}
+                              onChange={() => toggleCategory(cat.name, 'preferred')}
+                              className="rounded border-neutral-300 text-neutral-950 size-3.5"
+                            />
+                            Prefer
+                          </label>
+                          <label className="flex items-center gap-1 cursor-pointer text-[11px] text-rose-600">
+                            <input
+                              type="checkbox"
+                              checked={isExcl}
+                              onChange={() => toggleCategory(cat.name, 'excluded')}
+                              className="rounded border-neutral-300 text-rose-600 size-3.5"
+                            />
+                            Exclude
+                          </label>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* Domain Column */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900 border-b border-neutral-100 pb-2 mb-3">
+                Domain
+              </h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                {categories
+                  .filter((c) => c.type.toLowerCase() === 'domain')
+                  .map((cat) => {
+                    const isPref = preferredCategories.has(cat.name);
+                    const isExcl = excludedCategories.has(cat.name);
+                    return (
+                      <div key={cat.id} className="flex items-center justify-between text-xs py-1 border-b border-neutral-50">
+                        <span className="font-medium text-neutral-800 truncate mr-2">{cat.name}</span>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <label className="flex items-center gap-1 cursor-pointer text-[11px] text-neutral-600">
+                            <input
+                              type="checkbox"
+                              checked={isPref}
+                              onChange={() => toggleCategory(cat.name, 'preferred')}
+                              className="rounded border-neutral-300 text-neutral-950 size-3.5"
+                            />
+                            Prefer
+                          </label>
+                          <label className="flex items-center gap-1 cursor-pointer text-[11px] text-rose-600">
+                            <input
+                              type="checkbox"
+                              checked={isExcl}
+                              onChange={() => toggleCategory(cat.name, 'excluded')}
+                              className="rounded border-neutral-300 text-rose-600 size-3.5"
+                            />
+                            Exclude
+                          </label>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* Sector Column */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900 border-b border-neutral-100 pb-2 mb-3">
+                Sector
+              </h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                {categories
+                  .filter((c) => c.type.toLowerCase() === 'sector')
+                  .map((cat) => {
+                    const isPref = preferredCategories.has(cat.name);
+                    const isExcl = excludedCategories.has(cat.name);
+                    return (
+                      <div key={cat.id} className="flex items-center justify-between text-xs py-1 border-b border-neutral-50">
+                        <span className="font-medium text-neutral-800 truncate mr-2">{cat.name}</span>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <label className="flex items-center gap-1 cursor-pointer text-[11px] text-neutral-600">
+                            <input
+                              type="checkbox"
+                              checked={isPref}
+                              onChange={() => toggleCategory(cat.name, 'preferred')}
+                              className="rounded border-neutral-300 text-neutral-950 size-3.5"
+                            />
+                            Prefer
+                          </label>
+                          <label className="flex items-center gap-1 cursor-pointer text-[11px] text-rose-600">
+                            <input
+                              type="checkbox"
+                              checked={isExcl}
+                              onChange={() => toggleCategory(cat.name, 'excluded')}
+                              className="rounded border-neutral-300 text-rose-600 size-3.5"
+                            />
+                            Exclude
+                          </label>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-2">
+          <label className="flex items-center gap-2.5 cursor-pointer text-sm font-semibold text-neutral-900">
+            <input
+              type="checkbox"
+              checked={active}
+              onChange={(e) => setActive(e.target.checked)}
+              className="rounded border-neutral-300 text-neutral-950 focus:ring-neutral-950 size-4"
+            />
+            Active
+          </label>
+        </div>
+
+        <div className="pt-4 flex items-center gap-3">
+          <button type="submit" disabled={saving} className="btn-pill-primary px-6 py-2.5 text-sm">
+            {saving ? 'Saving changes…' : 'Save candidate'}
           </button>
           <Link
             href="/admin/candidates"
-            className="inline-flex min-h-11 items-center justify-center rounded-full bg-neutral-100 px-5 py-2.5 text-sm font-bold text-neutral-950 transition hover:bg-neutral-200 mt-5"
+            className="btn-pill-secondary px-6 py-2.5 text-sm"
           >
             Cancel
           </Link>

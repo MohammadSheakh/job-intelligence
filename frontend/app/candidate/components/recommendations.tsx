@@ -102,105 +102,162 @@ export function Recommendations() {
   }
 
   return (
-    <section aria-labelledby="recommendations-heading">
-      <h2 id="recommendations-heading">Recommended jobs</h2>
-      <p>
-        Ranked against your profile and preferences. Browse Companies to research employers beyond
-        these matches.
-      </p>
-      <button
-        className="secondary"
-        disabled={loading || saving}
-        onClick={() => setRevision((value) => value + 1)}
-      >
-        Refresh recommendations
-      </button>
+    <section aria-labelledby="recommendations-heading" className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <p className="text-[11px] uppercase tracking-wider font-bold text-neutral-400 mb-0.5">Recommendations</p>
+          <h2 id="recommendations-heading" className="text-xl font-bold tracking-tight text-neutral-950">
+            Best current matches
+          </h2>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            className="btn-pill-secondary text-xs px-3.5 py-1.5"
+            disabled={loading || saving}
+            onClick={() => setRevision((value) => value + 1)}
+          >
+            Refresh
+          </button>
+          <Link href="/candidate/profile" className="btn-pill-secondary text-xs px-4 py-1.5">
+            Tune profile
+          </Link>
+        </div>
+      </div>
+
       {error && (
-        <p className="error" role="alert">
+        <div className="p-3 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl" role="alert">
           {error}
-        </p>
+        </div>
       )}
+
       {loading ? (
-        <p role="status">Finding your best matches…</p>
+        <div className="py-10 text-center text-sm text-neutral-400">Finding your best matches…</div>
+      ) : rows.length === 0 ? (
+        <div className="py-12 text-center text-sm text-neutral-400">
+          No current jobs meet your match threshold. Run a Quick Search or adjust your profile.
+        </div>
       ) : (
-        <div className="results">
+        <div className="grid gap-4">
           {rows.map((row) => {
             const website = webUrl(row.companyWebsiteUrl);
             const application = webUrl(row.applicationUrl);
             return (
-              <article className="card" key={row.jobId}>
-                <h3>{row.title}</h3>
-                <p>
-                  {website ? (
-                    <a href={website} target="_blank" rel="noopener noreferrer">
-                      {row.companyName} ↗
-                    </a>
-                  ) : (
-                    row.companyName
-                  )}
-                </p>
-                <p>
-                  {row.location ?? 'Location not listed'}
-                  {row.workMode ? ` · ${row.workMode}` : ''} · Match score: {row.score}/100
-                </p>
+              <article
+                className="p-5 rounded-2xl border border-neutral-100 hover:border-neutral-200 bg-white transition space-y-3"
+                key={row.jobId}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                  <div>
+                    <h3 className="text-base font-bold text-neutral-900 leading-snug">{row.title}</h3>
+                    <div className="flex items-center gap-2 text-xs text-neutral-500 mt-0.5">
+                      {website ? (
+                        <a
+                          href={website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-neutral-800 hover:underline"
+                        >
+                          {row.companyName} ↗
+                        </a>
+                      ) : (
+                        <span className="font-medium text-neutral-800">{row.companyName}</span>
+                      )}
+                      <span>·</span>
+                      <span>{row.location ?? 'Location not listed'}</span>
+                      {row.workMode && (
+                        <>
+                          <span>·</span>
+                          <span>{row.workMode}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="badge-neutral text-xs font-semibold">
+                      Match: {row.score}%
+                    </span>
+                    {row.trackingStatus && (
+                      <span
+                        className={
+                          row.trackingStatus === 'APPLIED'
+                            ? 'badge-success text-xs font-semibold'
+                            : 'badge-warning text-xs font-semibold'
+                        }
+                      >
+                        {row.trackingStatus === 'APPLIED' ? 'Applied' : 'Planning'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
                 {row.applicationDeadline && (
-                  <p className="text-xs text-slate-600">
+                  <p className="text-xs text-neutral-400">
                     Application deadline: {formatDate(row.applicationDeadline)}
                   </p>
                 )}
-                <p className="tags">{row.categories.join(' · ')}</p>
+
+                {row.categories.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {row.categories.map((cat) => (
+                      <span key={cat} className="tag-pill text-[11px]">
+                        {cat}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 {row.reasons.length > 0 && (
-                  <ul>
+                  <ul className="text-xs text-neutral-500 space-y-0.5 pl-4 list-disc">
                     {row.reasons.map((reason) => (
                       <li key={reason}>{reason}</li>
                     ))}
                   </ul>
                 )}
-                {row.trackingStatus && (
-                  <p role="status">
-                    {row.trackingStatus === 'APPLIED'
-                      ? 'Applied'
-                      : row.trackingStatus === 'PLANNING'
-                        ? 'Planning'
-                        : row.trackingStatus}
-                  </p>
-                )}
-                <div className="company-actions">
-                  {application && (
-                    <a href={application} target="_blank" rel="noopener noreferrer">
-                      Apply ↗
-                    </a>
-                  )}
-                  <button
-                    disabled={saving || row.trackingStatus === 'PLANNING'}
-                    onClick={() => void track(row.companyId, 'PLANNING')}
-                  >
-                    Plan
-                  </button>
-                  <button
-                    disabled={saving || row.trackingStatus === 'APPLIED'}
-                    onClick={() => void track(row.companyId, 'APPLIED')}
-                  >
-                    Applied
-                  </button>
-                  <button
-                    className="secondary"
-                    disabled={saving}
-                    onClick={() => void track(row.companyId, 'EXCLUDED')}
-                  >
-                    Blacklist
-                  </button>
+
+                <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-neutral-50">
+                  <div>
+                    {application && (
+                      <a
+                        href={application}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold text-neutral-900 hover:underline"
+                      >
+                        Apply on company site ↗
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={saving || row.trackingStatus === 'PLANNING'}
+                      onClick={() => void track(row.companyId, 'PLANNING')}
+                      className={`btn-pill-secondary text-xs px-3.5 py-1 ${row.trackingStatus === 'PLANNING' ? 'bg-amber-50 border-amber-200 text-amber-800' : ''}`}
+                    >
+                      Plan
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saving || row.trackingStatus === 'APPLIED'}
+                      onClick={() => void track(row.companyId, 'APPLIED')}
+                      className={`btn-pill-primary text-xs px-3.5 py-1 ${row.trackingStatus === 'APPLIED' ? 'bg-emerald-700' : ''}`}
+                    >
+                      Applied
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-pill-danger text-xs px-3.5 py-1"
+                      disabled={saving}
+                      onClick={() => void track(row.companyId, 'EXCLUDED')}
+                    >
+                      Blacklist
+                    </button>
+                  </div>
                 </div>
               </article>
             );
           })}
-          {!error && rows.length === 0 && (
-            <p>
-              No jobs currently meet your preferences and minimum score.{' '}
-              <Link href="/candidate/profile">Review your profile</Link> or{' '}
-              <Link href="/candidate/companies">browse companies</Link>.
-            </p>
-          )}
         </div>
       )}
     </section>

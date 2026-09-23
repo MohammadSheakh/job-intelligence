@@ -69,192 +69,186 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <>
-      <div className="flex flex-col gap-1 mb-6">
-        <h1>Operational Settings</h1>
-        <p>Runtime controls for AI services, email dispatch, and candidate search limits.</p>
+    <section className="space-y-6 max-w-4xl">
+      <div>
+        <h1 className="text-3xl font-extrabold tracking-tight text-neutral-950 mb-1">Settings</h1>
+        <p className="text-sm text-neutral-500">Cost and notification controls</p>
       </div>
 
+      <div className="border-b border-neutral-100 pb-2"></div>
+
       {success && (
-        <p className="success mb-4" role="status">
+        <div className="p-3 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl" role="status">
           {success}
-        </p>
+        </div>
       )}
       {error && (
-        <p className="error mb-4" role="alert">
+        <div className="p-3 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl" role="alert">
           {error}
-        </p>
+        </div>
       )}
 
       {loading ? (
-        <section className="card">
-          <p className="muted">Loading settings…</p>
-        </section>
+        <div className="py-12 text-center text-sm text-neutral-400">Loading settings…</div>
       ) : settings ? (
-        <form className="card mb-8" onSubmit={handleSubmit}>
-          <div className="space-y-6">
-            {/* AI Settings Section */}
-            <div>
-              <h2>AI Intelligence Controls</h2>
-              <p className="text-xs text-slate-500 mb-3">
-                Controls semantic job analysis, match scoring enhancements, and external LLM limits.
-              </p>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="aiEnabled"
-                    className="size-4 m-0"
-                    checked={settings.aiEnabled}
-                    onChange={(e) => updateField('aiEnabled', e.target.checked)}
-                  />
-                  <label htmlFor="aiEnabled" className="m-0 text-sm font-medium text-slate-800">
-                    Master AI Engine Enabled
-                  </label>
-                </div>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+            {/* Left Column */}
+            <div className="space-y-6">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="aiEnabled"
+                  className="rounded border-neutral-300 text-neutral-950 focus:ring-neutral-950 size-4"
+                  checked={settings.aiEnabled}
+                  onChange={(e) => updateField('aiEnabled', e.target.checked)}
+                />
+                <span className="text-sm font-medium text-neutral-900">AI enabled</span>
+              </label>
 
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="aiMatchingEnabled"
-                    className="size-4 m-0"
-                    checked={settings.aiMatchingEnabled}
-                    onChange={(e) => updateField('aiMatchingEnabled', e.target.checked)}
-                  />
-                  <label
-                    htmlFor="aiMatchingEnabled"
-                    className="m-0 text-sm font-medium text-slate-800"
-                  >
-                    AI Match Enhancement Enabled
-                  </label>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="aiSkillExtractionEnabled"
-                    className="size-4 m-0"
-                    checked={settings.aiSkillExtractionEnabled}
-                    onChange={(e) => updateField('aiSkillExtractionEnabled', e.target.checked)}
-                  />
-                  <label
-                    htmlFor="aiSkillExtractionEnabled"
-                    className="m-0 text-sm font-medium text-slate-800"
-                  >
-                    AI Skill Extraction Enabled
-                  </label>
-                </div>
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 mb-1.5" htmlFor="aiProvider">
+                  AI provider
+                </label>
+                <input
+                  id="aiProvider"
+                  name="aiProvider"
+                  value={settings.aiProvider}
+                  onChange={(e) => updateField('aiProvider', e.target.value)}
+                  placeholder="local / openai-compatible"
+                  maxLength={100}
+                  className="input-clean w-full"
+                />
               </div>
 
-              <div className="admin-fields gap-4 mt-4">
-                <label>
-                  AI Provider Identifier
-                  <input
-                    name="aiProvider"
-                    value={settings.aiProvider}
-                    onChange={(e) => updateField('aiProvider', e.target.value)}
-                    placeholder="openai-compatible / local"
-                    maxLength={100}
-                  />
-                </label>
-                <label>
-                  Daily AI Execution Budget (calls/day)
-                  <input
-                    type="number"
-                    min={0}
-                    name="aiDailyLimit"
-                    value={settings.aiDailyLimit}
-                    onChange={(e) => updateField('aiDailyLimit', Number(e.target.value))}
-                  />
-                </label>
-              </div>
-            </div>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="aiSkillExtractionEnabled"
+                  className="rounded border-neutral-300 text-neutral-950 focus:ring-neutral-950 size-4"
+                  checked={settings.aiSkillExtractionEnabled}
+                  onChange={(e) => updateField('aiSkillExtractionEnabled', e.target.checked)}
+                />
+                <span className="text-sm font-medium text-neutral-900">AI skill extraction enabled</span>
+              </label>
 
-            {/* Matching & Notifications Section */}
-            <div className="border-t border-slate-200 pt-6">
-              <h2>Matching & Email Delivery</h2>
-              <p className="text-xs text-slate-500 mb-3">
-                Scoring threshold defaults and SMTP email dispatch switches.
-              </p>
-              <div className="flex items-center gap-2 mb-4">
+              <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   id="emailEnabled"
-                  className="size-4 m-0"
+                  className="rounded border-neutral-300 text-neutral-950 focus:ring-neutral-950 size-4"
                   checked={settings.emailEnabled}
                   onChange={(e) => updateField('emailEnabled', e.target.checked)}
                 />
-                <label htmlFor="emailEnabled" className="m-0 text-sm font-medium text-slate-800">
-                  Candidate Email Digests Dispatch Enabled
-                </label>
-              </div>
+                <span className="text-sm font-medium text-neutral-900">Email sending enabled</span>
+              </label>
 
-              <div className="admin-fields gap-4">
-                <label>
-                  Default Match Score Threshold (%)
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    name="defaultMatchThreshold"
-                    value={settings.defaultMatchThreshold}
-                    onChange={(e) => updateField('defaultMatchThreshold', Number(e.target.value))}
-                  />
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 mb-1.5" htmlFor="quickSearchAiDailyLimit">
+                  AI quick searches / candidate / day
                 </label>
+                <input
+                  id="quickSearchAiDailyLimit"
+                  type="number"
+                  min={0}
+                  max={20}
+                  name="quickSearchAiDailyLimit"
+                  value={settings.quickSearchAiDailyLimit}
+                  onChange={(e) => updateField('quickSearchAiDailyLimit', Number(e.target.value))}
+                  className="input-clean w-full"
+                />
               </div>
             </div>
 
-            {/* Quick Search Quotas Section */}
-            <div className="border-t border-slate-200 pt-6">
-              <h2>Quick Search Allowances</h2>
-              <p className="text-xs text-slate-500 mb-3">
-                Daily execution limits per candidate and crawl sweep limits per run.
-              </p>
-              <div className="admin-fields gap-4">
-                <label>
-                  Standard Quick Searches / Candidate / Day
-                  <input
-                    type="number"
-                    min={0}
-                    max={20}
-                    name="quickSearchDailyLimit"
-                    value={settings.quickSearchDailyLimit}
-                    onChange={(e) => updateField('quickSearchDailyLimit', Number(e.target.value))}
-                  />
+            {/* Right Column */}
+            <div className="space-y-6">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  id="aiMatchingEnabled"
+                  className="rounded border-neutral-300 text-neutral-950 focus:ring-neutral-950 size-4"
+                  checked={settings.aiMatchingEnabled}
+                  onChange={(e) => updateField('aiMatchingEnabled', e.target.checked)}
+                />
+                <span className="text-sm font-medium text-neutral-900">AI matching enabled</span>
+              </label>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 mb-1.5" htmlFor="aiDailyLimit">
+                  Daily AI call limit
                 </label>
-                <label>
-                  AI Quick Searches / Candidate / Day
-                  <input
-                    type="number"
-                    min={0}
-                    max={20}
-                    name="quickSearchAiDailyLimit"
-                    value={settings.quickSearchAiDailyLimit}
-                    onChange={(e) => updateField('quickSearchAiDailyLimit', Number(e.target.value))}
-                  />
+                <input
+                  id="aiDailyLimit"
+                  type="number"
+                  min={0}
+                  name="aiDailyLimit"
+                  value={settings.aiDailyLimit}
+                  onChange={(e) => updateField('aiDailyLimit', Number(e.target.value))}
+                  className="input-clean w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 mb-1.5" htmlFor="defaultMatchThreshold">
+                  Default match threshold
                 </label>
-                <label>
-                  Companies Inspected Per Search Run
-                  <input
-                    type="number"
-                    min={1}
-                    max={25}
-                    name="quickSearchCompanyLimit"
-                    value={settings.quickSearchCompanyLimit}
-                    onChange={(e) => updateField('quickSearchCompanyLimit', Number(e.target.value))}
-                  />
+                <input
+                  id="defaultMatchThreshold"
+                  type="number"
+                  min={0}
+                  max={100}
+                  name="defaultMatchThreshold"
+                  value={settings.defaultMatchThreshold}
+                  onChange={(e) => updateField('defaultMatchThreshold', Number(e.target.value))}
+                  className="input-clean w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 mb-1.5" htmlFor="quickSearchDailyLimit">
+                  Quick searches / candidate / day
                 </label>
+                <input
+                  id="quickSearchDailyLimit"
+                  type="number"
+                  min={0}
+                  max={20}
+                  name="quickSearchDailyLimit"
+                  value={settings.quickSearchDailyLimit}
+                  onChange={(e) => updateField('quickSearchDailyLimit', Number(e.target.value))}
+                  className="input-clean w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 mb-1.5" htmlFor="quickSearchCompanyLimit">
+                  Companies checked per quick search
+                </label>
+                <input
+                  id="quickSearchCompanyLimit"
+                  type="number"
+                  min={1}
+                  max={25}
+                  name="quickSearchCompanyLimit"
+                  value={settings.quickSearchCompanyLimit}
+                  onChange={(e) => updateField('quickSearchCompanyLimit', Number(e.target.value))}
+                  className="input-clean w-full"
+                />
               </div>
             </div>
           </div>
 
-          <div className="mt-8 flex gap-3">
-            <button type="submit" disabled={saving} className="px-6">
-              {saving ? 'Saving settings…' : 'Save Settings'}
+          <div className="pt-4">
+            <button
+              type="submit"
+              disabled={saving}
+              className="btn-pill-primary px-8 py-2.5 text-sm"
+            >
+              {saving ? 'Saving settings…' : 'Save settings'}
             </button>
           </div>
         </form>
       ) : null}
-    </>
+    </section>
   );
 }
