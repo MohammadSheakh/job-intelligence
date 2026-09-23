@@ -269,6 +269,7 @@ describe('Candidate and Company Intelligence browser flows', () => {
 
   describe('Company Intelligence admin', () => {
     beforeEach(async () => {
+      await page.evaluate(() => localStorage.clear()).catch(() => {});
       await prisma.company.deleteMany({ where: { id: { startsWith: 'admin-ui-' } } });
       await prisma.category.upsert({
         where: { name: 'Other' },
@@ -293,13 +294,19 @@ describe('Candidate and Company Intelligence browser flows', () => {
     });
 
     async function adminLogin() {
-      await page.getByLabel('Username', { exact: true }).fill('browser-admin');
-      await page.getByLabel('Password', { exact: true }).fill('browser-password');
-      await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-      await page.getByRole('button', { name: 'Sign out', exact: true }).waitFor();
+      const button = await Promise.race([
+        page.getByRole('button', { name: 'Sign in', exact: true }).waitFor().then(() => 'signin'),
+        page.getByRole('button', { name: 'Sign out', exact: true }).waitFor().then(() => 'signout'),
+      ]);
+      if (button === 'signin') {
+        await page.getByLabel('Username', { exact: true }).fill('browser-admin');
+        await page.getByLabel('Password', { exact: true }).fill('browser-password');
+        await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+        await page.getByRole('button', { name: 'Sign out', exact: true }).waitFor();
+      }
     }
 
-    it('rejects wrong credentials, keeps credentials out of storage, and signs out', async () => {
+    it('rejects wrong credentials, persists session across reload, and signs out', async () => {
       await page.goto(`${baseUrl}/admin/companies`);
       await page.getByLabel('Username').fill('browser-admin');
       await page.getByLabel('Password').fill('incorrect');
@@ -307,13 +314,13 @@ describe('Candidate and Company Intelligence browser flows', () => {
       await page.locator('p.error').waitFor();
       await adminLogin();
       await page.getByRole('link', { name: 'Admin Alpha', exact: true }).waitFor();
-      expect(await page.evaluate(() => [localStorage.length, sessionStorage.length])).toEqual([
-        0, 0,
-      ]);
+      expect(await page.evaluate(() => localStorage.getItem('admin_auth'))).toBeTruthy();
       await page.reload();
-      await page.getByRole('heading', { name: 'Admin sign in' }).waitFor();
-      await adminLogin();
+      await page.getByRole('link', { name: 'Admin Alpha', exact: true }).waitFor();
       await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+      await page.getByRole('heading', { name: 'Admin sign in' }).waitFor();
+      expect(await page.evaluate(() => localStorage.getItem('admin_auth'))).toBeNull();
+      await page.reload();
       await page.getByRole('heading', { name: 'Admin sign in' }).waitFor();
     });
 
