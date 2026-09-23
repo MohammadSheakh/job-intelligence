@@ -18,22 +18,54 @@ export class CompanyIntelligenceService {
   async list(input: CompanyListQueryDto) {
     const search = input.search?.trim();
     const category = input.category?.trim();
-    const where = {
-      ...(search
-        ? {
-            OR: [
-              { name: { contains: search, mode: 'insensitive' as const } },
-              { website_url: { contains: search, mode: 'insensitive' as const } },
-              { location: { contains: search, mode: 'insensitive' as const } },
-            ],
-          }
-        : {}),
-      ...(input.action ? { recommended_action: input.action } : {}),
+    const isSpecialCrawlAction =
+      input.action === 'DISCOVERED_CAREER_URL' ||
+      input.action === 'DISCOVERED_WEBSITE_ONLY' ||
+      input.action === 'NO_WEBSITE_FOUND';
+
+    const where: Record<string, unknown> = {
       ...(category ? { categories: { some: { category: { name: category } } } } : {}),
       ...(input.needsManualReview !== undefined
         ? { needs_manual_review: input.needsManualReview }
         : {}),
     };
+
+    if (search && isSpecialCrawlAction) {
+      where.AND = [
+        {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { website_url: { contains: search, mode: 'insensitive' as const } },
+            { location: { contains: search, mode: 'insensitive' as const } },
+          ],
+        },
+        {
+          OR: [
+            { recommended_action: input.action },
+            { crawl_logs: { some: { action_taken: input.action } } },
+          ],
+        },
+      ];
+    } else {
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' as const } },
+          { website_url: { contains: search, mode: 'insensitive' as const } },
+          { location: { contains: search, mode: 'insensitive' as const } },
+        ];
+      }
+      if (input.action) {
+        if (isSpecialCrawlAction) {
+          where.OR = [
+            { recommended_action: input.action },
+            { crawl_logs: { some: { action_taken: input.action } } },
+          ];
+        } else {
+          where.recommended_action = input.action;
+        }
+      }
+    }
+
     const [total, rows] = await this.prisma.$transaction([
       this.prisma.company.count({ where }),
       this.prisma.company.findMany({

@@ -7,6 +7,9 @@ const actions = [
   'NO_HIRING_PAGE_FOUND',
   'ENRICH_FROM_LINKEDIN',
   'MANUAL_REVIEW',
+  'DISCOVERED_CAREER_URL',
+  'DISCOVERED_WEBSITE_ONLY',
+  'NO_WEBSITE_FOUND',
 ] as const;
 
 /** Bounds administrator company pagination and restricts research-action filters. */
