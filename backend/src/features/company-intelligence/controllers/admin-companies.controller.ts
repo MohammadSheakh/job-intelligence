@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { AdminBasicAuthGuard } from '../../authentication/guards/admin-basic-auth.guard.js';
 import { CompanyListQueryDto } from '../dto/company-list-query.dto.js';
 import { CreateCompanyDto } from '../dto/create-company.dto.js';
@@ -106,5 +106,17 @@ export class AdminCompaniesController {
     id: string,
   ) {
     return this.linkedInEnricher.enrichSingleCompany(id);
+  }
+
+  /**
+   * Delete a company and its associated records.
+   */
+  @Delete(':id')
+  async delete(
+    @Param('id')
+    id: string,
+  ) {
+    await this.companies.delete(id);
+    return { ok: true, id };
   }
 }

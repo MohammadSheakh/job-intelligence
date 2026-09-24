@@ -395,6 +395,41 @@ export class CompanyIntelligenceService {
     });
   }
 
+  /**
+   * Delete a company, its crawl logs, and associated records atomically.
+   */
+  async delete(id: string): Promise<void> {
+    const existing = await this.prisma.company.findUnique({
+      where: { id },
+      select: { id: true, name: true },
+    });
+    if (!existing) {
+      throw new NotFoundException({
+        code: 'COMPANY_NOT_FOUND',
+        message: 'Company was not found.',
+      });
+    }
+
+    await this.prisma.$transaction(async (transaction) => {
+      // Remove crawl logs associated with this company
+      await transaction.crawlLog.deleteMany({
+        where: { company_id: id },
+      });
+      // Remove candidate company state bookmarks/notes
+      await transaction.candidate_company_state.deleteMany({
+        where: { company_id: id },
+      });
+      // Remove company category links
+      await transaction.companyCategory.deleteMany({
+        where: { companyId: id },
+      });
+      // Delete the company record (cascades to jobs, notifications, job categories)
+      await transaction.company.delete({
+        where: { id },
+      });
+    });
+  }
+
   private extractCareerLink(html: string, baseUrl: string): string | null {
     const linkRegex = /<a\s+[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
     const careerPathRegex =

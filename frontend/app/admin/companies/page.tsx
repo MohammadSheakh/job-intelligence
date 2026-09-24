@@ -3,7 +3,12 @@
 import Link from 'next/link';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useAdminApi } from '../../../lib/admin-api';
-import { companyActions, type Category, type CompanyPage } from '../../../lib/company-intelligence';
+import {
+  companyActions,
+  type Category,
+  type Company,
+  type CompanyPage,
+} from '../../../lib/company-intelligence';
 
 export default function AdminCompaniesPage() {
   const api = useAdminApi();
@@ -19,6 +24,12 @@ export default function AdminCompaniesPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
+
+  // Delete company state
+  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   // LinkedIn batch crawl state
   const [linkedInPendingCount, setLinkedInPendingCount] = useState<number | null>(null);
@@ -117,6 +128,69 @@ export default function AdminCompaniesPage() {
       page: 1,
     });
   }
+
+  async function confirmDeleteCompany() {
+    if (!companyToDelete) return;
+    setIsDeleting(true);
+    setDeleteError('');
+    try {
+      await api(`/admin/companies/${encodeURIComponent(companyToDelete.id)}`, {
+        method: 'DELETE',
+      });
+      const deletedName = companyToDelete.name;
+      const deletedId = companyToDelete.id;
+
+      // Close modal
+      setCompanyToDelete(null);
+
+      // Optimistically remove row from current page
+      setResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              total: Math.max(0, prev.total - 1),
+              rows: prev.rows.filter((r) => r.id !== deletedId),
+            }
+          : prev,
+      );
+
+      setSuccessMessage(`Company "${deletedName}" was successfully deleted.`);
+
+      // Trigger background sync
+      setRetry((r) => r + 1);
+    } catch (err: unknown) {
+      setDeleteError(
+        err instanceof Error ? err.message : 'Failed to delete company. Please try again.',
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
+  // Auto-dismiss success notification after 4.5 seconds
+  useEffect(() => {
+    if (!successMessage) return;
+    const timer = setTimeout(() => {
+      setSuccessMessage('');
+    }, 4500);
+    return () => clearTimeout(timer);
+  }, [successMessage]);
+
+  // Handle ESC key for modal dismissal
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        if (companyToDelete && !isDeleting) {
+          setCompanyToDelete(null);
+          setDeleteError('');
+        } else if (batchModalOpen && !batchRunning) {
+          setBatchModalOpen(false);
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [companyToDelete, isDeleting, batchModalOpen, batchRunning]);
 
   return (
     <div className="max-w-6xl">
@@ -218,6 +292,31 @@ export default function AdminCompaniesPage() {
         </button>
       </form>
 
+      {successMessage && (
+        <div
+          className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3.5 mb-6 flex items-center justify-between shadow-xs"
+          role="status"
+        >
+          <div className="flex items-center gap-2 text-sm font-medium text-emerald-800">
+            <svg className="w-4 h-4 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span>{successMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSuccessMessage('')}
+            className="text-xs text-emerald-700 hover:text-emerald-950 font-bold px-2 py-0.5 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {error && (
         <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-4 mb-6" role="alert">
           <p className="text-sm font-medium text-rose-700">{error}</p>
@@ -250,6 +349,7 @@ export default function AdminCompaniesPage() {
                     <th>Action</th>
                     <th>Status</th>
                     <th>Last Checked</th>
+                    <th className="text-right pr-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -331,6 +431,31 @@ export default function AdminCompaniesPage() {
                               year: 'numeric',
                             })
                           : '—'}
+                      </td>
+                      <td className="text-right pr-4 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCompanyToDelete(company);
+                            setDeleteError('');
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200/80 hover:border-rose-600 transition shadow-xs cursor-pointer"
+                          title={`Delete ${company.name}`}
+                        >
+                          <svg
+                            className="w-3.5 h-3.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 5v6m4-6v6" />
+                          </svg>
+                          <span>Delete</span>
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -545,6 +670,123 @@ export default function AdminCompaniesPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {companyToDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/50 backdrop-blur-xs"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-company-title"
+          onClick={() => {
+            if (!isDeleting) {
+              setCompanyToDelete(null);
+              setDeleteError('');
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl border border-neutral-100 max-w-md w-full p-6 flex flex-col relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header with Danger Icon */}
+            <div className="flex items-start justify-between pb-4 border-b border-neutral-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                  <svg
+                    className="w-5 h-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 5v6m4-6v6" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 id="delete-company-title" className="text-base font-bold text-neutral-900">
+                    Delete Company
+                  </h3>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Confirm deletion of company profile
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isDeleting) {
+                    setCompanyToDelete(null);
+                    setDeleteError('');
+                  }
+                }}
+                disabled={isDeleting}
+                className="text-neutral-400 hover:text-neutral-700 text-sm font-semibold p-1 cursor-pointer disabled:opacity-50"
+                aria-label="Close modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="py-4 space-y-3">
+              <p className="text-sm text-neutral-700 leading-relaxed">
+                Are you sure you want to delete{' '}
+                <span className="font-bold text-neutral-900 bg-neutral-100 px-1.5 py-0.5 rounded">
+                  {companyToDelete.name}
+                </span>
+                ?
+              </p>
+
+              <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl text-xs text-amber-900 leading-relaxed">
+                ⚠️ <strong>Permanent Action:</strong> Associated crawl logs, discovered jobs, and candidate bookmarks for this company will also be removed. This action <strong>cannot be undone</strong>.
+              </div>
+
+              {deleteError && (
+                <div
+                  className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700"
+                  role="alert"
+                >
+                  {deleteError}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer Buttons */}
+            <div className="pt-4 border-t border-neutral-100 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setCompanyToDelete(null);
+                  setDeleteError('');
+                }}
+                disabled={isDeleting}
+                className="btn-pill-secondary text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteCompany}
+                disabled={isDeleting}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-600 hover:bg-rose-700 px-5 py-2 text-xs font-semibold text-white shadow-xs transition hover:shadow disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="inline-block animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent" />
+                    <span>Deleting…</span>
+                  </>
+                ) : (
+                  <span>Yes, Delete</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

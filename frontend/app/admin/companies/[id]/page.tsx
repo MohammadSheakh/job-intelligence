@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useAdminApi } from '../../../../lib/admin-api';
 import {
@@ -12,6 +12,7 @@ import {
 
 export default function AdminCompanyPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const api = useAdminApi();
   const [company, setCompany] = useState<CompanyDetail | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -24,6 +25,11 @@ export default function AdminCompanyPage() {
   const [enrichmentMsg, setEnrichmentMsg] = useState('');
   const [enrichWebsiteOverride, setEnrichWebsiteOverride] = useState('');
   const [retry, setRetry] = useState(0);
+
+  // Delete modal state
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
@@ -173,6 +179,23 @@ export default function AdminCompanyPage() {
       setError(reason instanceof Error ? reason.message : 'LinkedIn enrichment failed.');
     } finally {
       setEnriching(false);
+    }
+  }
+
+  async function confirmDeleteCompany() {
+    if (!company) return;
+    setIsDeleting(true);
+    setDeleteError('');
+    try {
+      await api(`/admin/companies/${encodeURIComponent(company.id)}`, {
+        method: 'DELETE',
+      });
+      router.push('/admin/companies');
+    } catch (err: unknown) {
+      setDeleteError(
+        err instanceof Error ? err.message : 'Failed to delete company. Please try again.',
+      );
+      setIsDeleting(false);
     }
   }
 
@@ -555,8 +578,134 @@ export default function AdminCompanyPage() {
                 Company saved.
               </p>
             )}
-            <button disabled={saving}>{saving ? 'Saving…' : 'Save company'}</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #f3f4f6' }}>
+              <button disabled={saving}>{saving ? 'Saving…' : 'Save company'}</button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteModalOpen(true);
+                  setDeleteError('');
+                }}
+                className="btn-pill-danger"
+                style={{ cursor: 'pointer' }}
+              >
+                Delete company
+              </button>
+            </div>
           </form>
+
+          {/* Delete Confirmation Modal */}
+          {deleteModalOpen && company && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/50 backdrop-blur-xs"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-detail-company-title"
+              onClick={() => {
+                if (!isDeleting) {
+                  setDeleteModalOpen(false);
+                  setDeleteError('');
+                }
+              }}
+            >
+              <div
+                className="bg-white rounded-2xl shadow-2xl border border-neutral-100 max-w-md w-full p-6 flex flex-col relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-start justify-between pb-4 border-b border-neutral-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                      <svg
+                        className="w-5 h-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 5v6m4-6v6" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 id="delete-detail-company-title" className="text-base font-bold text-neutral-900">
+                        Delete Company
+                      </h3>
+                      <p className="text-xs text-neutral-500 mt-0.5">
+                        Confirm deletion of company profile
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isDeleting) {
+                        setDeleteModalOpen(false);
+                        setDeleteError('');
+                      }
+                    }}
+                    disabled={isDeleting}
+                    className="text-neutral-400 hover:text-neutral-700 text-sm font-semibold p-1 cursor-pointer disabled:opacity-50"
+                    aria-label="Close modal"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="py-4 space-y-3">
+                  <p className="text-sm text-neutral-700 leading-relaxed">
+                    Are you sure you want to delete{' '}
+                    <span className="font-bold text-neutral-900 bg-neutral-100 px-1.5 py-0.5 rounded">
+                      {company.name}
+                    </span>
+                    ?
+                  </p>
+
+                  <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl text-xs text-amber-900 leading-relaxed">
+                    ⚠️ <strong>Permanent Action:</strong> Associated crawl logs, discovered jobs, and candidate bookmarks for this company will also be removed. This action <strong>cannot be undone</strong>.
+                  </div>
+
+                  {deleteError && (
+                    <div
+                      className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-semibold text-rose-700"
+                      role="alert"
+                    >
+                      {deleteError}
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-neutral-100 flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteModalOpen(false);
+                      setDeleteError('');
+                    }}
+                    disabled={isDeleting}
+                    className="btn-pill-secondary text-xs cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmDeleteCompany}
+                    disabled={isDeleting}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-600 hover:bg-rose-700 px-5 py-2 text-xs font-semibold text-white shadow-xs transition hover:shadow disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="inline-block animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent" />
+                        <span>Deleting…</span>
+                      </>
+                    ) : (
+                      <span>Yes, Delete</span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </>
