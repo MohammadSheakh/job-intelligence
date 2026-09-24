@@ -4,8 +4,6 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    ports:
-      - '${REDIS_PORT:-6379}:6379'
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
@@ -24,7 +22,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env before using compose.neon.yaml}
       DATABASE_MODE: neon
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      REDIS_URL: ${DOCKER_REDIS_URL:-redis://redis:6379}
       PORT: 4000
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-asdfasdf}
@@ -37,7 +35,7 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - '${BACKEND_PORT:-4000}:4000'
+      - '${BACKEND_BIND_IP:-127.0.0.1}:${BACKEND_PORT:-4000}:4000'
     healthcheck:
       test:
         [
@@ -55,6 +53,8 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api/v1}
     restart: unless-stopped
     env_file:
       - .env
@@ -67,7 +67,7 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - '${FRONTEND_PORT:-3000}:3000'
+      - '${FRONTEND_BIND_IP:-127.0.0.1}:${FRONTEND_PORT:-3000}:3000'
     healthcheck:
       test:
         [
@@ -101,6 +101,18 @@ services:
       backend:
         condition: service_healthy
     command: ['node', 'scripts/docker-scheduler.mjs']
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --protocol http2 run --token ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    env_file:
+      - .env
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
 
 volumes:
   job_intelligence_redisdata:

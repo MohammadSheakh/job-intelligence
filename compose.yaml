@@ -40,7 +40,7 @@ services:
     environment:
       DATABASE_URL: postgresql://jobapp:${LOCAL_DB_PASSWORD:-jobapp_local}@db:5432/job_intelligence
       DATABASE_MODE: local
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      REDIS_URL: ${DOCKER_REDIS_URL:-redis://redis:6379}
       PORT: 4000
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-asdfasdf}
@@ -118,6 +118,18 @@ services:
       backend:
         condition: service_healthy
     command: ['node', 'scripts/docker-scheduler.mjs']
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --protocol http2 run --token ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    env_file:
+      - .env
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
 
 volumes:
   job_intelligence_pgdata:
