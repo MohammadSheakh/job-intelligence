@@ -12,37 +12,37 @@ flowchart TD
     Client(["Candidate Browser (Next.js Frontend)"])
     
     subgraph Guards ["Security & Authentication Layer"]
-        SessionGuard["CandidateSessionGuard (Verifies Cookie HMAC & Active Account)"]
-        PasswordGuard["CandidatePasswordChangedGuard (Enforces Initial Password Change)"]
-        RateLimit["RateLimitGuard (Redis Sliding Window: 20 req/60s)"]
+        SessionGuard["CandidateSessionGuard<br/>(Verifies Cookie HMAC & Account)"]
+        PasswordGuard["CandidatePasswordChangedGuard<br/>(Forces Initial Password Change)"]
+        RateLimit["RateLimitGuard<br/>(Redis Sliding Window: 20 req/60s)"]
     end
     
     subgraph Controllers ["Candidate Portal Controllers"]
-        ProfileCtrl["CandidateProfileController (/api/v1/candidate/profile)"]
-        PipelineCtrl["CandidatePipelineController (/api/v1/candidate/pipeline)"]
-        CompanyCtrl["CandidateCompanyController (/api/v1/candidate/companies)"]
-        RecsCtrl["CandidateRecommendationsController (/api/v1/candidate/recommendations)"]
-        SearchCtrl["CandidateSearchUsageController (/api/v1/candidate/quick-search)"]
-        CatalogCtrl["CandidateCategoryCatalogController (/api/v1/candidate/categories)"]
+        ProfileCtrl["CandidateProfileController<br/>(/api/v1/candidate/profile)"]
+        PipelineCtrl["CandidatePipelineController<br/>(/api/v1/candidate/pipeline)"]
+        CompanyCtrl["CandidateCompanyController<br/>(/api/v1/candidate/companies)"]
+        RecsCtrl["CandidateRecommendationsController<br/>(/api/v1/candidate/recommendations)"]
+        SearchCtrl["CandidateSearchUsageController<br/>(/api/v1/candidate/quick-search)"]
+        CatalogCtrl["CandidateCategoryCatalogController<br/>(/api/v1/candidate/categories)"]
     end
 
     subgraph InternalServices ["Portal Services"]
-        ProfileSvc["CandidateProfileService"]
-        PipelineSvc["CandidatePipelineService"]
-        CompanySvc["CandidateCompanyService"]
-        CatalogSvc["CandidateCategoryCatalogService"]
+        ProfileSvc["CandidateProfileService<br/>(Candidate Profiles)"]
+        PipelineSvc["CandidatePipelineService<br/>(Status State Machine)"]
+        CompanySvc["CandidateCompanyService<br/>(Catalog Projections)"]
+        CatalogSvc["CandidateCategoryCatalogService<br/>(Taxonomy Catalog)"]
     end
 
     subgraph CrossModuleDependencies ["Injected Module Dependencies"]
-        RecsSvc[["CandidateRecommendationsService (MatchingModule)"]]
-        QuotaSvc[["QuickSearchQuotaService (QuickSearchModule)"]]
-        ExecSvc[["QuickSearchExecutionService (QuickSearchModule)"]]
-        AiSvc[["AiMatchEnhancerService (MatchingModule)"]]
+        RecsSvc[["CandidateRecommendationsService<br/>(MatchingModule)"]]
+        QuotaSvc[["QuickSearchQuotaService<br/>(QuickSearchModule)"]]
+        ExecSvc[["QuickSearchExecutionService<br/>(QuickSearchModule)"]]
+        AiSvc[["AiMatchEnhancerService<br/>(MatchingModule)"]]
     end
 
     subgraph DataStorage ["Data Stores & Platform"]
         Prisma[("PrismaService (PostgreSQL)")]
-        RedisStore[("Redis Store (Rate Limits & Quota Counters)")]
+        RedisStore[("Redis Store (Rate Limits & Quotas)")]
     end
 
     Client --> SessionGuard
@@ -67,6 +67,29 @@ flowchart TD
     ExecSvc --> Prisma
     RateLimit --> RedisStore
 ```
+
+### Component Source Map
+
+| Component | Layer / Role | Relative Source Path |
+| :--- | :--- | :--- |
+| `CandidateProfileController` | HTTP Controller | [`./controllers/candidate-profile.controller.ts`](./controllers/candidate-profile.controller.ts) |
+| `CandidatePipelineController` | HTTP Controller | [`./controllers/candidate-pipeline.controller.ts`](./controllers/candidate-pipeline.controller.ts) |
+| `CandidateCompanyController` | HTTP Controller | [`./controllers/candidate-company.controller.ts`](./controllers/candidate-company.controller.ts) |
+| `CandidateRecommendationsController` | HTTP Controller | [`./controllers/candidate-recommendations.controller.ts`](./controllers/candidate-recommendations.controller.ts) |
+| `CandidateSearchUsageController` | HTTP Controller | [`./controllers/candidate-search-usage.controller.ts`](./controllers/candidate-search-usage.controller.ts) |
+| `CandidateCategoryCatalogController` | HTTP Controller | [`./controllers/candidate-category-catalog.controller.ts`](./controllers/candidate-category-catalog.controller.ts) |
+| `CandidateProfileService` | Domain Orchestration | [`./services/candidate-profile.service.ts`](./services/candidate-profile.service.ts) |
+| `CandidatePipelineService` | State Machine & Tracking | [`./services/candidate-pipeline.service.ts`](./services/candidate-pipeline.service.ts) |
+| `CandidateCompanyService` | Catalog Projection | [`./services/candidate-company.service.ts`](./services/candidate-company.service.ts) |
+| `CandidateCategoryCatalogService` | Taxonomy Catalog | [`./services/candidate-category-catalog.service.ts`](./services/candidate-category-catalog.service.ts) |
+| `CandidateSessionGuard` | Injected Security Guard | [`../authentication/guards/candidate-session.guard.ts`](../authentication/guards/candidate-session.guard.ts) |
+| `CandidatePasswordChangedGuard` | Injected Security Guard | [`../authentication/guards/candidate-password-changed.guard.ts`](../authentication/guards/candidate-password-changed.guard.ts) |
+| `SlidingWindowRateLimitGuard` | Global Rate Limiter | [`../../libs/common/src/guards/sliding-window-rate-limit.guard.ts`](../../libs/common/src/guards/sliding-window-rate-limit.guard.ts) |
+| `CandidateRecommendationsService` | Injected Cross-Module Dependency | [`../matching/services/candidate-recommendations.service.ts`](../matching/services/candidate-recommendations.service.ts) |
+| `QuickSearchQuotaService` | Injected Cross-Module Dependency | [`../quick-search/services/quick-search-quota.service.ts`](../quick-search/services/quick-search-quota.service.ts) |
+| `QuickSearchExecutionService` | Injected Cross-Module Dependency | [`../quick-search/services/quick-search-execution.service.ts`](../quick-search/services/quick-search-execution.service.ts) |
+| `AiMatchEnhancerService` | Injected Cross-Module Dependency | [`../matching/services/ai-match-enhancer.service.ts`](../matching/services/ai-match-enhancer.service.ts) |
+| `PrismaService` | Database ORM | [`../../libs/database/src/prisma.service.ts`](../../libs/database/src/prisma.service.ts) |
 
 ---
 

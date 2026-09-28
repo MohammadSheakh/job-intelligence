@@ -12,21 +12,21 @@ flowchart TD
     Client(["Client (Next.js Frontend / API Caller)"])
     
     subgraph Guards ["Security Guards Layer"]
-        RateLimit["RateLimitGuard (Redis Sliding Window)"]
-        AdminGuard["AdminBasicAuthGuard"]
-        SessionGuard["CandidateSessionGuard"]
-        PasswordGuard["CandidatePasswordChangedGuard"]
+        RateLimit["RateLimitGuard<br/>(Redis Sliding Window)"]
+        AdminGuard["AdminBasicAuthGuard<br/>(HTTP Basic Authentication)"]
+        SessionGuard["CandidateSessionGuard<br/>(Cookie HMAC Verification)"]
+        PasswordGuard["CandidatePasswordChangedGuard<br/>(Forces Initial Password Change)"]
     end
     
     subgraph ControllerLayer ["HTTP Controllers"]
-        AuthCtrl["CandidateAuthenticationController<br/><code>/api/v1/candidate-auth</code>"]
+        AuthCtrl["CandidateAuthenticationController<br/>(/api/v1/candidate-auth)"]
     end
 
     subgraph ServiceLayer ["Authentication Services"]
-        AuthSvc["CandidateAuthenticationService"]
-        SessionSvc["CandidateSessionService"]
-        GoogleSvc["GoogleOAuthService"]
-        PasswordLib["PasswordService (scrypt)"]
+        AuthSvc["CandidateAuthenticationService<br/>(Account & Credential Verification)"]
+        SessionSvc["CandidateSessionService<br/>(HMAC Session Tokens)"]
+        GoogleSvc["GoogleOAuthService<br/>(OAuth 2.0 Exchange)"]
+        PasswordLib["PasswordService<br/>(Salted scrypt Hashing)"]
     end
 
     subgraph ExternalProviders ["External Services & Identity Providers"]
@@ -34,9 +34,9 @@ flowchart TD
     end
 
     subgraph StorageLayer ["Data Stores & Platform"]
-        Prisma[("PrismaService (PostgreSQL)<br/><code>candidate</code>, <code>candidate_auth</code>")]
+        Prisma[("PrismaService (PostgreSQL)<br/>• candidate & candidate_auth")]
         RedisStore[("Redis (Rate Limiting)")]
-        Config[("AppConfigService / .env<br/><code>CANDIDATE_SESSION_SECRET</code>")]
+        Config[("AppConfigService / .env<br/>(CANDIDATE_SESSION_SECRET)")]
     end
 
     Client --> RateLimit
@@ -57,6 +57,22 @@ flowchart TD
     SessionGuard --> AuthSvc
     RateLimit --> RedisStore
 ```
+
+### Component Source Map
+
+| Component | Layer / Role | Relative Source Path |
+| :--- | :--- | :--- |
+| `CandidateAuthenticationController` | HTTP Controller | [`./controllers/candidate-authentication.controller.ts`](./controllers/candidate-authentication.controller.ts) |
+| `CandidateAuthenticationService` | Authentication Orchestration | [`./services/candidate-authentication.service.ts`](./services/candidate-authentication.service.ts) |
+| `CandidateSessionService` | HMAC Session Tokens | [`./services/candidate-session.service.ts`](./services/candidate-session.service.ts) |
+| `GoogleOAuthService` | Google OAuth 2.0 Integration | [`./services/google-oauth.service.ts`](./services/google-oauth.service.ts) |
+| `PasswordService` | Salted scrypt Hashing | [`./services/password.service.ts`](./services/password.service.ts) |
+| `CandidateSessionGuard` | Portal Session Guard | [`./guards/candidate-session.guard.ts`](./guards/candidate-session.guard.ts) |
+| `CandidatePasswordChangedGuard` | Password Change Enforcement | [`./guards/candidate-password-changed.guard.ts`](./guards/candidate-password-changed.guard.ts) |
+| `AdminBasicAuthGuard` | Admin HTTP Basic Guard | [`./guards/admin-basic-auth.guard.ts`](./guards/admin-basic-auth.guard.ts) |
+| `SlidingWindowRateLimitGuard` | Global Rate Limiter | [`../../libs/common/src/guards/sliding-window-rate-limit.guard.ts`](../../libs/common/src/guards/sliding-window-rate-limit.guard.ts) |
+| `PrismaService` | Database ORM | [`../../libs/database/src/prisma.service.ts`](../../libs/database/src/prisma.service.ts) |
+| `AppConfigService` | Configuration Service | [`../../config/config.service.ts`](../../config/config.service.ts) |
 
 ---
 

@@ -10,34 +10,31 @@ Owns candidate-to-job match scoring, deterministic career fit algorithms, hard e
 ```mermaid
 flowchart TD
     subgraph Consumers ["Consumers (External Modules)"]
-        CandidateCtrl["CandidateRecommendationsController (/api/v1/candidate/recommendations)"]
-        QuickSearchExec[["QuickSearchExecutionService (QuickSearchModule)"]]
-        NotificationsDigest[["CandidateNotificationDigestService (NotificationsModule)"]]
+        CandidateCtrl["CandidateRecommendationsController<br/>(/api/v1/candidate/recommendations)"]
+        QuickSearchExec[["QuickSearchExecutionService<br/>(QuickSearchModule)"]]
+        NotificationsDigest[["DailyNotificationService<br/>(NotificationsModule)"]]
     end
 
     subgraph MatchingModule ["Matching Module (Zero Mutation Boundary)"]
-        RecsSvc["CandidateRecommendationsService"]
-        AiEnhancer["AiMatchEnhancerService"]
+        RecsSvc["CandidateRecommendationsService<br/>(Scored Matching Pipeline)"]
+        AiEnhancer["AiMatchEnhancerService<br/>(AI Semantic Blending 80/20)"]
     end
 
     subgraph DomainCore ["Pure Domain Algorithms & Normalization"]
-        MatcherFn["Deterministic Matcher (deterministicMatch)"]
-        FamilyDetector["Job Family Classifier (detectFamily)"]
-        AliasesMap["Taxonomy Aliases (CATEGORY_ALIASES)"]
-        Normalizer["String Normalizers (normalizeText, skillList)"]
+        MatcherFn["Deterministic Matcher<br/>(matchJob Multi-Factor Scoring)"]
+        FamilyDetector["Job Family Classifier<br/>(13 Job Families Detection)"]
+        AliasesMap["Taxonomy Aliases<br/>(CATEGORY_ALIASES Map)"]
+        Normalizer["String Normalizers<br/>(normalizeTokens)"]
     end
 
     subgraph ExternalServices ["External Platform & APIs"]
-        SettingsSvc[["SettingsService (SettingsModule)"]]
-        LlmApi[("OpenAI-Compatible LLM API (AI_BASE_URL/chat/completions)")]
+        SettingsSvc[["SettingsService<br/>(SettingsModule)"]]
+        LlmApi[("OpenAI-Compatible LLM API<br/>(AI_BASE_URL/chat/completions)")]
     end
 
-    subgraph DataStorage ["Data Stores (PostgreSQL - Read Only)"]
+    subgraph DataStorage ["Persistence Tier (PostgreSQL - Read Only)"]
         Prisma[("PrismaService (PostgreSQL)")]
-        JobsModel[("jobs (OPEN & Verified in last 30d)")]
-        CandidateModel[("candidates (Preferences & Minimum Score)")]
-        BlacklistModel[("candidate_company_state (EXCLUDED status)")]
-        CompanyModel[("companies (Categories & Tech Stack)")]
+        DBTables[("PostgreSQL Database Models (Read-Only)<br/>• jobs (OPEN & Verified in last 30d)<br/>• candidates (Preferences & Minimum Score)<br/>• candidate_company_state (Exclusions)<br/>• companies (Categories & Tech Stack)")]
     end
 
     CandidateCtrl --> RecsSvc
@@ -54,11 +51,19 @@ flowchart TD
     MatcherFn --> AliasesMap
     MatcherFn --> Normalizer
 
-    Prisma --> JobsModel
-    Prisma --> CandidateModel
-    Prisma --> BlacklistModel
-    Prisma --> CompanyModel
+    Prisma --> DBTables
 ```
+
+### Component Source Map
+
+| Component | Layer / Role | Relative Source Path |
+| :--- | :--- | :--- |
+| `CandidateRecommendationsService` | Recommendations Orchestration | [`./services/candidate-recommendations.service.ts`](./services/candidate-recommendations.service.ts) |
+| `AiMatchEnhancerService` | AI Semantic Reranking | [`./services/ai-match-enhancer.service.ts`](./services/ai-match-enhancer.service.ts) |
+| `matchJob` | Deterministic Multi-Factor Scoring | [`./domain/matcher.ts`](./domain/matcher.ts) |
+| `normalizeTokens` | Alphanumeric Tokenizer | [`./domain/normalize.ts`](./domain/normalize.ts) |
+| `SettingsService` | Injected Feature Settings | [`../settings/services/settings.service.ts`](../settings/services/settings.service.ts) |
+| `PrismaService` | Database ORM | [`../../libs/database/src/prisma.service.ts`](../../libs/database/src/prisma.service.ts) |
 
 ---
 

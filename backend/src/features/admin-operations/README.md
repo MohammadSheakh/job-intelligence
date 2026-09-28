@@ -12,12 +12,12 @@ flowchart TD
     AdminClient(["Admin Client (Browser / API)"]) --> Guard["AdminBasicAuthGuard"]
     
     subgraph AdminOperationsModule ["Admin Operations Module"]
-        Guard --> CandidatesCtrl["AdminCandidatesController<br/><code>/api/v1/admin/candidates</code>"]
+        Guard --> CandidatesCtrl["AdminCandidatesController<br/>(/api/v1/admin/candidates)"]
         Guard --> DashRateLimit["RateLimitGuard<br/>(60 req/min)"]
-        DashRateLimit --> DashboardCtrl["AdminDashboardController<br/><code>/api/v1/admin/dashboard</code>"]
+        DashRateLimit --> DashboardCtrl["AdminDashboardController<br/>(/api/v1/admin/dashboard)"]
         
-        CandidatesCtrl --> CandidatesSvc["AdminCandidatesService"]
-        DashboardCtrl --> DashboardSvc["AdminDashboardService"]
+        CandidatesCtrl --> CandidatesSvc["AdminCandidatesService<br/>(Candidate Profiles & Password Reset)"]
+        DashboardCtrl --> DashboardSvc["AdminDashboardService<br/>(Operational Metrics & Crawl Telemetry)"]
     end
     
     subgraph ExternalModules ["Cross-Module Dependencies"]
@@ -32,6 +32,21 @@ flowchart TD
         CandidatesSvc -.-> AppConfig[("AppConfigService<br/>(defaultCandidatePassword)")]
     end
 ```
+
+### Component Source Map
+
+| Component | Layer / Role | Relative Source Path |
+| :--- | :--- | :--- |
+| `AdminCandidatesController` | HTTP Controller | [`./controllers/admin-candidates.controller.ts`](./controllers/admin-candidates.controller.ts) |
+| `AdminDashboardController` | HTTP Controller | [`./controllers/admin-dashboard.controller.ts`](./controllers/admin-dashboard.controller.ts) |
+| `AdminCandidatesService` | Domain Orchestration | [`./services/admin-candidates.service.ts`](./services/admin-candidates.service.ts) |
+| `AdminDashboardService` | Telemetry Aggregation | [`./services/admin-dashboard.service.ts`](./services/admin-dashboard.service.ts) |
+| `AdminBasicAuthGuard` | Injected Security Guard | [`../authentication/guards/admin-basic-auth.guard.ts`](../authentication/guards/admin-basic-auth.guard.ts) |
+| `SlidingWindowRateLimitGuard` | Global Rate Limiter | [`../../libs/common/src/guards/sliding-window-rate-limit.guard.ts`](../../libs/common/src/guards/sliding-window-rate-limit.guard.ts) |
+| `CandidateAuthenticationService` | Injected Dependency | [`../authentication/services/candidate-authentication.service.ts`](../authentication/services/candidate-authentication.service.ts) |
+| `SettingsService` | Injected Dependency | [`../settings/services/settings.service.ts`](../settings/services/settings.service.ts) |
+| `PrismaService` | Database ORM | [`../../libs/database/src/prisma.service.ts`](../../libs/database/src/prisma.service.ts) |
+| `AppConfigService` | Configuration Service | [`../../config/config.service.ts`](../../config/config.service.ts) |
 
 ---
 

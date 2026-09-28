@@ -10,30 +10,25 @@ Owns candidate on-demand search quota reservation and daily allowance accounting
 ```mermaid
 flowchart TD
     subgraph Consumers ["Consumers (Candidate Portal)"]
-        UsageCtrl["CandidateSearchUsageController (/api/v1/candidate/quick-search)"]
+        UsageCtrl["CandidateSearchUsageController<br/>(/api/v1/candidate/quick-search)"]
     end
 
-    subgraph QuickSearchModule ["Quick Search Module"]
-        QuotaSvc["QuickSearchQuotaService"]
-        SelectorSvc["QuickSearchCompanySelectorService"]
-        ExecSvc["QuickSearchExecutionService"]
+    subgraph QuickSearchModule ["Quick Search Module Boundary"]
+        QuotaSvc["QuickSearchQuotaService<br/>(Advisory Locks & Quota Accounting)"]
+        SelectorSvc["QuickSearchCompanySelectorService<br/>(Prioritized Shortlist Selection)"]
+        ExecSvc["QuickSearchExecutionService<br/>(Live Crawl Sweep Orchestration)"]
     end
 
     subgraph CrossModuleDependencies ["Injected Module Dependencies"]
-        SettingsSvc[["SettingsService (SettingsModule)"]]
-        CrawlerSvc[["CompanyCrawlService (JobCrawlingModule)"]]
-        RecsSvc[["CandidateRecommendationsService (MatchingModule)"]]
-        AiSvc[["AiMatchEnhancerService (MatchingModule)"]]
+        SettingsSvc[["SettingsService<br/>(SettingsModule)"]]
+        CrawlerSvc[["CompanyCrawlService<br/>(JobCrawlingModule)"]]
+        RecsSvc[["CandidateRecommendationsService<br/>(MatchingModule)"]]
+        AiSvc[["AiMatchEnhancerService<br/>(MatchingModule)"]]
     end
 
-    subgraph DataStorage ["Data Stores (PostgreSQL)"]
+    subgraph DataStorage ["Persistence Tier (PostgreSQL)"]
         Prisma[("PrismaService (PostgreSQL)")]
-        RunsModel[("candidate_search_runs (Quota tracking & Audit)")]
-        CandidateModel[("candidates (Preferences & Active state)")]
-        BlacklistModel[("candidate_company_state (EXCLUDED status)")]
-        CompaniesModel[("companies (MONITOR_READY targets)")]
-        CategoriesModel[("categories & company_categories")]
-        SettingsModel[("settings (Limits & Policies)")]
+        DBTables[("PostgreSQL Database Models<br/>• candidate_search_runs (Quota Audits)<br/>• candidates (Preferences & Status)<br/>• candidate_company_state (Exclusions)<br/>• companies (MONITOR_READY)<br/>• settings (Operational Limits)")]
     end
 
     UsageCtrl --> QuotaSvc
@@ -52,13 +47,21 @@ flowchart TD
     SelectorSvc --> Prisma
     ExecSvc --> Prisma
 
-    Prisma --> RunsModel
-    Prisma --> CandidateModel
-    Prisma --> BlacklistModel
-    Prisma --> CompaniesModel
-    Prisma --> CategoriesModel
-    SettingsSvc --> SettingsModel
+    Prisma --> DBTables
 ```
+
+### Component Source Map
+
+| Component | Layer / Role | Relative Source Path |
+| :--- | :--- | :--- |
+| `QuickSearchQuotaService` | Quota Accounting & Advisory Locks | [`./services/quick-search-quota.service.ts`](./services/quick-search-quota.service.ts) |
+| `QuickSearchCompanySelectorService` | Shortlist Selection & Ranking | [`./services/quick-search-company-selector.service.ts`](./services/quick-search-company-selector.service.ts) |
+| `QuickSearchExecutionService` | Live Crawl Sweep Orchestration | [`./services/quick-search-execution.service.ts`](./services/quick-search-execution.service.ts) |
+| `CompanyCrawlService` | Injected Single-Company Crawler | [`../job-crawling/services/company-crawl.service.ts`](../job-crawling/services/company-crawl.service.ts) |
+| `CandidateRecommendationsService` | Injected Scored Recommendations | [`../matching/services/candidate-recommendations.service.ts`](../matching/services/candidate-recommendations.service.ts) |
+| `SettingsService` | Injected Operational Settings | [`../settings/services/settings.service.ts`](../settings/services/settings.service.ts) |
+| `PrismaService` | Database ORM | [`../../libs/database/src/prisma.service.ts`](../../libs/database/src/prisma.service.ts) |
+| `AppConfigService` | Configuration Service | [`../../config/config.service.ts`](../../config/config.service.ts) |
 
 ---
 

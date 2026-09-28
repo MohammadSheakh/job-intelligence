@@ -11,45 +11,42 @@ Owns web crawling transport, strict SSRF-protected HTTP fetching, Cheerio-based 
 flowchart TD
     subgraph Clients ["Triggers & Entry Points"]
         AdminClient(["Admin Browser / API"]) --> BasicGuard["AdminBasicAuthGuard"]
-        CLI(["CLI Command or Cron Scheduler (pnpm crawl:daily)"]) --> Worker["DailyCrawlService"]
-        QuickSearchSvc[["QuickSearchExecutionService (QuickSearchModule)"]] --> CompanyCrawl["CompanyCrawlService"]
-        CompanyIntellSvc[["CompanyIntelligenceService (CompanyIntelligenceModule)"]] --> Fetcher["CareerPageFetcherService"]
+        CLI(["CLI Command / Cron Scheduler<br/>(pnpm crawl:daily)"]) --> Worker["DailyCrawlService"]
+        QuickSearchSvc[["QuickSearchExecutionService<br/>(QuickSearchModule)"]] --> CompanyCrawl["CompanyCrawlService"]
+        CompanyIntellSvc[["CompanyIntelligenceService<br/>(CompanyIntelligenceModule)"]] --> Fetcher["CareerPageFetcherService"]
     end
 
     subgraph Controllers ["Administrative Controllers"]
-        BasicGuard --> JobsCtrl["AdminJobsController (/api/v1/admin/jobs)"]
-        BasicGuard --> LogsCtrl["AdminCrawlLogsController (/api/v1/admin/crawl-logs)"]
+        BasicGuard --> JobsCtrl["AdminJobsController<br/>(/api/v1/admin/jobs)"]
+        BasicGuard --> LogsCtrl["AdminCrawlLogsController<br/>(/api/v1/admin/crawl-logs)"]
     end
 
     subgraph CatalogServices ["Catalog Services"]
-        JobsCtrl --> JobsSvc["AdminJobCatalogService"]
-        LogsCtrl --> LogsSvc["AdminCrawlLogService"]
+        JobsCtrl --> JobsSvc["AdminJobCatalogService<br/>(Job Catalog Queries)"]
+        LogsCtrl --> LogsSvc["AdminCrawlLogService<br/>(Crawl Audit Logs)"]
     end
 
-    subgraph CrawlEngine ["Crawl Execution Engine (CrawlExecutionModule)"]
-        Worker --> DailyRepo["DailyCrawlRepository"]
+    subgraph CrawlEngine ["Crawl Execution Engine"]
+        Worker --> DailyRepo["DailyCrawlService<br/>(Keyset Pagination & Advisory Locks)"]
         Worker --> CompanyCrawl
         CompanyCrawl --> Fetcher
-        CompanyCrawl --> Ingestion["CrawlIngestionService"]
+        CompanyCrawl --> Ingestion["CrawlIngestionService<br/>(Deduplication & Upserts)"]
     end
 
     subgraph DomainLogic ["Domain Parsers & Classifiers"]
-        Ingestion --> PageParser["Career Page Parser (parseCareerPage)"]
-        Ingestion --> Classifier["Job Category Classifier (classifyJobCategories)"]
-        Ingestion --> Normalizer["Job Hash & Normalizer (createJobHash)"]
+        Ingestion --> PageParser["Career Page Parser<br/>(parseCareerPage Cheerio DOM)"]
+        Ingestion --> Classifier["Job Category Classifier<br/>(classifyJobCategories Regex)"]
+        Ingestion --> Normalizer["Job Hash & Normalizer<br/>(createJobHash Deduplication)"]
     end
 
     subgraph ExternalWeb ["External Web Targets"]
-        Fetcher --> TargetWeb[("Target Career Pages (HTTP/HTTPS)")]
+        Fetcher --> TargetWeb[("Target Career Pages<br/>(SSRF-Protected HTTP/HTTPS)")]
     end
 
-    subgraph DataStorage ["Data Stores (PostgreSQL)"]
-        DirectConn[("Direct PG Client Connection (pg_try_advisory_lock: 124631)")]
+    subgraph DataStorage ["Persistence Tier (PostgreSQL)"]
+        DirectConn[("Direct PG Advisory Lock<br/>(pg_try_advisory_lock: 124631)")]
         Prisma[("PrismaService (PostgreSQL)")]
-        JobsModel[("jobs & job_categories")]
-        LogsModel[("crawl_logs")]
-        CompaniesModel[("companies")]
-        CategoriesModel[("categories")]
+        DBTables[("PostgreSQL Database Models<br/>• jobs & job_categories<br/>• crawl_logs (Audit Telemetry)<br/>• companies & categories")]
     end
 
     DailyRepo --> DirectConn
@@ -57,12 +54,25 @@ flowchart TD
     Ingestion --> Prisma
     JobsSvc --> Prisma
     LogsSvc --> Prisma
-
-    Prisma --> JobsModel
-    Prisma --> LogsModel
-    Prisma --> CompaniesModel
-    Prisma --> CategoriesModel
+    Prisma --> DBTables
 ```
+
+### Component Source Map
+
+| Component | Layer / Role | Relative Source Path |
+| :--- | :--- | :--- |
+| `AdminJobsController` | HTTP Controller | [`./controllers/admin-jobs.controller.ts`](./controllers/admin-jobs.controller.ts) |
+| `AdminCrawlLogsController` | HTTP Controller | [`./controllers/admin-crawl-logs.controller.ts`](./controllers/admin-crawl-logs.controller.ts) |
+| `CareerPageFetcherService` | SSRF-Protected HTTP Transport | [`./services/career-page-fetcher.service.ts`](./services/career-page-fetcher.service.ts) |
+| `CrawlIngestionService` | Vacancy Ingestion & Deduplication | [`./services/crawl-ingestion.service.ts`](./services/crawl-ingestion.service.ts) |
+| `DailyCrawlService` | Scheduled Crawl Orchestration | [`./services/daily-crawl.service.ts`](./services/daily-crawl.service.ts) |
+| `CompanyCrawlService` | Single-Company Crawl Execution | [`./services/company-crawl.service.ts`](./services/company-crawl.service.ts) |
+| `AdminJobCatalogService` | Administrative Job Catalog | [`./services/admin-job-catalog.service.ts`](./services/admin-job-catalog.service.ts) |
+| `AdminCrawlLogService` | Telemetry & Audit Logs | [`./services/admin-crawl-log.service.ts`](./services/admin-crawl-log.service.ts) |
+| `CareerPageParser` | DOM Vacancy Extractor | [`./domain/career-page.parser.ts`](./domain/career-page.parser.ts) |
+| `JobCategoryClassifier` | Taxonomy Classifier | [`./domain/job-category-classifier.ts`](./domain/job-category-classifier.ts) |
+| `AdminBasicAuthGuard` | Injected Security Guard | [`../authentication/guards/admin-basic-auth.guard.ts`](../authentication/guards/admin-basic-auth.guard.ts) |
+| `PrismaService` | Database ORM | [`../../libs/database/src/prisma.service.ts`](../../libs/database/src/prisma.service.ts) |
 
 ---
 

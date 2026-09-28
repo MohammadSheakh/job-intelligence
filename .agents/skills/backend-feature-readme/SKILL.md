@@ -39,9 +39,10 @@ Visualizes important flows across actors (e.g. Client -> Controller -> Guard -> 
 Visualizes status transitions (e.g. pipeline stages, approval queues, enrichment states).
 
 > [!TIP]
-> **Mermaid Formatting Rules**:
-> - Always quote node labels containing special characters: `node["Label (Details)"]`.
-> - Avoid raw HTML tags inside node text.
+> **Mermaid Formatting & Sizing Rules**:
+> - Always quote node labels containing special characters: `node["Label<br/>(Details)"]`.
+> - Use `<br/>` to break long component names from their role/path onto multiple lines. This makes node boxes spacious, taller, and prevents text clipping/truncation across different viewport widths and fonts.
+> - Avoid horizontal sprawl: do not place 6+ nodes side-by-side on the same rank (e.g. database tables). Group related tables or structure layers vertically so the diagram does not downscale into unreadable, tiny boxes.
 > - Use appropriate shapes: `([Endpoints])`, `[[Services]]`, `[(Databases)]`.
 
 ---
@@ -66,6 +67,17 @@ flowchart TD
     Service --> DB[("Prisma Models (Write/Read)")]
     Service --> Cache[("Redis Store")]
 ```
+
+### Component Source Map
+
+> Accompany every architecture diagram with a markdown table linking directly to the relative source files. This provides 1-click navigation in VS Code / IDE and GitHub.
+
+| Component | Layer / Role | Relative Source Path |
+| :--- | :--- | :--- |
+| `FeatureController` | HTTP Controller | [`./controllers/feature.controller.ts`](./controllers/feature.controller.ts) |
+| `FeatureService` | Domain Orchestration | [`./services/feature.service.ts`](./services/feature.service.ts) |
+| `InjectedModuleDependency` | Cross-Module Dependency | [`../other-module/services/other.service.ts`](../other-module/services/other.service.ts) |
+| `PrismaService` | Database ORM | [`@app/database`](../../../packages/database) |
 
 ## Responsibilities
 - <Core domain responsibility 1>

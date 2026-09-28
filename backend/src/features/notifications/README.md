@@ -10,43 +10,50 @@ Owns candidate email digest rendering, SMTP transport delivery, notification del
 ```mermaid
 flowchart TD
     subgraph Triggers ["Entry Points & Triggers"]
-        CLI(["CLI Command / Scheduled Worker (pnpm notify:daily)"]) --> DailySvc["DailyNotificationService"]
+        CLI(["CLI Command / Scheduled Worker<br/>(pnpm notify:daily)"]) --> DailySvc["DailyNotificationService<br/>(Digest Orchestration & Dispatch)"]
     end
 
     subgraph CoreServices ["Notification Services"]
-        DailySvc --> DeduplicationSvc["NotificationDeduplicationService"]
-        DailySvc --> RenderSvc["EmailRenderService"]
-        DailySvc --> TransportSvc["EmailTransportService"]
+        DailySvc --> DeduplicationSvc["NotificationDeduplicationService<br/>(Idempotent Sent-Job Ledger)"]
+        DailySvc --> RenderSvc["EmailRenderService<br/>(Responsive HTML Template Generator)"]
+        DailySvc --> TransportSvc["EmailTransportService<br/>(SMTP Transport & Nodemailer)"]
     end
 
     subgraph ExternalModules ["Cross-Module Dependencies"]
-        DailySvc --> SettingsSvc[["SettingsService (SettingsModule)"]]
-        DailySvc --> MatcherFn[["Deterministic Matcher (MatchingModule)"]]
-        DailySvc --> AiEnhancer[["AiMatchEnhancerService (MatchingModule)"]]
+        DailySvc --> SettingsSvc[["SettingsService<br/>(SettingsModule)"]]
+        DailySvc --> MatcherFn[["CandidateRecommendationsService<br/>(MatchingModule)"]]
+        DailySvc --> AiEnhancer[["AiMatchEnhancerService<br/>(MatchingModule)"]]
     end
 
     subgraph ExternalSMTP ["External Mail Infrastructure"]
-        TransportSvc --> SmtpServer[("SMTP Server (Nodemailer: Host, User, Pass, Port)")]
+        TransportSvc --> SmtpServer[("SMTP Mail Server<br/>(Nodemailer Transport)")]
         SmtpServer --> CandidateInbox(["Candidate Email Inbox"])
     end
 
-    subgraph DataStorage ["Data Stores (PostgreSQL)"]
+    subgraph DataStorage ["Persistence Tier (PostgreSQL)"]
         Prisma[("PrismaService (PostgreSQL)")]
-        NotificationModel[("notifications (candidate_id, job_id, sent_at)")]
-        CandidateModel[("candidates (Active profiles & thresholds)")]
-        JobModel[("jobs (OPEN & Verified in last 30d)")]
-        BlacklistModel[("candidate_company_state (EXCLUDED status)")]
-        SettingsModel[("settings (emailEnabled, defaultMatchThreshold)")]
+        DBTables[("PostgreSQL Database Models<br/>• notifications (Sent Log: candidate_id, job_id)<br/>• candidates (Active Profiles & Thresholds)<br/>• jobs (OPEN & Verified in last 30d)<br/>• candidate_company_state (Exclusions)")]
     end
 
     DailySvc --> Prisma
     DeduplicationSvc --> Prisma
-    Prisma --> NotificationModel
-    Prisma --> CandidateModel
-    Prisma --> JobModel
-    Prisma --> BlacklistModel
     SettingsSvc --> Prisma
+    Prisma --> DBTables
 ```
+
+### Component Source Map
+
+| Component | Layer / Role | Relative Source Path |
+| :--- | :--- | :--- |
+| `DailyNotificationService` | Digest Sweeps & Dispatching | [`./services/daily-notification.service.ts`](./services/daily-notification.service.ts) |
+| `EmailRenderService` | HTML Email Template Generator | [`./services/email-render.service.ts`](./services/email-render.service.ts) |
+| `EmailTransportService` | SMTP Transport | [`./services/email-transport.service.ts`](./services/email-transport.service.ts) |
+| `NotificationDeduplicationService` | Idempotent Notification Ledger | [`./services/notification-deduplication.service.ts`](./services/notification-deduplication.service.ts) |
+| `CandidateRecommendationsService` | Injected Matching Engine | [`../matching/services/candidate-recommendations.service.ts`](../matching/services/candidate-recommendations.service.ts) |
+| `AiMatchEnhancerService` | Injected AI Match Engine | [`../matching/services/ai-match-enhancer.service.ts`](../matching/services/ai-match-enhancer.service.ts) |
+| `SettingsService` | Injected Operational Settings | [`../settings/services/settings.service.ts`](../settings/services/settings.service.ts) |
+| `PrismaService` | Database ORM | [`../../libs/database/src/prisma.service.ts`](../../libs/database/src/prisma.service.ts) |
+| `AppConfigService` | Configuration Service | [`../../config/config.service.ts`](../../config/config.service.ts) |
 
 ---
 

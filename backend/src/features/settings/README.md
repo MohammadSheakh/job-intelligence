@@ -10,28 +10,38 @@ The **Settings** module manages platform-wide operational configurations, featur
 ```mermaid
 flowchart TD
     subgraph Administration ["Admin Control Plane"]
-        AdminUser(["Admin Operator / UI"]) --> BasicGuard["AdminBasicAuthGuard"]
-        BasicGuard --> SettingsCtrl["AdminSettingsController (/api/v1/admin/settings)"]
+        AdminUser(["Admin Operator / UI"]) --> BasicGuard["AdminBasicAuthGuard<br/>(HTTP Basic Authentication)"]
+        BasicGuard --> SettingsCtrl["AdminSettingsController<br/>(/api/v1/admin/settings)"]
     end
 
     subgraph CoreModule ["Settings Module Boundary"]
-        SettingsCtrl --> SettingsSvc[["SettingsService"]]
-        SettingsDto["UpdateSettingsDto (class-validator)"] -.-> SettingsCtrl
+        SettingsCtrl --> SettingsSvc[["SettingsService<br/>(Operational Settings Provider)"]]
+        SettingsDto["UpdateSettingsDto<br/>(Bounds Validation)"] -.-> SettingsCtrl
     end
 
     subgraph InternalConsumers ["Internal Feature Consumers"]
-        AiMatch[["AiMatchEnhancerService (matching)"]] -.->|"get()"| SettingsSvc
-        DailyNotify[["DailyNotificationService (notifications)"]] -.->|"get()"| SettingsSvc
-        QuotaSvc[["QuickSearchQuotaService (quick-search)"]] -.->|"get()"| SettingsSvc
-        SelectorSvc[["QuickSearchCompanySelectorService (quick-search)"]] -.->|"get()"| SettingsSvc
-        AdminDash[["AdminDashboardService (admin-operations)"]] -.->|"get()"| SettingsSvc
+        AiMatch[["AiMatchEnhancerService<br/>(matching)"]] -.->|"get()"| SettingsSvc
+        DailyNotify[["DailyNotificationService<br/>(notifications)"]] -.->|"get()"| SettingsSvc
+        QuotaSvc[["QuickSearchQuotaService<br/>(quick-search)"]] -.->|"get()"| SettingsSvc
+        SelectorSvc[["QuickSearchCompanySelectorService<br/>(quick-search)"]] -.->|"get()"| SettingsSvc
+        AdminDash[["AdminDashboardService<br/>(admin-operations)"]] -.->|"get()"| SettingsSvc
     end
 
     subgraph DataTier ["Persistence Tier"]
-        SettingsSvc --> Prisma["PrismaService ($transaction / findMany)"]
-        Prisma --> SettingsTable[("PostgreSQL: settings table")]
+        SettingsSvc --> Prisma["PrismaService<br/>($transaction / findMany)"]
+        Prisma --> SettingsTable[("PostgreSQL Database<br/>• settings (10 Key-Value Tuples)")]
     end
 ```
+
+### Component Source Map
+
+| Component | Layer / Role | Relative Source Path |
+| :--- | :--- | :--- |
+| `AdminSettingsController` | HTTP Controller | [`./controllers/admin-settings.controller.ts`](./controllers/admin-settings.controller.ts) |
+| `SettingsService` | Operational Settings Provider | [`./services/settings.service.ts`](./services/settings.service.ts) |
+| `UpdateSettingsDto` | Validation DTO | [`./dto/update-settings.dto.ts`](./dto/update-settings.dto.ts) |
+| `AdminBasicAuthGuard` | Injected Security Guard | [`../authentication/guards/admin-basic-auth.guard.ts`](../authentication/guards/admin-basic-auth.guard.ts) |
+| `PrismaService` | Database ORM | [`../../libs/database/src/prisma.service.ts`](../../libs/database/src/prisma.service.ts) |
 
 ---
 

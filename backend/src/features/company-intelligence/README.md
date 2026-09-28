@@ -12,17 +12,17 @@ flowchart TD
     AdminClient(["Admin Client (Browser / API)"]) --> Guard["AdminBasicAuthGuard"]
 
     subgraph Controllers ["Company Intelligence Controllers"]
-        CompaniesCtrl["AdminCompaniesController (/api/v1/admin/companies)"]
-        CategoriesCtrl["AdminCategoriesController (/api/v1/admin/categories)"]
+        CompaniesCtrl["AdminCompaniesController<br/>(/api/v1/admin/companies)"]
+        CategoriesCtrl["AdminCategoriesController<br/>(/api/v1/admin/categories)"]
     end
 
     Guard --> CompaniesCtrl
     Guard --> CategoriesCtrl
 
     subgraph Services ["Feature Services"]
-        CompanySvc["CompanyIntelligenceService"]
-        CategorySvc["CategoryCatalogService"]
-        LinkedInSvc["LinkedInEnrichmentCrawlerService"]
+        CompanySvc["CompanyIntelligenceService<br/>(Company CRUD & Cascade Deletions)"]
+        CategorySvc["CategoryCatalogService<br/>(Taxonomy & Category Mutations)"]
+        LinkedInSvc["LinkedInEnrichmentCrawlerService<br/>(Automated Metadata Enrichment)"]
     end
 
     CompaniesCtrl --> CompanySvc
@@ -30,15 +30,15 @@ flowchart TD
     CategoriesCtrl --> CategorySvc
 
     subgraph Domain ["Domain Logic & Parsers"]
-        LinkedInParser["LinkedIn HTML Parser (extractWebsiteFromLinkedInHtml)"]
-        UrlCleaner["URL Normalizer & Cleaner (validateAndCleanWebsiteUrl)"]
+        LinkedInParser["LinkedIn HTML Parser<br/>(extractWebsiteFromLinkedInHtml)"]
+        UrlCleaner["URL Normalizer & Cleaner<br/>(validateAndCleanWebsiteUrl)"]
     end
 
     LinkedInSvc --> LinkedInParser
     LinkedInSvc --> UrlCleaner
 
     subgraph CrossModuleDependencies ["Injected Module Dependencies"]
-        FetcherSvc[["CareerPageFetcherService (JobCrawlingModule)"]]
+        FetcherSvc[["CareerPageFetcherService<br/>(JobCrawlingModule)"]]
     end
 
     CompanySvc --> FetcherSvc
@@ -52,24 +52,31 @@ flowchart TD
     LinkedInSvc -.-> CompanyWeb
     FetcherSvc -.-> CompanyWeb
 
-    subgraph DataStorage ["Data Stores (PostgreSQL)"]
+    subgraph DataStorage ["Persistence Tier (PostgreSQL)"]
         Prisma[("PrismaService (PostgreSQL)")]
-        CompanyModel[("companies")]
-        CategoryModel[("categories")]
-        JoinModel[("company_categories")]
-        CrawlLogModel[("crawl_logs")]
-        CandidateStateModel[("candidate_company_state")]
+        DBTables[("PostgreSQL Database Models<br/>• companies (Deterministic Slug ID)<br/>• categories & company_categories<br/>• crawl_logs & candidate_company_state")]
     end
 
     CompanySvc --> Prisma
     CategorySvc --> Prisma
     LinkedInSvc --> Prisma
-    Prisma --> CompanyModel
-    Prisma --> CategoryModel
-    Prisma --> JoinModel
-    Prisma --> CrawlLogModel
-    Prisma --> CandidateStateModel
+    Prisma --> DBTables
 ```
+
+### Component Source Map
+
+| Component | Layer / Role | Relative Source Path |
+| :--- | :--- | :--- |
+| `AdminCompaniesController` | HTTP Controller | [`./controllers/admin-companies.controller.ts`](./controllers/admin-companies.controller.ts) |
+| `AdminCategoriesController` | HTTP Controller | [`./controllers/admin-categories.controller.ts`](./controllers/admin-categories.controller.ts) |
+| `CompanyIntelligenceService` | Domain Orchestration & CRUD | [`./services/company-intelligence.service.ts`](./services/company-intelligence.service.ts) |
+| `CategoryCatalogService` | Taxonomy Catalog | [`./services/category-catalog.service.ts`](./services/category-catalog.service.ts) |
+| `LinkedInEnrichmentCrawlerService` | Automated Enrichment | [`./services/linkedin-enrichment-crawler.service.ts`](./services/linkedin-enrichment-crawler.service.ts) |
+| `extractWebsiteFromLinkedInHtml` | Domain HTML Parser | [`./domain/linkedin-parser.ts`](./domain/linkedin-parser.ts) |
+| `validateAndCleanWebsiteUrl` | URL Sanitizer & Normalizer | [`./domain/linkedin-parser.ts`](./domain/linkedin-parser.ts) |
+| `CareerPageFetcherService` | Injected Crawler Fetcher | [`../job-crawling/services/career-page-fetcher.service.ts`](../job-crawling/services/career-page-fetcher.service.ts) |
+| `AdminBasicAuthGuard` | Injected Security Guard | [`../authentication/guards/admin-basic-auth.guard.ts`](../authentication/guards/admin-basic-auth.guard.ts) |
+| `PrismaService` | Database ORM | [`../../libs/database/src/prisma.service.ts`](../../libs/database/src/prisma.service.ts) |
 
 ---
 
