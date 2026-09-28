@@ -1,0 +1,98 @@
+# System Architecture (Detailed Diagram)
+
+```mermaid
+flowchart LR
+    subgraph ACTORS ["Users & Triggers"]
+        direction TB
+        CAND_USER(("Candidate"))
+        ADMIN_USER(("Admin"))
+        CRON_USER(("Cron Daemon"))
+    end
+
+    subgraph CLIENTS ["Client Applications (Next.js 15 Standalone)"]
+        direction TB
+        PORTAL_APP["Candidate Portal<br/>- Self-Service Profile<br/>- Application Pipeline<br/>- Standard & AI Quick Search"]
+        ADMIN_APP["Admin Operations Console<br/>- Company Intelligence<br/>- Category & Job Catalog<br/>- Telemetry & Crawler Logs"]
+    end
+
+    subgraph GATEWAY ["API Gateway & Security Layer (NestJS 11)"]
+        direction TB
+        RATE_LIMIT["Redis Sliding-Window Rate Limiter<br/>(Atomic ZSET Pipelines: 10-60 req/min)"]
+        AUTH_GUARD["Authentication & Session Guard<br/>- Signed HMAC Session + Token Version Revocation<br/>- Timing-Safe HTTP Basic Auth"]
+        INTERCEPTORS["Global Interceptors & Filters<br/>- BigIntSerializerInterceptor (BigInt to String)<br/>- GlobalHttpExceptionFilter (Sanitized Envelope)"]
+    end
+
+    subgraph SERVICES ["Core Application Services (NestJS 11)"]
+        direction TB
+        SVC_AUTH["Authentication Service<br/>Scrypt Hashing / Google OAuth / Revocation"]
+        SVC_CAND["Candidate Portal Service<br/>Profile Management / Pipeline Tracking"]
+        SVC_COMP["Company Intelligence Service<br/>Category Taxonomy / Review Queue / Enrichment"]
+        SVC_CRAWL["Job Crawling & Ingestion Service<br/>Bounded Fetcher / Decompression / SHA-256 Hasher"]
+        SVC_SEARCH["Quick Search Orchestrator<br/>PostgreSQL Advisory Lock Quota / Candidate Runs"]
+        SVC_MATCH["Hybrid Matching Engine<br/>Bounded Keyset Scan (1K) / Deterministic + LLM Blend"]
+        SVC_NOTIF["Notification Service<br/>Ferio Digest Renderer / Delivery Deduplication"]
+        SVC_ADMIN["Admin Operations Service<br/>System Dashboard / Operational Settings"]
+    end
+
+    subgraph WORKERS ["Background Workers & CLI"]
+        direction TB
+        SCHEDULER["Docker Scheduler Daemon<br/>(Asia/Dhaka 06:15 Cron)"]
+        WORKER_CRAWL["Daily Crawler CLI<br/>(pnpm crawl:daily)"]
+        WORKER_NOTIF["Daily Notifier CLI<br/>(pnpm notify:daily)"]
+    end
+
+    subgraph STORAGE ["Persistence & Caching Infrastructure"]
+        direction TB
+        DB_PG[("PostgreSQL 16 / Neon<br/>- Prisma 7 + Pooled Adapter<br/>- Dynamic Pool: 10-20 Conns<br/>- 11 Normalized Tables<br/>- pg_advisory_xact_lock")]
+        CACHE_REDIS[("Redis 7 Alpine<br/>- Sliding-Window Sorted Sets (ZSET)<br/>- TTL Auto-Eviction")]
+    end
+
+    subgraph EXTERNAL ["External Integrations"]
+        direction TB
+        EXT_SITES["Target Career Sites<br/>(Public HTTPS / HTML)"]
+        EXT_LLM["OpenAI LLM API<br/>(Semantic Match Scoring)"]
+        EXT_SMTP["SMTP Mail Provider<br/>(Candidate Digest Delivery)"]
+        EXT_GOOGLE["Google Identity API<br/>(OAuth Account Verification)"]
+    end
+
+    subgraph NOTES ["Technical Notes & Architecture Logic"]
+        direction TB
+        NOTE_CONCURRENCY["<b>Concurrency & Rate Limiting:</b><br/>• Sliding-window rate limiting via Redis atomic Sorted Sets.<br/>• PostgreSQL transaction advisory locks (pg_advisory_xact_lock)<br/>  guarantee strict candidate search quota serialization."]
+        NOTE_CRAWLER["<b>Resilient Web Crawler:</b><br/>• Single-hop DNS pinning (Anti-SSRF) + manual redirect tracing.<br/>• Streaming Brotli / Gzip / Deflate decompression (node:zlib).<br/>• Strict 2 MiB boundary safety against decompression bombs."]
+        NOTE_MATCHING["<b>Hybrid Recommendation Engine:</b><br/>• Multi-factor deterministic scoring (Experience, Skills, Location).<br/>• Optional LLM semantic blending (80% deterministic + 20% semantic).<br/>• Automated fallback to deterministic score upon 15s timeout."]
+        NOTE_HARDENING["<b>Enterprise Reliability & Security:</b><br/>• Token-versioned sessions enable instant multi-device revocation.<br/>• Global BigInt interceptor eliminates unhandled JSON serialization.<br/>• Dynamic PostgreSQL pool with graceful SIGTERM/SIGINT draining."]
+    end
+
+    CAND_USER -->|"Access Portal"| PORTAL_APP
+    ADMIN_USER -->|"Manage Console"| ADMIN_APP
+    CRON_USER -->|"Trigger Schedule"| SCHEDULER
+    PORTAL_APP -->|"HTTPS / Signed Cookies"| RATE_LIMIT
+    ADMIN_APP -->|"HTTPS / Basic Auth"| RATE_LIMIT
+    RATE_LIMIT --> AUTH_GUARD
+    AUTH_GUARD --> INTERCEPTORS
+    INTERCEPTORS --> SVC_AUTH
+    INTERCEPTORS --> SVC_CAND
+    INTERCEPTORS --> SVC_COMP
+    INTERCEPTORS --> SVC_SEARCH
+    INTERCEPTORS --> SVC_ADMIN
+    SCHEDULER --> WORKER_CRAWL
+    SCHEDULER --> WORKER_NOTIF
+    WORKER_CRAWL --> SVC_CRAWL
+    WORKER_NOTIF --> SVC_NOTIF
+    SVC_SEARCH --> SVC_CRAWL
+    SVC_SEARCH --> SVC_MATCH
+    SVC_NOTIF --> SVC_MATCH
+    RATE_LIMIT <-->|"Atomic ZSET Pipelines"| CACHE_REDIS
+    SVC_AUTH <-->|"Read / Write"| DB_PG
+    SVC_CAND <-->|"Read / Write"| DB_PG
+    SVC_COMP <-->|"Read / Write"| DB_PG
+    SVC_CRAWL <-->|"Atomic Upsert & Logs"| DB_PG
+    SVC_SEARCH <-->|"pg_advisory_xact_lock"| DB_PG
+    SVC_MATCH <-->|"Bounded Keyset Scan"| DB_PG
+    SVC_ADMIN <-->|"Read / Write"| DB_PG
+    SVC_NOTIF <-->|"Deduplication Queries"| DB_PG
+    SVC_CRAWL -->|"Streaming Fetch (2 MiB Cap)"| EXT_SITES
+    SVC_MATCH -.->|"Semantic Rerank (15s Timeout)"| EXT_LLM
+    SVC_NOTIF -->|"Sanitized HTML Digest"| EXT_SMTP
+    SVC_AUTH -->|"Token Exchange"| EXT_GOOGLE
+```

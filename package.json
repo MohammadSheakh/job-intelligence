@@ -8,6 +8,7 @@
     "db:import-companies": "tsx scripts/import-companies.ts",
     "db:verify": "tsx scripts/verify.ts",
     "crawl:pilot": "tsx scripts/crawl-pilot.ts",
+    "crawl:linkedin": "tsx scripts/crawl-linkedin.ts",
     "typecheck": "tsc --noEmit",
     "crawl:daily": "tsx scripts/crawl-daily.ts",
     "crawl:dry": "tsx scripts/crawl-dry-run.ts",

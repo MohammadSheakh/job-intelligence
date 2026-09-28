@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useState,
   type FormEvent,
   type ReactNode,
@@ -14,11 +15,26 @@ import { api, ApiError } from './api';
 type AdminRequest = <T>(path: string, options?: RequestInit) => Promise<T>;
 const AdminContext = createContext<AdminRequest | null>(null);
 
-/** Keep Basic credentials in memory only; refreshing or signing out requires a new sign-in. */
+const ADMIN_AUTH_KEY = 'admin_auth';
+
+/** Persist Basic credentials in localStorage so hard reloads maintain administrator session. */
 export function AdminSession({ children }: { children: ReactNode }) {
   const [authorization, setAuthorization] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(ADMIN_AUTH_KEY);
+      if (stored) {
+        setAuthorization(stored);
+      }
+    } catch {
+      // Storage might be restricted in some environments
+    }
+    setInitialized(true);
+  }, []);
 
   const request = useCallback<AdminRequest>(
     async (path, options = {}) => {
@@ -28,6 +44,11 @@ export function AdminSession({ children }: { children: ReactNode }) {
       } catch (reason) {
         if (reason instanceof ApiError && reason.status === 401) {
           setAuthorization(null);
+          try {
+            localStorage.removeItem(ADMIN_AUTH_KEY);
+          } catch {
+            // Ignore storage errors
+          }
           setError('Your administrator credentials were rejected. Sign in again.');
         }
         throw reason;
@@ -46,11 +67,34 @@ export function AdminSession({ children }: { children: ReactNode }) {
     try {
       await api('/admin/companies?pageSize=1', { headers: { authorization: header } });
       setAuthorization(header);
+      try {
+        localStorage.setItem(ADMIN_AUTH_KEY, header);
+      } catch {
+        // Ignore storage errors
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Sign-in failed.');
     } finally {
       setBusy(false);
     }
+  }
+
+  function signOut() {
+    setAuthorization(null);
+    try {
+      localStorage.removeItem(ADMIN_AUTH_KEY);
+    } catch {
+      // Ignore storage errors
+    }
+    setError('');
+  }
+
+  if (!initialized) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-6 bg-neutral-50/50">
+        <div className="w-6 h-6 border-2 border-neutral-300 border-t-neutral-800 rounded-full animate-spin" />
+      </main>
+    );
   }
 
   if (!authorization)
@@ -165,10 +209,7 @@ export function AdminSession({ children }: { children: ReactNode }) {
             <button
               type="button"
               className="text-xs font-medium text-neutral-400 hover:text-neutral-900 transition flex items-center gap-1.5"
-              onClick={() => {
-                setAuthorization(null);
-                setError('');
-              }}
+              onClick={signOut}
             >
               Sign out
             </button>

@@ -4,6 +4,9 @@ export const companyActions = [
   ['NO_HIRING_PAGE_FOUND', 'No hiring page found'],
   ['ENRICH_FROM_LINKEDIN', 'Enrich from LinkedIn'],
   ['MANUAL_REVIEW', 'Manual review'],
+  ['DISCOVERED_CAREER_URL', 'Discovered career URL'],
+  ['DISCOVERED_WEBSITE_ONLY', 'Discovered website only'],
+  ['NO_WEBSITE_FOUND', 'No website found'],
 ] as const;
 
 export interface Category {

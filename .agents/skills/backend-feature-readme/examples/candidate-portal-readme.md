@@ -82,14 +82,12 @@ flowchart TD
 | `CandidatePipelineService` | State Machine & Tracking | [`./services/candidate-pipeline.service.ts`](./services/candidate-pipeline.service.ts) |
 | `CandidateCompanyService` | Catalog Projection | [`./services/candidate-company.service.ts`](./services/candidate-company.service.ts) |
 | `CandidateCategoryCatalogService` | Taxonomy Catalog | [`./services/candidate-category-catalog.service.ts`](./services/candidate-category-catalog.service.ts) |
-| `CandidateSessionGuard` | Injected Security Guard | [`../authentication/guards/candidate-session.guard.ts`](../authentication/guards/candidate-session.guard.ts) |
-| `CandidatePasswordChangedGuard` | Injected Security Guard | [`../authentication/guards/candidate-password-changed.guard.ts`](../authentication/guards/candidate-password-changed.guard.ts) |
-| `SlidingWindowRateLimitGuard` | Global Rate Limiter | [`../../libs/common/src/guards/sliding-window-rate-limit.guard.ts`](../../libs/common/src/guards/sliding-window-rate-limit.guard.ts) |
-| `CandidateRecommendationsService` | Injected Cross-Module Dependency | [`../matching/services/candidate-recommendations.service.ts`](../matching/services/candidate-recommendations.service.ts) |
-| `QuickSearchQuotaService` | Injected Cross-Module Dependency | [`../quick-search/services/quick-search-quota.service.ts`](../quick-search/services/quick-search-quota.service.ts) |
-| `QuickSearchExecutionService` | Injected Cross-Module Dependency | [`../quick-search/services/quick-search-execution.service.ts`](../quick-search/services/quick-search-execution.service.ts) |
-| `AiMatchEnhancerService` | Injected Cross-Module Dependency | [`../matching/services/ai-match-enhancer.service.ts`](../matching/services/ai-match-enhancer.service.ts) |
-| `PrismaService` | Database ORM | [`../../libs/database/src/prisma.service.ts`](../../libs/database/src/prisma.service.ts) |
+| `CandidateSessionGuard` | Security Guard | [`../authentication/guards/candidate-session.guard.ts`](../authentication/guards/candidate-session.guard.ts) |
+| `CandidatePasswordChangedGuard` | Security Guard | [`../authentication/guards/candidate-password-changed.guard.ts`](../authentication/guards/candidate-password-changed.guard.ts) |
+| `CandidateRecommendationsService` | Injected Dependency | [`../matching/services/candidate-recommendations.service.ts`](../matching/services/candidate-recommendations.service.ts) |
+| `QuickSearchQuotaService` | Injected Dependency | [`../quick-search/services/quick-search-quota.service.ts`](../quick-search/services/quick-search-quota.service.ts) |
+| `QuickSearchExecutionService` | Injected Dependency | [`../quick-search/services/quick-search-execution.service.ts`](../quick-search/services/quick-search-execution.service.ts) |
+| `AiMatchEnhancerService` | Injected Dependency | [`../matching/services/ai-match-enhancer.service.ts`](../matching/services/ai-match-enhancer.service.ts) |
 
 ---
 

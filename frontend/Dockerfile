@@ -8,7 +8,9 @@ WORKDIR /app/frontend
 RUN pnpm install --frozen-lockfile
 
 COPY frontend ./
-ENV NEXT_TELEMETRY_DISABLED=1 \
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
+    NEXT_TELEMETRY_DISABLED=1 \
     NODE_ENV=production
 RUN pnpm run build
 
