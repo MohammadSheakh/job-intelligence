@@ -4,6 +4,12 @@ A TypeScript/Node.js job-intelligence application for curated Bangladesh company
 
 The Admin and Candidate portals run in the **same application and database**, but they have different authentication and views. Both follow the shared Ferio design system.
 
+## High level design Adobe Acrobat PDF viewer Link
+
+https://acrobat.adobe.com/id/urn:aaid:sc:AP:c8974c05-3ff0-44a2-b5db-c4c39b367c46 
+
+
+
 ## Project truth documents
 
 Before changing behavior, read:
